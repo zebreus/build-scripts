@@ -1,0 +1,76 @@
+name: Build and Deploy Python Index to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main  # Re-generate index on every change to the default branch
+    paths:
+      - artifacts/*.whl
+      - generate-index.py
+      - python-wasix-binaries
+  workflow_dispatch:
+
+# Minimal permissions required by the official Pages deployment action
+# NOTE: these are REPLACED, not merged, with job-level permissions
+permissions:
+  contents: read      # to checkout the repository
+  pages: write        # to deploy to Pages
+  id-token: write     # to verify deployment origin
+
+concurrency:
+  group: "deploy-pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          submodules: false
+          sparse-checkout: |
+            # Only checkout the files needed to generate the index
+            artifacts
+            generate-index.py
+            python-wasix-binaries
+      - name: Checkout python-wasix-binaries
+        run: |
+          git submodule update --init --depth 1 --recommend-shallow python-wasix-binaries
+      # Install a fast Python environment + the `uv` CLI (with cache)
+      - name: Setup uv & Python
+        uses: astral-sh/setup-uv@v6
+        with:
+          # Install the runner's system Python (faster than compiling)
+          python-version: "3.12"
+          enable-cache: true
+          # Reuse cache when lockfile or project metadata didn’t change
+          cache-dependency-glob: |
+            generate-index.py
+      - name: Generate static package index
+        run: |
+          ./generate-index.py
+
+      # Upload the "dist" folder produced by the script so it can be
+      # deployed by the next job.
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages   # default Pages environment
+      url: ${{ steps.deploy.outputs.page_url }}
+    # Job-level permissions must explicitly include the same set
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4

@@ -45,7 +45,7 @@ with open(package_list, 'w') as package_list_file:
 main.main((
         '--package-list-json', package_list,
         '--output-dir', 'dist',
-        '--packages-url', '../packages/',
+        '--packages-url', '../../packages/',
         '--title', 'WASIX Python native wheels',
 ))
 
