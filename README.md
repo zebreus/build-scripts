@@ -1,8 +1,88 @@
-# more than numpy
+# Python native modules for WASIX
+
+## Python Index
+
+You can use this index for WASIX easily by providing this index to `pip` or `uv`:
+https://wasix-org.github.io/build-scripts/
+
+### Using the index in your projects
+
+The actual **Simple API** endpoint that pip/uv expect lives under the `simple/` path, so the full base URL is:
+
+```
+https://wasix-org.github.io/build-scripts/simple
+```
+
+Below are a few common ways to point your tooling at it.
+
+#### pip (one-off)
+
+Install a package **only** from the WASIX index (no PyPI fallback):
+
+```bash
+pip install --index-url https://wasix-org.github.io/build-scripts/simple <package-name>
+```
+
+Keep the default PyPI index but let pip also search the WASIX index:
+
+```bash
+pip install --extra-index-url https://wasix-org.github.io/build-scripts/simple <package-name>
+```
+
+You can also set an environment variable once per shell:
+
+```bash
+export PIP_INDEX_URL=https://wasix-org.github.io/build-scripts/simple
+pip install <package-name>
+```
+
+#### uv (one-off)
+
+`uv` accepts the same flags as pip, so you can run e.g.:
+
+```bash
+# Only use the WASIX index
+uv pip install --index-url https://wasix-org.github.io/build-scripts/simple <package-name>
+
+# Or combine with PyPI
+uv pip install --extra-index-url https://wasix-org.github.io/build-scripts/simple <package-name>
+```
+
+#### uv (project configuration)
+
+For a permanent, checked-in configuration add a custom index section to your `pyproject.toml`:
+
+```toml
+[[tool.uv.index]]
+# A human-friendly name you pick
+name = "wasix"
+# The Simple index URL
+url = "https://wasix-org.github.io/build-scripts/simple"
+# Optional – make this the primary index
+default = true
+```
+
+After that, every `uv sync` / `uv pip install` inside the project will automatically resolve packages against the WASIX index.
+
+---
+
+
+### Rebuilding the index
+
+All the supported native modules are already compiled in the [`artifacts/`](./artifacts) folder.
+For each commit that changes the modules, we generate a new index using `dumb-pypi` that is statically stored in the provided URL index.
+
+If you want to regenerate the index manually, you just need to do:
+
+```bash
+./generate-index.sh
+```
+
+## Building modules from source
 
 Buildscripts to build numpy and other wheels for wasix. For convenience, this package already includes prebuilt versions of all the wheels and libraries.
 
-## Usage
+### Usage
 
 The build script is controlled by the following environment variables:
 
@@ -15,11 +95,11 @@ The easiest way to setup all the environment variables is to activate the wasix-
 
 Then you can run `make all` to build all wheels and libraries.
 
-## Versions
+### Versions
 
 Here is a list of the versions of the wheels and libraries that are included in this package:
 
-### Wheels
+#### Wheels
 
 * numpy: 2.0.2
 * markupsafe: 3.0.2
@@ -53,7 +133,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 
 psycopg3-c is just the sdist of psycopg3-binary
 
-### Libraries
+#### Libraries
 
 * libzbar: 0.23.93
 * libffi: wasix-org/libffi main
@@ -76,17 +156,17 @@ psycopg3-c is just the sdist of psycopg3-binary
 
 SDL has all subsystems disabled
 
-## Notes
+### Notes
 
 All built library packages should include a pkg-config file for each library.
 
-### [Variables in pkg-config files](https://www.gnu.org/prep/standards/html_node/Directory-Variables.html)
+#### [Variables in pkg-config files](https://www.gnu.org/prep/standards/html_node/Directory-Variables.html)
 
 When building libs, we should make shour they include pkg-config files. The pkg config files should have their prefix set to `/usr/local`, exec_prefix set to `${prefix}`, libdir set to `${exec_prefix}/lib/wasm32-wasi`, and includedir set to `${prefix}/include`. In some cases it might be acceptable to have exec_prefix hardcoded to the same value as prefix. In that case libdir should start with `${prefix}` instead of `${exec_prefix}`.
 
-## Analyzing the output
+### Analyzing the output
 
-### Check whether python libaries require shared libs
+#### Check whether python libaries require shared libs
 
 You can run somethign like
 
