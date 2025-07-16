@@ -6,3 +6,5 @@
 /*.build
 /*.prepared
 __pycache__
+/dist
+/package-list.jsonl
