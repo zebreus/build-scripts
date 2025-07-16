@@ -1,3 +1,4 @@
+#!/usr/bin/env -S uv run --script
 # /// script
 # dependencies = [
 #   "dumb-pypi>=1.15.0"
