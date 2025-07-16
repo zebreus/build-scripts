@@ -116,11 +116,15 @@ endef
 define build_wheel =
 if test -n "${PREPARE}" ; then source ./cross-venv/bin/activate && cd $(word 1, $(subst _wasm32, ,$@)) && _= ${PREPARE} ; fi
 source ./cross-venv/bin/activate && cd $(word 1, $(subst _wasm32, ,$@))/${PYPROJECT_PATH} && ${BUILD_ENV_VARS} python3 -m build --wheel ${BUILD_EXTRA_FLAGS}
-cp $(word 1, $(subst _wasm32, ,$@))/${PYPROJECT_PATH}/dist/*.whl $@
+mkdir -p artifacts
+cp $(word 1, $(subst _wasm32, ,$@))/${PYPROJECT_PATH}/dist/*.whl artifacts
+ln -sf artifacts/$$(basename $(word 1, $(subst _wasm32, ,$@))/${PYPROJECT_PATH}/dist/*.whl) $@
 endef
 
 define package_lib =
-cd $(word 1, $(subst ., ,$@)).build && tar cfJ ../$@ *
+mkdir -p artifacts
+cd $(word 1, $(subst ., ,$@)).build && tar cfJ ../artifacts/$@ *
+ln -sf artifacts/$(word 1, $(subst ., ,$@)).tar.xz $(word 1, $(subst ., ,$@)).tar.xz
 endef
 
 # Command to run something in an environment with a haskell compiler targeting wasi
