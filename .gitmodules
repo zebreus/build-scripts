@@ -145,3 +145,6 @@
 [submodule "util-linux"]
 	path = util-linux
 	url = https://github.com/util-linux/util-linux
+[submodule "openssh"]
+	path = openssh
+	url = https://github.com/openssh/openssh-portable.git

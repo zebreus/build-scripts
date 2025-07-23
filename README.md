@@ -148,14 +148,15 @@ psycopg3-c is just the sdist of psycopg3-binary
 * giflib: 5.2.2
 * libpng: 1.6.50
 * SDL: 3.2.16
+  * SDL has all subsystems disabled
 * openjpeg: 2.5.3
 * libuv: 1.51.0
 * mariadb-connector-c: 3.4.6
 * openssl: 3.5.1
 * bzip2: 1.0.8
 * util-linux: 2.41.1
-
-SDL has all subsystems disabled
+  * We only build libuuid from util-linux
+* openssh: 10.0p2
 
 ### Notes
 
