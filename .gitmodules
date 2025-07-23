@@ -142,3 +142,6 @@
 [submodule "python-wasix-binaries"]
 	path = python-wasix-binaries
 	url = https://github.com/wasix-org/python-wasix-binaries
+[submodule "util-linux"]
+	path = util-linux
+	url = https://github.com/util-linux/util-linux

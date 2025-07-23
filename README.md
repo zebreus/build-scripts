@@ -153,6 +153,7 @@ psycopg3-c is just the sdist of psycopg3-binary
 * mariadb-connector-c: 3.4.6
 * openssl: 3.5.1
 * bzip2: 1.0.8
+* util-linux: 2.41.1
 
 SDL has all subsystems disabled
 
