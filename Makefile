@@ -69,6 +69,7 @@ LIBS+=openjpeg
 LIBS+=libuv
 LIBS+=mariadb-connector-c
 LIBS+=openssl
+LIBS+=util-linux
 
 DONT_INSTALL=
 # Dont install pypandoc because it uses the same name as pypandoc_binary
@@ -444,6 +445,15 @@ openssl.build: openssl
 	cd openssl && make -j8
 	$(reset_builddir) $@
 	cd openssl && make install_sw DESTDIR=${PWD}/$@
+	touch $@
+
+# We only build a static libuuid for now
+util-linux.build: util-linux
+	cd util-linux && bash autogen.sh
+	cd util-linux && ./configure --disable-all-programs --enable-libuuid --host=wasm32-wasi --enable-static --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi'
+	cd util-linux && make
+	$(reset_builddir) $@
+	cd util-linux && make install DESTDIR=${PWD}/util-linux.build
 	touch $@
 #####     Installing wheels and libs     #####
 
