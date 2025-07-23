@@ -1,0 +1,51 @@
+From 1d1fc8e52b3109a8ac974c9148963f259b0177a1 Mon Sep 17 00:00:00 2001
+From: "M.Amin Rayej" <m.amin.rayej@gmail.com>
+Date: Wed, 3 Jul 2024 13:24:48 +0330
+Subject: [PATCH] Add wasix support
+
+---
+ libuuid/src/gen_uuid.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/libuuid/src/gen_uuid.c b/libuuid/src/gen_uuid.c
+index 763abeb9e..fcdc160a9 100644
+--- a/libuuid/src/gen_uuid.c
++++ b/libuuid/src/gen_uuid.c
+@@ -142,7 +142,7 @@ static int gettimeofday_fixed(struct timeval *tv, void *tz __attribute__((unused
+  */
+ static int get_node_id(unsigned char *node_id)
+ {
+-#ifdef HAVE_NET_IF_H
++#if defined(HAVE_NET_IF_H) && !defined(__wasm32)
+ 	int		sd;
+ 	struct ifreq	ifr, *ifrp;
+ 	struct ifconf	ifc;
+@@ -269,6 +269,7 @@ static int get_clock(uint32_t *clock_high, uint32_t *clock_low,
+ 
+ 	if (state_fd >= 0) {
+ 		rewind(state_f);
++		#if !defined(__wasm32)
+ 		while (flock(state_fd, LOCK_EX) < 0) {
+ 			if ((errno == EAGAIN) || (errno == EINTR))
+ 				continue;
+@@ -278,6 +279,7 @@ static int get_clock(uint32_t *clock_high, uint32_t *clock_low,
+ 			ret = -1;
+ 			break;
+ 		}
++		#endif
+ 	} else
+ 		ret = -1;
+ 
+@@ -348,7 +350,9 @@ try_again:
+ 			      clock_seq, (long)last.tv_sec, (long)last.tv_usec, adjustment);
+ 		fflush(state_f);
+ 		rewind(state_f);
++		#if !defined(__wasm32)
+ 		flock(state_fd, LOCK_UN);
++		#endif
+ 	}
+ 
+ 	*clock_high = clock_reg >> 32;
+-- 
+2.48.1
+
