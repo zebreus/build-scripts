@@ -148,6 +148,9 @@
 [submodule "openssh"]
 	path = openssh
 	url = https://github.com/openssh/openssh-portable.git
+[submodule "dropbear"]
+	path = dropbear
+	url = https://github.com/mkj/dropbear.git
 [submodule "shapely"]
 	path = shapely
 	url = https://github.com/shapely/shapely.git

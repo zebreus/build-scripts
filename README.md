@@ -158,6 +158,7 @@ psycopg3-c is just the sdist of psycopg3-binary
 * util-linux: 2.41.1
   * We only build libuuid from util-linux
 * openssh: 10.0p2
+* dropbear: 2025.88
 
 ### Notes
 
