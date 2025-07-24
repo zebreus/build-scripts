@@ -70,6 +70,7 @@ LIBS+=libuv
 LIBS+=mariadb-connector-c
 LIBS+=openssl
 LIBS+=util-linux
+LIBS+=dropbear
 
 DONT_INSTALL=
 # Dont install pypandoc because it uses the same name as pypandoc_binary
@@ -454,6 +455,15 @@ util-linux.build: util-linux
 	cd util-linux && make
 	$(reset_builddir) $@
 	cd util-linux && make install DESTDIR=${PWD}/util-linux.build
+	touch $@
+
+
+dropbear.build: dropbear
+	cd dropbear && autoreconf -vfi
+	cd dropbear && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --enable-bundled-libtom --without-pam --enable-static --disable-utmp --disable-utmpx --disable-wtmp --disable-wtmpx --disable-lastlog --disable-loginfunc
+	cd dropbear && make -j8
+	$(reset_builddir) $@
+	cd dropbear && make install DESTDIR=${PWD}/dropbear.build
 	touch $@
 #####     Installing wheels and libs     #####
 
