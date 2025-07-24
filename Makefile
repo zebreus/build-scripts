@@ -71,6 +71,7 @@ LIBS+=mariadb-connector-c
 LIBS+=openssl
 LIBS+=util-linux
 LIBS+=dropbear
+LIBS+=tinyxml2
 
 DONT_INSTALL=
 # Dont install pypandoc because it uses the same name as pypandoc_binary
@@ -463,7 +464,15 @@ dropbear.build: dropbear
 	cd dropbear && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --enable-bundled-libtom --without-pam --enable-static --disable-utmp --disable-utmpx --disable-wtmp --disable-wtmpx --disable-lastlog --disable-loginfunc
 	cd dropbear && make -j8
 	$(reset_builddir) $@
-	cd dropbear && make install DESTDIR=${PWD}/dropbear.build
+	cd dropbear && make install DESTDIR=${PWD}/$@
+	touch $@
+
+tinyxml2.build: tinyxml2
+	cd tinyxml2 && rm -rf out
+	cd tinyxml2 && cmake -B out -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi'
+	cd tinyxml2 && make -C out
+	$(reset_builddir) $@
+	cd tinyxml2 && make -C out install DESTDIR=${PWD}/$@
 	touch $@
 #####     Installing wheels and libs     #####
 
