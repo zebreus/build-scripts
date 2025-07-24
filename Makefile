@@ -42,8 +42,6 @@ WHEELS+=typing-inspection
 WHEELS+=annotated-types
 
 PYTHON_WASIX_BINARIES_WHEELS=
-# PYTHON_WASIX_BINARIES_WHEELS+=mysqlclient-2.2.7-cp313-cp313-wasix_wasm32
-# PYTHON_WASIX_BINARIES_WHEELS+=cffi-1.17.1-cp313-cp313-wasix_wasm32
 PYTHON_WASIX_BINARIES_WHEELS+=cryptography-45.0.4-cp313-abi3-any
 PYTHON_WASIX_BINARIES_WHEELS+=pydantic_core-2.33.2-cp313-cp313-any
 PYTHON_WASIX_BINARIES_WHEELS+=jiter-0.10.0-cp313-cp313-any
@@ -72,6 +70,7 @@ LIBS+=openssl
 LIBS+=util-linux
 LIBS+=dropbear
 LIBS+=tinyxml2
+LIBS+=geos
 
 DONT_INSTALL=
 # Dont install pypandoc because it uses the same name as pypandoc_binary
@@ -473,6 +472,14 @@ tinyxml2.build: tinyxml2
 	cd tinyxml2 && make -C out
 	$(reset_builddir) $@
 	cd tinyxml2 && make -C out install DESTDIR=${PWD}/$@
+	touch $@
+
+geos.build: geos
+	cd geos && rm -rf out
+	cd geos && cmake -B out -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi'
+	cd geos && make -C out -j8
+	$(reset_builddir) $@
+	cd geos && make -C out install DESTDIR=${PWD}/$@
 	touch $@
 #####     Installing wheels and libs     #####
 
