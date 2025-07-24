@@ -101,7 +101,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 
 #### Wheels
 
-* numpy: 2.0.2
+* numpy: numpy/numpy main
 * markupsafe: 3.0.2
 * pandas: 2.2.3
 * pytz: 2025.2
