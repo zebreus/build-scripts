@@ -154,3 +154,6 @@
 [submodule "shapely"]
 	path = shapely
 	url = https://github.com/shapely/shapely.git
+[submodule "tinyxml2"]
+	path = tinyxml2
+	url = https://github.com/leethomason/tinyxml2.git
