@@ -17,7 +17,7 @@ WHEELS+=markupsafe
 WHEELS+=dateutil
 # Technically not a native package, but it uses a native build process to prepare some files.
 WHEELS+=tzdata
-# WHEELS+=pandas
+WHEELS+=pandas
 WHEELS+=six
 WHEELS+=msgpack-python
 WHEELS+=pycryptodome
@@ -264,11 +264,11 @@ uvloop_wasm32.whl: BUILD_EXTRA_FLAGS = '-C--build-option=build_ext --use-system-
 
 mysqlclient_wasm32.whl: BUILD_ENV_VARS = WASIX_FORCE_STATIC_DEPENDENCIES=true PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig
 
-# Currently broken, because numpy is missing. The binary in the repo is build manually.
-# Build pandas manually by compiling a native numpy and extracting the wheel into the cross env
-pandas_wasm32.whl: pandas cross-venv
-	source ./cross-venv/bin/activate && cd pandas && CC=$$(pwd)/../clang.sh CXX=$$(pwd)/../clang++.sh python3 -m build --wheel -Csetup-args="--cross-file=${CROSSFILE}" -Cbuild-dir=build_np
-	cp pandas/dist/*.whl pandas_wasm32.whl
+# Use numpy dev build from our registry. Our patches have been merged upstream, so for the next numpy release we can remove this.
+pandas_wasm32.whl: BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
+pandas_wasm32.whl: BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
+pandas_wasm32.whl: BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${CROSSFILE}"
+pandas_wasm32.whl: ${CROSSFILE}
 
 #####     Building libraries     #####
 
