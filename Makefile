@@ -40,6 +40,7 @@ WHEELS+=pydantic
 WHEELS+=typing_extensions
 WHEELS+=typing-inspection
 WHEELS+=annotated-types
+WHEELS+=shapely
 
 PYTHON_WASIX_BINARIES_WHEELS=
 PYTHON_WASIX_BINARIES_WHEELS+=cryptography-45.0.4-cp313-abi3-any
@@ -242,6 +243,14 @@ msgpack-python_wasm32.whl: PREPARE = make cython
 # Depends on a meson crossfile
 numpy_wasm32.whl: BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${CROSSFILE}"
 numpy_wasm32.whl: ${CROSSFILE}
+
+shapely_wasm32.whl: geos.build
+# Set geos paths
+shapely_wasm32.whl: BUILD_ENV_VARS += GEOS_INCLUDE_PATH="${PWD}/geos.build/usr/local/include"
+shapely_wasm32.whl: BUILD_ENV_VARS += GEOS_LIBRARY_PATH="${PWD}/geos.build/usr/local/lib/wasm32-wasi"
+# Use numpy dev build from our registry. Our patches have been merged upstream, so for the next numpy release we can remove this.
+shapely_wasm32.whl: BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
+shapely_wasm32.whl: BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
 
 # Needs to have the pypandoc executable in the repo
 pypandoc_binary_wasm32.whl: pypandoc_binary/pypandoc/files/pandoc
