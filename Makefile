@@ -468,18 +468,18 @@ dropbear.build: dropbear
 
 tinyxml2.build: tinyxml2
 	cd tinyxml2 && rm -rf out
-	cd tinyxml2 && cmake -B out -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi'
-	cd tinyxml2 && make -C out
+	cd tinyxml2 && cmake -B out -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=OFF
+	cd tinyxml2 && cmake --build out -j8
 	$(reset_builddir) $@
-	cd tinyxml2 && make -C out install DESTDIR=${PWD}/$@
+	cd tinyxml2 && DESTDIR=${PWD}/$@ cmake --install out
 	touch $@
 
 geos.build: geos
 	cd geos && rm -rf out
-	cd geos && cmake -B out -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi'
-	cd geos && make -C out -j8
+	cd geos && cmake -B out -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_GEOSOP=OFF -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=OFF
+	cd geos && cmake --build out -j8
 	$(reset_builddir) $@
-	cd geos && make -C out install DESTDIR=${PWD}/$@
+	cd geos && DESTDIR=${PWD}/$@ cmake --install out
 	touch $@
 #####     Installing wheels and libs     #####
 
