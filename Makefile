@@ -181,7 +181,7 @@ cross-venv: native-venv python
 	rm -rf ./cross-venv
 	source ./native-venv/bin/activate && python3 -m crossenv python/artifacts/wasix-install/cpython/bin/python3.wasm ./cross-venv --cc wasix-clang --cxx wasix-clang++
 	source ./cross-venv/bin/activate && build-pip install cffi
-	source ./cross-venv/bin/activate && pip install cython build
+	source ./cross-venv/bin/activate && pip install cython build six
 
 #####     Preparing submodules     #####
 
@@ -235,7 +235,7 @@ psycopg-binary_wasm32.whl: export CCC_OVERRIDE_OPTIONS = ^-D__linux__=1
 pillow_wasm32.whl: BUILD_ENV_VARS = PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig WASIX_FORCE_STATIC_DEPENDENCIES=true
 pillow_wasm32.whl: BUILD_EXTRA_FLAGS = -Cplatform-guessing=disable
 
-
+dateutil_wasm32.whl: PREPARE = python3 updatezinfo.py
 
 # Needs to run a cython command before building the wheel	
 msgpack-python_wasm32.whl: PREPARE = make cython
