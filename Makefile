@@ -498,7 +498,17 @@ geos.build: geos
 	cd geos && cmake --build shared -j16
 	$(reset_builddir) $@
 	cd geos && DESTDIR=${PWD}/$@ cmake --install static
-	cd geos && DESTDIR=${PWD}/$@ cmake --install shared
+	touch $@
+
+libxslt.build: libxslt xz.build libxml2.build zlib.build
+	cd libxslt && rm -rf static shared
+	cd libxslt && CMAKE_PREFIX_PATH=${PWD}/xz.build/usr/local/lib/wasm32-wasi/cmake:${PWD}/libxml2.build/usr/local/lib/wasm32-wasi/cmake:${PWD}/zlib.build/usr/local/lib/wasm32-wasi/cmake cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_RPATH=YES -DLIBXSLT_WITH_PYTHON=OFF
+	cd libxslt && CMAKE_PREFIX_PATH=${PWD}/xz.build/usr/local/lib/wasm32-wasi/cmake:${PWD}/libxml2.build/usr/local/lib/wasm32-wasi/cmake:${PWD}/zlib.build/usr/local/lib/wasm32-wasi/cmake cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_RPATH=YES -DLIBXSLT_WITH_PYTHON=OFF
+	cd libxslt && cmake --build static -j16
+	cd libxslt && cmake --build shared -j16
+	$(reset_builddir) $@
+	cd libxslt && DESTDIR=${PWD}/$@ cmake --install static
+	cd libxslt && DESTDIR=${PWD}/$@ cmake --install shared
 	touch $@
 
 libxml2.build: libxml2
