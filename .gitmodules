@@ -166,3 +166,6 @@
 [submodule "lxml"]
 	path = lxml
 	url = https://github.com/lxml/lxml.git
+[submodule "libxslt"]
+	path = libxslt
+	url = https://gitlab.gnome.org/GNOME/libxslt.git

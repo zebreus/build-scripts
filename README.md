@@ -163,6 +163,7 @@ psycopg3-c is just the sdist of psycopg3-binary
 * dropbear: 2025.88
 * tinyxml2: 11.0.0
 * geos: 3.13.1
+* libxslt: 1.1.43
 
 ### Notes
 
