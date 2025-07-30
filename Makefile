@@ -302,10 +302,11 @@ libffi.build: libffi
 	touch $@
 
 zlib.build: zlib
-	cd zlib && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi'
-	cd zlib && make
+	cd zlib && rm -rf combined
+	cd zlib && cmake -B combined -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DZLIB_BUILD_MINIZIP=OFF
+	cd zlib && cmake --build combined -j16
 	$(reset_builddir) $@
-	cd zlib && make install DESTDIR=${PWD}/zlib.build
+	cd zlib && DESTDIR=${PWD}/$@ cmake --install combined
 	touch $@
 
 pandoc.build: pandoc
