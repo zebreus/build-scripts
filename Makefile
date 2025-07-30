@@ -42,6 +42,7 @@ WHEELS+=typing-inspection
 WHEELS+=annotated-types
 WHEELS+=shapely
 WHEELS+=regex
+WHEELS+=lxml
 
 PYTHON_WASIX_BINARIES_WHEELS=
 PYTHON_WASIX_BINARIES_WHEELS+=cryptography-45.0.4-cp313-abi3-any
@@ -245,6 +246,10 @@ psycopg-binary_wasm32.whl: export CCC_OVERRIDE_OPTIONS = ^-D__linux__=1
 
 pillow_wasm32.whl: BUILD_ENV_VARS = PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig WASIX_FORCE_STATIC_DEPENDENCIES=true
 pillow_wasm32.whl: BUILD_EXTRA_FLAGS = -Cplatform-guessing=disable
+
+# We need to install, because we can only specify one sysroot in pkgconfig
+lxml_wasm32.whl: libxml2.build libxslt.build install-libxml2 install-libxslt
+lxml_wasm32.whl: BUILD_ENV_VARS = PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/libxml2.build/usr/local/lib/wasm32-wasi/pkgconfig:${PWD}/libxslt.build/usr/local/lib/wasm32-wasi/pkgconfig
 
 dateutil_wasm32.whl: PREPARE = python3 updatezinfo.py
 
