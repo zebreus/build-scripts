@@ -481,23 +481,24 @@ dropbear.build: dropbear
 
 tinyxml2.build: tinyxml2
 	cd tinyxml2 && rm -rf shared static
-	cd tinyxml2 && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=OFF
-	cd tinyxml2 && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=ON
-	cd tinyxml2 && cmake --build shared -j16
+	cd tinyxml2 && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=OFF
+	cd tinyxml2 && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=ON
 	cd tinyxml2 && cmake --build static -j16
+	cd tinyxml2 && cmake --build shared -j16
 	$(reset_builddir) $@
-	cd tinyxml2 && DESTDIR=${PWD}/$@ cmake --install shared
 	cd tinyxml2 && DESTDIR=${PWD}/$@ cmake --install static
+	cd tinyxml2 && DESTDIR=${PWD}/$@ cmake --install shared
 	touch $@
 
 geos.build: geos
 	cd geos && rm -rf static shared
-	cd geos && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_GEOSOP=OFF -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_INSTALL_RPATH=YES -DCMAKE_SKIP_RPATH=YES
-	cd geos && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_GEOSOP=OFF -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_INSTALL_RPATH=YES -DCMAKE_SKIP_RPATH=YES
+	cd geos && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_GEOSOP=OFF -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_INSTALL_RPATH=YES -DCMAKE_SKIP_RPATH=YES
+	cd geos && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_GEOSOP=OFF -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_INSTALL_RPATH=YES -DCMAKE_SKIP_RPATH=YES
 	cd geos && cmake --build static -j16
 	cd geos && cmake --build shared -j16
 	$(reset_builddir) $@
 	cd geos && DESTDIR=${PWD}/$@ cmake --install static
+	cd geos && DESTDIR=${PWD}/$@ cmake --install shared
 	touch $@
 
 libxslt.build: libxslt xz.build libxml2.build zlib.build
