@@ -131,6 +131,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * typing-inspection: 0.4.1
 * annotated-types: 0.7.0
 * shapely: 2.1.1
+* mrab-regex: 2025.7.31
 
 psycopg3-c is just the sdist of psycopg3-binary
 
