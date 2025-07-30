@@ -501,13 +501,14 @@ geos.build: geos
 	touch $@
 
 libxml2.build: libxml2
-	cd libxml2 && bash autogen.sh
-	# Force configure to build shared libraries. This is a hack, but it works.
-	cd libxml2 && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
-	cd libxml2 && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --disable-symbol-versions
-	cd libxml2 && make -j8
+	cd libxml2 && rm -rf shared static
+	cd libxml2 && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=OFF -DLIBXML2_WITH_PYTHON=OFF
+	cd libxml2 && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=ON -DLIBXML2_WITH_PYTHON=OFF
+	cd libxml2 && cmake --build static -j16
+	cd libxml2 && cmake --build shared -j16
 	$(reset_builddir) $@
-	cd libxml2 && make install DESTDIR=${PWD}/$@
+	cd libxml2 && DESTDIR=${PWD}/$@ cmake --install static
+	cd libxml2 && DESTDIR=${PWD}/$@ cmake --install shared
 	touch $@
 
 #####     Installing wheels and libs     #####
