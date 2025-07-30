@@ -73,6 +73,7 @@ LIBS+=util-linux
 LIBS+=dropbear
 LIBS+=tinyxml2
 LIBS+=geos
+LIBS+=libxslt
 LIBS+=libxml2
 
 DONT_INSTALL=
