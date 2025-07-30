@@ -41,6 +41,7 @@ WHEELS+=typing_extensions
 WHEELS+=typing-inspection
 WHEELS+=annotated-types
 WHEELS+=shapely
+WHEELS+=regex
 
 PYTHON_WASIX_BINARIES_WHEELS=
 PYTHON_WASIX_BINARIES_WHEELS+=cryptography-45.0.4-cp313-abi3-any
