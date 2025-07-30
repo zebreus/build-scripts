@@ -185,8 +185,14 @@ native-venv:
 cross-venv: native-venv python
 	rm -rf ./cross-venv
 	source ./native-venv/bin/activate && python3 -m crossenv python/artifacts/wasix-install/cpython/bin/python3.wasm ./cross-venv --cc wasix-clang --cxx wasix-clang++
-	source ./cross-venv/bin/activate && build-pip install cffi
-	source ./cross-venv/bin/activate && pip install cython build six
+	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple build-pip install cffi numpy==2.4.0.dev0
+	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple pip install build six
+# cross-venv: native-venv python
+# 	rm -rf ./cross-venv
+# 	source ./native-venv/bin/activate && python3 -m crossenv python/artifacts/wasix-install/cpython/bin/python3.wasm ./cross-venv --cc wasix-clang --cxx wasix-clang++
+# 	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple build-pip install cffi numpy==2.4.0.dev0
+# 	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple cross-pip install setuptools>=61.0.0 Cython
+# 	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple pip install build six 
 
 #####     Preparing submodules     #####
 
@@ -250,12 +256,15 @@ numpy_wasm32.whl: BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${CROSSFILE}"
 numpy_wasm32.whl: ${CROSSFILE}
 
 shapely_wasm32.whl: geos.build
+# TODO: Static build don't work yet, because we would have to specify recursive dependencies manually
+# shapely_wasm32.whl: BUILD_ENV_VARS += WASIX_FORCE_STATIC_DEPENDENCIES=true
 # Set geos paths
 shapely_wasm32.whl: BUILD_ENV_VARS += GEOS_INCLUDE_PATH="${PWD}/geos.build/usr/local/include"
 shapely_wasm32.whl: BUILD_ENV_VARS += GEOS_LIBRARY_PATH="${PWD}/geos.build/usr/local/lib/wasm32-wasi"
 # Use numpy dev build from our registry. Our patches have been merged upstream, so for the next numpy release we can remove this.
 shapely_wasm32.whl: BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
 shapely_wasm32.whl: BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
+shapely_wasm32.whl: BUILD_EXTRA_FLAGS = --skip-dependency-check
 
 # Needs to have the pypandoc executable in the repo
 pypandoc_binary_wasm32.whl: pypandoc_binary/pypandoc/files/pandoc
