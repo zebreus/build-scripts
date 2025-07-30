@@ -73,6 +73,7 @@ LIBS+=util-linux
 LIBS+=dropbear
 LIBS+=tinyxml2
 LIBS+=geos
+LIBS+=libxml2
 
 DONT_INSTALL=
 # Dont install pypandoc because it uses the same name as pypandoc_binary
@@ -497,6 +498,17 @@ geos.build: geos
 	cd geos && DESTDIR=${PWD}/$@ cmake --install static
 	cd geos && DESTDIR=${PWD}/$@ cmake --install shared
 	touch $@
+
+libxml2.build: libxml2
+	cd libxml2 && bash autogen.sh
+	# Force configure to build shared libraries. This is a hack, but it works.
+	cd libxml2 && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
+	cd libxml2 && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --disable-symbol-versions
+	cd libxml2 && make -j8
+	$(reset_builddir) $@
+	cd libxml2 && make install DESTDIR=${PWD}/$@
+	touch $@
+
 #####     Installing wheels and libs     #####
 
 # Use `install` to install everything
