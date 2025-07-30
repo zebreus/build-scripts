@@ -163,3 +163,6 @@
 [submodule "mrab-regex"]
 	path = regex
 	url = https://github.com/mrabarnett/mrab-regex.git
+[submodule "lxml"]
+	path = lxml
+	url = https://github.com/lxml/lxml.git
