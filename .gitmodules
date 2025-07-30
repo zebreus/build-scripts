@@ -169,3 +169,6 @@
 [submodule "libxslt"]
 	path = libxslt
 	url = https://gitlab.gnome.org/GNOME/libxslt.git
+[submodule "libxml2"]
+	path = libxml2
+	url = https://gitlab.gnome.org/GNOME/libxml2.git

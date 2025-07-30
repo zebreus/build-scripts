@@ -164,6 +164,7 @@ psycopg3-c is just the sdist of psycopg3-binary
 * tinyxml2: 11.0.0
 * geos: 3.13.1
 * libxslt: 1.1.43
+* libxml2: 2.9.9
 
 ### Notes
 
