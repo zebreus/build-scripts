@@ -161,5 +161,5 @@
 	path = geos
 	url = https://github.com/libgeos/geos.git
 [submodule "mrab-regex"]
-	path = mrab-regex
+	path = regex
 	url = https://github.com/mrabarnett/mrab-regex.git
