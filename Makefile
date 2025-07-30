@@ -350,13 +350,14 @@ libjpeg-turbo.build: libjpeg-turbo
 	touch $@
 
 xz.build: xz
-	cd xz && bash autogen.sh
-	# Force configure to build shared libraries. This is a hack, but it works.
-	cd xz && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
-	cd xz && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --disable-xz --disable-symbol-versions
-	cd xz && make
+	cd xz && rm -rf static shared
+	cd xz && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_INSTALL_RPATH=YES -DCMAKE_SKIP_RPATH=YES
+	cd xz && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_INSTALL_RPATH=YES -DCMAKE_SKIP_RPATH=YES
+	cd xz && cmake --build shared -j16
+	cd xz && cmake --build static -j16
 	$(reset_builddir) $@
-	cd xz && make install DESTDIR=${PWD}/xz.build
+	cd xz && DESTDIR=${PWD}/$@ cmake --install shared
+	cd xz && DESTDIR=${PWD}/$@ cmake --install static
 	touch $@
 
 libtiff.build: libtiff
