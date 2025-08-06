@@ -84,7 +84,10 @@ DONT_INSTALL+=psycopg-binary
 
 SUBMODULES=$(WHEELS) $(LIBS)
 
-BUILT_WHEELS=$(addsuffix _wasm32.whl,$(WHEELS))
+BUILT_WHEELS=$(addprefix pkgs/,$(addsuffix .whl,$(WHEELS)))
+UNPACKED_WHEELS=$(addprefix pkgs/,$(addsuffix .wheel,$(WHEELS)))
+BUILT_SDISTS=$(addprefix pkgs/,$(addsuffix .tar.gz,$(WHEELS)))
+UNPACKED_SDISTS=$(addprefix pkgs/,$(addsuffix .sdist,$(WHEELS)))
 UNPACKED_LIBS=$(addsuffix .build,$(LIBS))
 BUILT_LIBS=$(addsuffix .tar.xz,$(LIBS))
 
@@ -92,7 +95,7 @@ WHEELS_TO_INSTALL=$(filter-out $(DONT_INSTALL),$(WHEELS))
 PYTHON_WASIX_BINARIES_WHEELS_TO_INSTALL=$(filter-out $(DONT_INSTALL),$(PYTHON_WASIX_BINARIES_WHEELS))
 LIBS_TO_INSTALL=$(filter-out $(DONT_INSTALL),$(LIBS))
 
-BUILT_WHEELS_TO_INSTALL=$(addsuffix _wasm32.whl,$(WHEELS_TO_INSTALL))
+BUILT_WHEELS_TO_INSTALL=$(addsuffix .whl,$(WHEELS_TO_INSTALL))
 BUILT_PYTHON_WASIX_BINARIES_WHEELS_TO_INSTALL=$(addprefix ${PYTHON_WASIX_BINARIES}/wheels/,$(addsuffix .whl,$(PYTHON_WASIX_BINARIES_WHEELS_TO_INSTALL)))
 BUILT_LIBS_TO_INSTALL=$(addsuffix .tar.xz,$(LIBS_TO_INSTALL))
 
@@ -121,11 +124,22 @@ endef
 # BUILD_EXTRA_FLAGS is a space separated list of extra flags to pass to the build script. Defaults to empty
 # PREPARE is a command to run before building the wheel. Defaults to empty. Runs inside the submodule directory
 define build_wheel =
-if test -n "${PREPARE}" ; then source ./cross-venv/bin/activate && cd $(word 1, $(subst _wasm32, ,$@)) && _= ${PREPARE} ; fi
-source ./cross-venv/bin/activate && cd $(word 1, $(subst _wasm32, ,$@))/${PYPROJECT_PATH} && ${BUILD_ENV_VARS} python3 -m build --wheel ${BUILD_EXTRA_FLAGS}
+mkdir -p pkgs
+if test -n "${PREPARE}" ; then source ./cross-venv/bin/activate && cd $(subst .whl,.sdist,$@) && _= ${PREPARE} ; fi
+source ./cross-venv/bin/activate && cd $(subst .whl,.sdist,$@) && ${BUILD_ENV_VARS} python3 -m build --wheel ${BUILD_EXTRA_FLAGS}
 mkdir -p artifacts
-cp $(word 1, $(subst _wasm32, ,$@))/${PYPROJECT_PATH}/dist/*[2y].whl artifacts
-ln -sf artifacts/$$(basename $(word 1, $(subst _wasm32, ,$@))/${PYPROJECT_PATH}/dist/*[2y].whl) $@
+cp $(subst .whl,.sdist,$@)/dist/*[2y].whl artifacts
+# [2y] is a hack to match anything ending in wasm32 or any
+ln -sf ../artifacts/$$(basename $(subst .whl,.sdist,$@)/dist/*[2y].whl) $@
+endef
+
+define build_sdist =
+mkdir -p pkgs
+if test -n "${PREPARE}" ; then source ./cross-venv/bin/activate && cd $(subst pkgs/,,$(subst .tar.gz,,$@)) && _= ${PREPARE} ; fi
+source ./cross-venv/bin/activate && cd $(subst pkgs/,,$(subst .tar.gz,,$@))/${PYPROJECT_PATH} && ${BUILD_ENV_VARS} python3 -m build --sdist ${BUILD_EXTRA_FLAGS}
+mkdir -p artifacts
+cp $(subst pkgs/,,$(subst .tar.gz,,$@))/${PYPROJECT_PATH}/dist/*[0-9].tar.gz artifacts
+ln -sf ../artifacts/$$(basename $(subst pkgs/,,$(subst .tar.gz,,$@))/${PYPROJECT_PATH}/dist/*[0-9].tar.gz) $@
 endef
 
 define package_lib =
@@ -224,70 +238,83 @@ pypandoc_binary:
 
 # A target to build a wheel from a python submodule
 # To override the build behaviour, add a target for your submodule
-$(BUILT_WHEELS): %_wasm32.whl: % | cross-venv
-%_wasm32.whl: %
+$(BUILT_WHEELS): pkgs/%.whl: pkgs/%.sdist | cross-venv
+pkgs/%.whl: pkgs/%.sdist
 	$(build_wheel)
+$(BUILT_SDISTS): pkgs/%.tar.gz: % | cross-venv
+pkgs/%.tar.gz: %
+	$(build_sdist)
+$(UNPACKED_SDISTS): pkgs/%.sdist: pkgs/%.tar.gz | cross-venv
+pkgs/%.sdist: pkgs/%.tar.gz
+	rm -rf $@
+	mkdir -p $@
+	tar -xzf $^ -C $@ --strip-components=1
+$(UNPACKED_WHEELS): pkgs/%.wheel: | cross-venv
+pkgs/%.wheel: pkgs/%.whl
+	rm -rf $@
+	mkdir -p $@
+	unzip -oq $< -d $@ 
 
 # Depends on zbar headers being installed
 # setup.py is not in the root directory
-pytz_wasm32.whl: PYPROJECT_PATH = build/dist
+pkgs/pytz.tar.gz: PYPROJECT_PATH = build/dist
 # Build the tzdb locally
-pytz_wasm32.whl: PREPARE = CCC_OVERRIDE_OPTIONS='^--target=x86_64-unknown-linux' CC=clang CXX=clang++ make build
+pkgs/pytz.tar.gz: PREPARE = CCC_OVERRIDE_OPTIONS='^--target=x86_64-unknown-linux' CC=clang CXX=clang++ make build
 
-psycopg_wasm32.whl: PYPROJECT_PATH = psycopg
-psycopg-pool_wasm32.whl: PYPROJECT_PATH = psycopg_pool
+pkgs/psycopg.tar.gz: PYPROJECT_PATH = psycopg
+pkgs/psycopg-pool.tar.gz: PYPROJECT_PATH = psycopg_pool
 
-psycopg-binary_wasm32.whl: PYPROJECT_PATH = psycopg_binary
-psycopg-binary_wasm32.whl: PREPARE = rm -rf psycopg_binary && python3 tools/build/copy_to_binary.py
+pkgs/psycopg-binary.tar.gz: PYPROJECT_PATH = psycopg_binary
+pkgs/psycopg-binary.tar.gz: PREPARE = rm -rf psycopg_binary && python3 tools/build/copy_to_binary.py
 # Inject a mock pg_config to the PATH, so the build process can find it
-psycopg-binary_wasm32.whl: BUILD_ENV_VARS = PATH="${PWD}/resources:$$PATH" WASIX_FORCE_STATIC_DEPENDENCIES=true
+pkgs/psycopg-binary.whl: BUILD_ENV_VARS = PATH="${PWD}/resources:$$PATH" WASIX_FORCE_STATIC_DEPENDENCIES=true
 # Pretend we are a normal posix-like target, so we automatically include <endian.h>
-psycopg-binary_wasm32.whl: export CCC_OVERRIDE_OPTIONS = ^-D__linux__=1
+pkgs/psycopg-binary.whl: export CCC_OVERRIDE_OPTIONS = ^-D__linux__=1
 
-pillow_wasm32.whl: BUILD_ENV_VARS = PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig WASIX_FORCE_STATIC_DEPENDENCIES=true
-pillow_wasm32.whl: BUILD_EXTRA_FLAGS = -Cplatform-guessing=disable
+pkgs/pillow.whl: BUILD_ENV_VARS = PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig WASIX_FORCE_STATIC_DEPENDENCIES=true
+pkgs/pillow.whl: BUILD_EXTRA_FLAGS = -Cplatform-guessing=disable
 
 # We need to install, because we can only specify one sysroot in pkgconfig
-lxml_wasm32.whl: libxml2.build libxslt.build install-libxml2 install-libxslt
-lxml_wasm32.whl: BUILD_ENV_VARS = PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/libxml2.build/usr/local/lib/wasm32-wasi/pkgconfig:${PWD}/libxslt.build/usr/local/lib/wasm32-wasi/pkgconfig
+pkgs/lxml.whl: libxml2.build libxslt.build install-libxml2 install-libxslt
+pkgs/lxml.whl: BUILD_ENV_VARS = PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/libxml2.build/usr/local/lib/wasm32-wasi/pkgconfig:${PWD}/libxslt.build/usr/local/lib/wasm32-wasi/pkgconfig
 
-dateutil_wasm32.whl: PREPARE = python3 updatezinfo.py
+pkgs/dateutil.tar.gz: PREPARE = python3 updatezinfo.py
 
 # Needs to run a cython command before building the wheel	
-msgpack-python_wasm32.whl: PREPARE = make cython
+pkgs/msgpack-python.tar.gz: PREPARE = make cython
 
 # Depends on a meson crossfile
-numpy_wasm32.whl: BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${CROSSFILE}"
-numpy_wasm32.whl: ${CROSSFILE}
+pkgs/numpy.whl: BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${CROSSFILE}"
+pkgs/numpy.whl: ${CROSSFILE}
 
-shapely_wasm32.whl: geos.build
+pkgs/shapely.whl: geos.build
 # TODO: Static build don't work yet, because we would have to specify recursive dependencies manually
-# shapely_wasm32.whl: BUILD_ENV_VARS += WASIX_FORCE_STATIC_DEPENDENCIES=true
+# pkgs/shapely.whl: BUILD_ENV_VARS += WASIX_FORCE_STATIC_DEPENDENCIES=true
 # Set geos paths
-shapely_wasm32.whl: BUILD_ENV_VARS += GEOS_INCLUDE_PATH="${PWD}/geos.build/usr/local/include"
-shapely_wasm32.whl: BUILD_ENV_VARS += GEOS_LIBRARY_PATH="${PWD}/geos.build/usr/local/lib/wasm32-wasi"
+pkgs/shapely.whl: BUILD_ENV_VARS += GEOS_INCLUDE_PATH="${PWD}/geos.build/usr/local/include"
+pkgs/shapely.whl: BUILD_ENV_VARS += GEOS_LIBRARY_PATH="${PWD}/geos.build/usr/local/lib/wasm32-wasi"
 # Use numpy dev build from our registry. Our patches have been merged upstream, so for the next numpy release we can remove this.
-shapely_wasm32.whl: BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
-shapely_wasm32.whl: BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
-shapely_wasm32.whl: BUILD_EXTRA_FLAGS = --skip-dependency-check
+pkgs/shapely.whl: BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
+pkgs/shapely.whl: BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
+pkgs/shapely.whl: BUILD_EXTRA_FLAGS = --skip-dependency-check
 
 # Needs to have the pypandoc executable in the repo
-pypandoc_binary_wasm32.whl: pypandoc_binary/pypandoc/files/pandoc
+pkgs/pypandoc_binary.whl: pypandoc_binary/pypandoc/files/pandoc
 pypandoc_binary/pypandoc/files/pandoc: pypandoc_binary pandoc.tar.xz
 	mkdir -p pypandoc_binary/pypandoc/files
 	tar xfJ pandoc.tar.xz -C pypandoc_binary/pypandoc/files --strip-components=1 bin/pandoc
 	touch $@
 
-uvloop_wasm32.whl: BUILD_ENV_VARS = WASIX_FORCE_STATIC_DEPENDENCIES=true
-uvloop_wasm32.whl: BUILD_EXTRA_FLAGS = '-C--build-option=build_ext --use-system-libuv'
+pkgs/uvloop.whl: BUILD_ENV_VARS = WASIX_FORCE_STATIC_DEPENDENCIES=true
+pkgs/uvloop.whl: BUILD_EXTRA_FLAGS = '-C--build-option=build_ext --use-system-libuv'
 
-mysqlclient_wasm32.whl: BUILD_ENV_VARS = WASIX_FORCE_STATIC_DEPENDENCIES=true PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig
+pkgs/mysqlclient.whl: BUILD_ENV_VARS = WASIX_FORCE_STATIC_DEPENDENCIES=true PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig
 
 # Use numpy dev build from our registry. Our patches have been merged upstream, so for the next numpy release we can remove this.
-pandas_wasm32.whl: BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
-pandas_wasm32.whl: BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
-pandas_wasm32.whl: BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${CROSSFILE}"
-pandas_wasm32.whl: ${CROSSFILE}
+pkgs/pandas.whl: BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
+pkgs/pandas.whl: BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
+pkgs/pandas.whl: BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${CROSSFILE}"
+pkgs/pandas.whl: ${CROSSFILE}
 
 #####     Building libraries     #####
 
@@ -553,7 +580,7 @@ ${WASIX_SYSROOT}/.%.installed: %.tar.xz
 	tar mxJf $< -C ${WASIX_SYSROOT}
 	touch $@
 
-${INSTALL_DIR}/.%.installed: %_wasm32.whl
+${INSTALL_DIR}/.%.installed: pkgs/%.whl
 	test -n "${INSTALL_DIR}" || (echo "You must set INSTALL_DIR to the python library path" && exit 1)
 	unzip -oq $< -d ${INSTALL_DIR}
 	touch $@
