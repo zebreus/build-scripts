@@ -3,14 +3,14 @@
 ## Python Index
 
 You can use this index for WASIX easily by providing this index to `pip` or `uv`:
-https://wasix-org.github.io/build-scripts/
+https://pythonindex.wasix.org/
 
 ### Using the index in your projects
 
 The actual **Simple API** endpoint that pip/uv expect lives under the `simple/` path, so the full base URL is:
 
 ```
-https://wasix-org.github.io/build-scripts/simple
+https://pythonindex.wasix.org/simple
 ```
 
 Below are a few common ways to point your tooling at it.
