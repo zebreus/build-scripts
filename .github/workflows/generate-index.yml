@@ -37,7 +37,7 @@ jobs:
             python-wasix-binaries
       - name: Checkout python-wasix-binaries
         run: |
-          git submodule update --init --depth 1 --recommend-shallow python-wasix-binaries
+          git submodule update --init python-wasix-binaries
       # Install a fast Python environment + the `uv` CLI (with cache)
       - name: Setup uv & Python
         uses: astral-sh/setup-uv@v6

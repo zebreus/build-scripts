@@ -11,10 +11,12 @@ import os
 import json
 import hashlib
 import shutil
+import subprocess
 
 package_list = 'package-list.jsonl'
 
 wheel_files = glob.glob(os.path.join("artifacts", '*.whl'))
+wheel_files += glob.glob(os.path.join("artifacts", '*.tar.gz')) # SDists
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'cryptography*.whl'))
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'pydantic_core*.whl'))
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'jiter*.whl'))
@@ -25,17 +27,22 @@ wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'rpds_py*.
 with open(package_list, 'w') as package_list_file:
     for filepath in wheel_files:
         filename = os.path.basename(filepath)
+        filedir = os.path.dirname(filepath)
 
         with open(filepath, 'rb') as f:
             content = f.read()
             sha256_hash = hashlib.sha256(content).hexdigest()
 
-        upload_timestamp = int(os.path.getmtime(filepath))
+        timestamp_result = subprocess.run(["git", "log", "-1", "--pretty=%at", filename], capture_output=True, cwd=filedir)
+        upload_timestamp = int(timestamp_result.stdout.decode('utf-8').partition('\n')[0] or "0") or None
+        
+        name_result = subprocess.run(["git", "log", "-1", "--pretty=%aN", filename], capture_output=True, cwd=filedir)
+        uploader_name = name_result.stdout.decode('utf-8').partition('\n')[0] or "wasmer"
 
         entry = {
             "filename": filename,
             "hash": f"sha256={sha256_hash}",
-            "uploaded_by": "wasmer",
+            "uploaded_by": uploader_name,
             "upload_timestamp": upload_timestamp
         }
 
