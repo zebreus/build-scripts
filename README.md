@@ -143,7 +143,8 @@ psycopg3-c is just the sdist of psycopg3-binary
 * pandoc: haskell-wasm/pandoc wasm
 * postgresql: 17.5
 * brotli: 1.1.0
-* zlib: 1.3.1
+* zlib: develop
+  * 1.3.1 does not have proper cmake support, so we are using develop for now
 * libjpeg-turbo: 3.1.1
 * xz: 5.8.1
 * libtiff: 4.7.0
@@ -165,6 +166,7 @@ psycopg3-c is just the sdist of psycopg3-binary
 * geos: 3.13.1
 * libxslt: 1.1.43
 * libxml2: 2.14.5
+* protobuf: 31.1
 
 ### Notes
 
