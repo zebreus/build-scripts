@@ -133,6 +133,8 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * shapely: 2.1.1
 * mrab-regex: 2025.7.31
 * lxml: 6.0.0
+* protobuf: 31.1
+* grpc: 1.74.1
 
 psycopg3-c is just the sdist of psycopg3-binary
 
@@ -166,7 +168,6 @@ psycopg3-c is just the sdist of psycopg3-binary
 * geos: 3.13.1
 * libxslt: 1.1.43
 * libxml2: 2.14.5
-* protobuf: 31.1
 
 ### Notes
 
