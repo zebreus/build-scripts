@@ -43,6 +43,7 @@ WHEELS+=annotated-types
 WHEELS+=shapely
 WHEELS+=regex
 WHEELS+=lxml
+WHEELS+=protobuf
 
 PYTHON_WASIX_BINARIES_WHEELS=
 PYTHON_WASIX_BINARIES_WHEELS+=cryptography-45.0.4-cp313-abi3-any
@@ -239,6 +240,11 @@ pypandoc_binary:
 	rm $@/pyproject.toml
 	# The pandoc binary also needs to be copied, but we do that in the build step
 
+protobuf:
+	$(reset_submodule)
+	# The bazel toolchain files need to be in the repository
+	cp -r resources/bazel-toolchain protobuf/wasix-toolchain
+
 #####     Building wheels     #####
 
 # A target to build a wheel from a python submodule
@@ -321,6 +327,13 @@ pkgs/pandas.whl: BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==
 pkgs/pandas.whl: BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
 pkgs/pandas.whl: BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${CROSSFILE}"
 pkgs/pandas.whl: ${CROSSFILE}
+
+pkgs/protobuf.tar.gz: protobuf
+	mkdir -p pkgs
+	cd protobuf/python && CC=/usr/bin/gcc CXX=/usr/bin/g++ LD=/usr/bin/ld bazelisk build //python/dist:source_wheel --crosstool_top=//wasix-toolchain:wasix_toolchain --host_crosstool_top=@bazel_tools//tools/cpp:toolchain --cpu=wasm32-wasi
+	mkdir -p artifacts
+	install -m666 protobuf/bazel-bin/python/dist/protobuf.tar.gz artifacts
+	ln -sf ../artifacts/protobuf.tar.gz $@
 
 #####     Building libraries     #####
 
