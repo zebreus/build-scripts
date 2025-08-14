@@ -88,20 +88,21 @@ BUILT_WHEELS=$(addprefix pkgs/,$(addsuffix .whl,$(WHEELS)))
 UNPACKED_WHEELS=$(addprefix pkgs/,$(addsuffix .wheel,$(WHEELS)))
 BUILT_SDISTS=$(addprefix pkgs/,$(addsuffix .tar.gz,$(WHEELS)))
 UNPACKED_SDISTS=$(addprefix pkgs/,$(addsuffix .sdist,$(WHEELS)))
-UNPACKED_LIBS=$(addsuffix .build,$(LIBS))
-BUILT_LIBS=$(addsuffix .tar.xz,$(LIBS))
+UNPACKED_LIBS=$(addprefix pkgs/,$(addsuffix .build,$(LIBS)))
+BUILT_LIBS=$(addprefix pkgs/,$(addsuffix .tar.xz,$(LIBS)))
+
+DONT_INSTALL_LIBS=$(addprefix pkgs/,$(addsuffix .tar.xz,$(DONT_INSTALL)))
 
 WHEELS_TO_INSTALL=$(filter-out $(DONT_INSTALL),$(WHEELS))
 PYTHON_WASIX_BINARIES_WHEELS_TO_INSTALL=$(filter-out $(DONT_INSTALL),$(PYTHON_WASIX_BINARIES_WHEELS))
-LIBS_TO_INSTALL=$(filter-out $(DONT_INSTALL),$(LIBS))
 
 BUILT_WHEELS_TO_INSTALL=$(addsuffix .whl,$(WHEELS_TO_INSTALL))
 BUILT_PYTHON_WASIX_BINARIES_WHEELS_TO_INSTALL=$(addprefix ${PYTHON_WASIX_BINARIES}/wheels/,$(addsuffix .whl,$(PYTHON_WASIX_BINARIES_WHEELS_TO_INSTALL)))
-BUILT_LIBS_TO_INSTALL=$(addsuffix .tar.xz,$(LIBS_TO_INSTALL))
+BUILT_LIBS_TO_INSTALL=$(filter-out $(DONT_INSTALL_LIBS),$(BUILT_LIBS))
 
 ALL_INSTALLED_WHEELS=$(addprefix ${INSTALL_DIR}/.,$(addsuffix .installed,$(WHEELS_TO_INSTALL)))
 ALL_INSTALLED_WHEELS+=$(addprefix ${INSTALL_DIR}/.pwb-,$(addsuffix .installed,$(filter-out $(DONT_INSTALL),$(PYTHON_WASIX_BINARIES_WHEELS_TO_INSTALL))))
-ALL_INSTALLED_LIBS=$(addprefix ${WASIX_SYSROOT}/.,$(addsuffix .installed,$(LIBS_TO_INSTALL)))
+ALL_INSTALLED_LIBS=$(addprefix ${WASIX_SYSROOT}/.,$(addsuffix .installed,$(BUILT_LIBS_TO_INSTALL)))
 
 # mkdir but resets the timestamp if it didnt exist before
 define reset_builddir
@@ -138,14 +139,15 @@ mkdir -p pkgs
 if test -n "${PREPARE}" ; then source ./cross-venv/bin/activate && cd $(subst pkgs/,,$(subst .tar.gz,,$@)) && _= ${PREPARE} ; fi
 source ./cross-venv/bin/activate && cd $(subst pkgs/,,$(subst .tar.gz,,$@))/${PYPROJECT_PATH} && ${BUILD_ENV_VARS} python3 -m build --sdist ${BUILD_EXTRA_FLAGS}
 mkdir -p artifacts
-cp $(subst pkgs/,,$(subst .tar.gz,,$@))/${PYPROJECT_PATH}/dist/*[0-9].tar.gz artifacts
+cp $(subst pkgs/,,$(subst .tar.gz,,$$@))/${PYPROJECT_PATH}/dist/*[0-9].tar.gz artifacts
 ln -sf ../artifacts/$$(basename $(subst pkgs/,,$(subst .tar.gz,,$@))/${PYPROJECT_PATH}/dist/*[0-9].tar.gz) $@
 endef
 
+# Bundle the first dependency to a tar.xz file in artifacts and link it to the target
 define package_lib =
 mkdir -p artifacts
-cd $(word 1, $(subst ., ,$@)).build && tar cfJ ../artifacts/$@ *
-ln -sf artifacts/$(word 1, $(subst ., ,$@)).tar.xz $(word 1, $(subst ., ,$@)).tar.xz
+cd $< && tar cfJ ${PWD}/artifacts/$(notdir $@) *
+ln -sf $(shell realpath -s --relative-to="${PWD}/$(dir $@)" "${PWD}/artifacts/$(notdir $@)") $@
 endef
 
 # Command to run something in an environment with a haskell compiler targeting wasi
@@ -153,6 +155,7 @@ endef
 RUN_WITH_HASKELL=nix shell 'gitlab:haskell-wasm/ghc-wasm-meta/6a8b8457df83025bed2a8759f5502725a827104b?host=gitlab.haskell.org' --command
 
 all: $(BUILT_LIBS_TO_INSTALL) $(BUILT_WHEELS_TO_INSTALL) $(BUILT_PYTHON_WASIX_BINARIES_WHEELS_TO_INSTALL)
+libs: $(BUILT_LIBS_TO_INSTALL)
 
 #####     Downloading and uploading the python webc     #####
 
@@ -318,34 +321,34 @@ pkgs/pandas.whl: ${CROSSFILE}
 
 #####     Building libraries     #####
 
-$(UNPACKED_LIBS): %.build: %
-$(BUILT_LIBS): %.tar.xz: %.build
-%.build: %
+$(UNPACKED_LIBS): pkgs/%.build: %
+$(BUILT_LIBS): pkgs/%.tar.xz: pkgs/%.build
+pkgs/%.build: %
 	echo "Missing build script for $@" >&2 && exit 1
-%.tar.xz: %.build
+pkgs/%.tar.xz: pkgs/%.build
 	$(package_lib)
 	touch $@
 
 # TODO: Add libjpeg support
-zbar.build: zbar
+pkgs/zbar.build: zbar
 	cd zbar && autoreconf -vfi
 	# Force configure to build shared libraries. This is a hack, but it works.
 	cd zbar && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
 	cd zbar && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --enable-static --enable-shared --disable-video --disable-rpath --without-imagemagick --without-java --without-qt --without-gtk --without-xv --without-xshm --without-python
 	cd zbar && make
 	$(reset_builddir) $@
-	cd zbar && make install DESTDIR=${PWD}/zbar.build
+	cd zbar && make install DESTDIR=${PWD}/$@
 	touch $@
 
-libffi.build: libffi
+pkgs/libffi.build: libffi
 	cd libffi && autoreconf -vfi
 	cd libffi && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --host="wasm32-wasi" --enable-static --disable-shared --disable-dependency-tracking --disable-builddir --disable-multi-os-directory --disable-raw-api --disable-docs
 	cd libffi && make
 	$(reset_builddir) $@
-	cd libffi && make install DESTDIR=${PWD}/libffi.build
+	cd libffi && make install DESTDIR=${PWD}/$@
 	touch $@
 
-zlib.build: zlib
+pkgs/zlib.build: zlib
 	cd zlib && rm -rf combined
 	cd zlib && cmake -B combined -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DZLIB_BUILD_MINIZIP=OFF
 	cd zlib && cmake --build combined -j16
@@ -353,7 +356,7 @@ zlib.build: zlib
 	cd zlib && DESTDIR=${PWD}/$@ cmake --install combined
 	touch $@
 
-pandoc.build: pandoc
+pkgs/pandoc.build: pandoc
 	cd pandoc && ${RUN_WITH_HASKELL} wasm32-wasi-cabal update
 	cd pandoc && ${RUN_WITH_HASKELL} wasm32-wasi-cabal build pandoc-cli
 	# Most of these options are copied from https://github.com/tweag/pandoc-wasm/blob/master/.github/workflows/build.yml
@@ -363,7 +366,7 @@ pandoc.build: pandoc
 	install -m 755 pandoc/pandoc.opt.wasm $@/bin/pandoc
 	touch $@
 
-postgresql.build: postgresql
+pkgs/postgresql.build: postgresql
 	cd postgresql && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --without-icu --without-zlib --without-readline
 	cd postgresql && make MAKELEVEL=0 -C src/interfaces
 	cd postgresql && make MAKELEVEL=0 -C src/include
@@ -372,7 +375,7 @@ postgresql.build: postgresql
 	cd postgresql && make MAKELEVEL=0 -C src/include install DESTDIR=${PWD}/$@
 	touch $@
 
-brotli.build: brotli
+pkgs/brotli.build: brotli
 	cd brotli && rm -rf out
 	cd brotli && cmake -DCMAKE_BUILD_TYPE=Release -B out -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi'
 # Brotli always tries to build the executable (which we dont need), which imports `chown` and `clock`, which we don't provide.
@@ -384,7 +387,7 @@ brotli.build: brotli
 	cd brotli && CCC_OVERRIDE_OPTIONS='^-Wl,--unresolved-symbols=import-dynamic' make -C out install DESTDIR=${PWD}/$@
 	touch $@
 
-libjpeg-turbo.build: libjpeg-turbo
+pkgs/libjpeg-turbo.build: libjpeg-turbo
 	cd libjpeg-turbo && rm -rf out
 	# They use a custom version of GNUInstallDirs.cmake does not support libdir starting with prefix.
 	# TODO: Add a sed command to fix that
@@ -394,7 +397,7 @@ libjpeg-turbo.build: libjpeg-turbo
 	cd libjpeg-turbo && make -C out install DESTDIR=${PWD}/$@
 	touch $@
 
-xz.build: xz
+pkgs/xz.build: xz
 	cd xz && rm -rf static shared
 	cd xz && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_INSTALL_RPATH=YES -DCMAKE_SKIP_RPATH=YES
 	cd xz && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_INSTALL_RPATH=YES -DCMAKE_SKIP_RPATH=YES
@@ -405,58 +408,58 @@ xz.build: xz
 	cd xz && DESTDIR=${PWD}/$@ cmake --install static
 	touch $@
 
-libtiff.build: libtiff
+pkgs/libtiff.build: libtiff
 	cd libtiff && bash autogen.sh
 	# Force configure to build shared libraries. This is a hack, but it works.
 	cd libtiff && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
 	cd libtiff && PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi'
 	cd libtiff && PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig make -j4
 	$(reset_builddir) $@
-	cd libtiff && PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig make install DESTDIR=${PWD}/libtiff.build
+	cd libtiff && PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig make install DESTDIR=${PWD}/$@
 	touch $@
 
-libwebp.build: libwebp
+pkgs/libwebp.build: libwebp
 	cd libwebp && bash autogen.sh
 	# Force configure to build shared libraries. This is a hack, but it works.
 	cd libwebp && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
 	cd libwebp && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi'
 	cd libwebp && make
 	$(reset_builddir) $@
-	cd libwebp && PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig make install DESTDIR=${PWD}/libwebp.build
+	cd libwebp && PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig make install DESTDIR=${PWD}/$@
 	touch $@
 
-giflib.build: giflib resources/giflib.pc
+pkgs/giflib.build: giflib resources/giflib.pc
 	cd giflib && make
 	$(reset_builddir) $@
-	cd giflib && make install PREFIX=/usr/local LIBDIR=/usr/local/lib/wasm32-wasi DESTDIR=${PWD}/giflib.build
+	cd giflib && make install PREFIX=/usr/local LIBDIR=/usr/local/lib/wasm32-wasi DESTDIR=${PWD}/$@
 	# giflib does not include a pkg-config file, so we need to install it manually. We need to bump the version in that file as well, when we update the version
-	install -Dm644 ${PWD}/resources/giflib.pc ${PWD}/libwebp.build/usr/local/lib/wasm32-wasi/pkgconfig/giflib.pc
+	install -Dm644 ${PWD}/resources/giflib.pc ${PWD}/$@/usr/local/lib/wasm32-wasi/pkgconfig/giflib.pc
 	touch $@
 
-libpng.build: libpng
+pkgs/libpng.build: libpng
 	# Force configure to build shared libraries. This is a hack, but it works.
 	cd libpng && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
 	cd libpng && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi'
 	cd libpng && make
 	$(reset_builddir) $@
-	cd libpng && make install DESTDIR=${PWD}/libpng.build
+	cd libpng && make install DESTDIR=${PWD}/$@
 	touch $@
 
-SDL3.build: SDL3
+pkgs/SDL3.build: SDL3
 	cd SDL3 && cmake . -DSDL_UNIX_CONSOLE_BUILD=ON -DSDL_RENDER_GPU=OFF -DSDL_VIDEO=OFF -DSDL_AUDIO=OFF -DSDL_JOYSTICK=OFF -DSDL_HAPTIC=OFF -DSDL_HIDAPI=OFF -DSDL_SENSOR=OFF -DSDL_POWER=OFF -DSDL_DIALOG=OFF -DSDL_STATIC=ON -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi'
 	cd SDL3 && make
 	$(reset_builddir) $@
-	cd SDL3 && make install DESTDIR=${PWD}/SDL3.build
+	cd SDL3 && make install DESTDIR=${PWD}/$@
 	touch $@
 
-openjpeg.build: openjpeg
+pkgs/openjpeg.build: openjpeg
 	cd openjpeg && PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig cmake . -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi'
 	cd openjpeg && make
 	$(reset_builddir) $@
-	cd openjpeg && make install DESTDIR=${PWD}/openjpeg.build
+	cd openjpeg && make install DESTDIR=${PWD}/$@
 	touch $@
 
-libuv.build: libuv
+pkgs/libuv.build: libuv
 	cd libuv && rm -rf out
 	cd libuv && cmake -B out -DLIBUV_BUILD_TESTS=OFF -DCMAKE_SYSTEM_NAME=WASI -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi'
 	cd libuv && make -C out
@@ -465,7 +468,7 @@ libuv.build: libuv
 	touch $@
 
 # TODO: Improve, after openssl is building
-mariadb-connector-c.build: mariadb-connector-c
+pkgs/mariadb-connector-c.build: mariadb-connector-c
 	# cd mariadb-connector-c && rm -rf out
 	cd mariadb-connector-c && PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig cmake -B out \
 	 -DCMAKE_SYSTEM_NAME=WASI \
@@ -496,7 +499,7 @@ mariadb-connector-c.build: mariadb-connector-c
 	cd ${PWD}/$@/usr/local/lib/wasm32-wasi && ln -s libmariadb.so ./libmysql.so
 	touch ${PWD}/$@/usr/local/lib/wasm32-wasi
 
-openssl.build: openssl
+pkgs/openssl.build: openssl
 	# Options adapted from https://github.com/wasix-org/openssl/commit/52cc90976bea2e4f224250ef72cfa992c42bf410
 	# Add no-pic to disable PIC
 	cd openssl && ./Configure no-asm no-tests no-apps no-afalgeng no-dgram no-secure-memory --prefix /usr/local --libdir=lib/wasm32-wasi
@@ -506,16 +509,16 @@ openssl.build: openssl
 	touch $@
 
 # We only build a static libuuid for now
-util-linux.build: util-linux
+pkgs/util-linux.build: util-linux
 	cd util-linux && bash autogen.sh
 	cd util-linux && ./configure --disable-all-programs --enable-libuuid --host=wasm32-wasi --enable-static --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi'
 	cd util-linux && make
 	$(reset_builddir) $@
-	cd util-linux && make install DESTDIR=${PWD}/util-linux.build
+	cd util-linux && make install DESTDIR=${PWD}/$@
 	touch $@
 
 
-dropbear.build: dropbear
+pkgs/dropbear.build: dropbear
 	cd dropbear && autoreconf -vfi
 	cd dropbear && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --enable-bundled-libtom --without-pam --enable-static --disable-utmp --disable-utmpx --disable-wtmp --disable-wtmpx --disable-lastlog --disable-loginfunc
 	cd dropbear && make -j8
@@ -523,7 +526,7 @@ dropbear.build: dropbear
 	cd dropbear && make install DESTDIR=${PWD}/$@
 	touch $@
 
-tinyxml2.build: tinyxml2
+pkgs/tinyxml2.build: tinyxml2
 	cd tinyxml2 && rm -rf shared static
 	cd tinyxml2 && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=OFF
 	cd tinyxml2 && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=ON
@@ -534,7 +537,7 @@ tinyxml2.build: tinyxml2
 	cd tinyxml2 && DESTDIR=${PWD}/$@ cmake --install shared
 	touch $@
 
-geos.build: geos
+pkgs/geos.build: geos
 	cd geos && rm -rf static shared
 	cd geos && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_GEOSOP=OFF -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_INSTALL_RPATH=YES -DCMAKE_SKIP_RPATH=YES
 	cd geos && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_GEOSOP=OFF -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_INSTALL_RPATH=YES -DCMAKE_SKIP_RPATH=YES
@@ -545,10 +548,10 @@ geos.build: geos
 	cd geos && DESTDIR=${PWD}/$@ cmake --install shared
 	touch $@
 
-libxslt.build: libxslt xz.build libxml2.build zlib.build
+pkgs/libxslt.build: libxslt pkgs/xz.build pkgs/libxml2.build pkgs/zlib.build
 	cd libxslt && rm -rf static shared
-	cd libxslt && CMAKE_PREFIX_PATH=${PWD}/xz.build/usr/local/lib/wasm32-wasi/cmake:${PWD}/libxml2.build/usr/local/lib/wasm32-wasi/cmake:${PWD}/zlib.build/usr/local/lib/wasm32-wasi/cmake cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_RPATH=YES -DLIBXSLT_WITH_PYTHON=OFF
-	cd libxslt && CMAKE_PREFIX_PATH=${PWD}/xz.build/usr/local/lib/wasm32-wasi/cmake:${PWD}/libxml2.build/usr/local/lib/wasm32-wasi/cmake:${PWD}/zlib.build/usr/local/lib/wasm32-wasi/cmake cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_RPATH=YES -DLIBXSLT_WITH_PYTHON=OFF
+	cd libxslt && CMAKE_PREFIX_PATH=${PWD}/pkgs/xz.build/usr/local/lib/wasm32-wasi/cmake:${PWD}/pkgs/libxml2.build/usr/local/lib/wasm32-wasi/cmake:${PWD}/pkgs/zlib.build/usr/local/lib/wasm32-wasi/cmake cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_RPATH=YES -DLIBXSLT_WITH_PYTHON=OFF
+	cd libxslt && CMAKE_PREFIX_PATH=${PWD}/pkgs/xz.build/usr/local/lib/wasm32-wasi/cmake:${PWD}/pkgs/libxml2.build/usr/local/lib/wasm32-wasi/cmake:${PWD}/pkgs/zlib.build/usr/local/lib/wasm32-wasi/cmake cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_RPATH=YES -DLIBXSLT_WITH_PYTHON=OFF
 	cd libxslt && cmake --build static -j16
 	cd libxslt && cmake --build shared -j16
 	$(reset_builddir) $@
@@ -556,7 +559,7 @@ libxslt.build: libxslt xz.build libxml2.build zlib.build
 	cd libxslt && DESTDIR=${PWD}/$@ cmake --install shared
 	touch $@
 
-libxml2.build: libxml2
+pkgs/libxml2.build: libxml2
 	cd libxml2 && rm -rf shared static
 	cd libxml2 && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=OFF -DLIBXML2_WITH_PYTHON=OFF
 	cd libxml2 && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=ON -DLIBXML2_WITH_PYTHON=OFF
