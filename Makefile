@@ -139,7 +139,7 @@ mkdir -p pkgs
 if test -n "${PREPARE}" ; then source ./cross-venv/bin/activate && cd $(subst pkgs/,,$(subst .tar.gz,,$@)) && _= ${PREPARE} ; fi
 source ./cross-venv/bin/activate && cd $(subst pkgs/,,$(subst .tar.gz,,$@))/${PYPROJECT_PATH} && ${BUILD_ENV_VARS} python3 -m build --sdist ${BUILD_EXTRA_FLAGS}
 mkdir -p artifacts
-cp $(subst pkgs/,,$(subst .tar.gz,,$$@))/${PYPROJECT_PATH}/dist/*[0-9].tar.gz artifacts
+cp $(subst pkgs/,,$(subst .tar.gz,,$@))/${PYPROJECT_PATH}/dist/*[0-9].tar.gz artifacts
 ln -sf ../artifacts/$$(basename $(subst pkgs/,,$(subst .tar.gz,,$@))/${PYPROJECT_PATH}/dist/*[0-9].tar.gz) $@
 endef
 
@@ -156,6 +156,7 @@ RUN_WITH_HASKELL=nix shell 'gitlab:haskell-wasm/ghc-wasm-meta/6a8b8457df83025bed
 
 all: $(BUILT_LIBS_TO_INSTALL) $(BUILT_WHEELS_TO_INSTALL) $(BUILT_PYTHON_WASIX_BINARIES_WHEELS_TO_INSTALL)
 wheels: $(BUILT_WHEELS_TO_INSTALL)
+external-wheels: $(BUILT_PYTHON_WASIX_BINARIES_WHEELS_TO_INSTALL)
 libs: $(BUILT_LIBS_TO_INSTALL)
 
 #####     Downloading and uploading the python webc     #####
@@ -170,7 +171,7 @@ python: python.webc
 	wasmer package unpack python.webc --out-dir python
 	cp python/modules/python python/artifacts/wasix-install/cpython/bin/python3.wasm
 	touch python
-python-with-packages: python postgresql.build zbar.build libjpeg-turbo.build geos.build $(BUILT_WHEELS_TO_INSTALL) $(BUILT_PYTHON_WASIX_BINARIES_WHEELS_TO_INSTALL)
+python-with-packages: python pkgs/postgresql.build pkgs/zbar.build pkgs/libjpeg-turbo.build pkgs/geos.build $(BUILT_WHEELS_TO_INSTALL) $(BUILT_PYTHON_WASIX_BINARIES_WHEELS_TO_INSTALL)
 	### Prepare a python release with all the deps
 	# Copy the base python package
 	rm -rf python-with-packages
@@ -181,11 +182,11 @@ python-with-packages: python postgresql.build zbar.build libjpeg-turbo.build geo
 
 	# Install the libs
 	mkdir -p python-with-packages/artifacts/wasix-install/lib
-	cp -L $(PWD)/postgresql.build/usr/local/lib/wasm32-wasi/*.so* python-with-packages/artifacts/wasix-install/lib
-	cp -L $(PWD)/zbar.build/usr/local/lib/wasm32-wasi/libzbar.so* python-with-packages/artifacts/wasix-install/lib
-	cp -L $(PWD)/libjpeg-turbo.build/usr/local/lib/wasm32-wasi/libjpeg.so* python-with-packages/artifacts/wasix-install/lib
+	cp -L $(PWD)/pkgs/postgresql.build/usr/local/lib/wasm32-wasi/*.so* python-with-packages/artifacts/wasix-install/lib
+	cp -L $(PWD)/pkgs/zbar.build/usr/local/lib/wasm32-wasi/libzbar.so* python-with-packages/artifacts/wasix-install/lib
+	cp -L $(PWD)/pkgs/libjpeg-turbo.build/usr/local/lib/wasm32-wasi/libjpeg.so* python-with-packages/artifacts/wasix-install/lib
 	# TODO: Build shapely without a shared geos dep
-	cp -L $(PWD)/geos.build/usr/local/lib/wasm32-wasi/libgeos* python-with-packages/artifacts/wasix-install/lib
+	cp -L $(PWD)/pkgs/geos.build/usr/local/lib/wasm32-wasi/libgeos* python-with-packages/artifacts/wasix-install/lib
 
 	# Copy the python-wasix-binaries wheels (tomlq is provided in the yq package (but only in the python implementation))
 	tomlq -i '.package.name = "$(PYTHON_WITH_PACKAGES_WEBC)"' python-with-packages/wasmer.toml --output-format toml
@@ -279,9 +280,9 @@ pkgs/pillow.whl: BUILD_ENV_VARS = PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CO
 pkgs/pillow.whl: BUILD_EXTRA_FLAGS = -Cplatform-guessing=disable
 
 # We need to install, because we can only specify one sysroot in pkgconfig
-pkgs/lxml.tar.gz: libxml2.build libxslt.build | install-libxml2 install-libxslt
-pkgs/lxml.tar.gz: BUILD_ENV_VARS = PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${PWD}/libxml2.build/usr/local/lib/wasm32-wasi/pkgconfig:${PWD}/libxslt.build/usr/local/lib/wasm32-wasi/pkgconfig
-pkgs/lxml.whl: BUILD_ENV_VARS = PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${PWD}/libxml2.build/usr/local/lib/wasm32-wasi/pkgconfig:${PWD}/libxslt.build/usr/local/lib/wasm32-wasi/pkgconfig
+pkgs/lxml.tar.gz: pkgs/libxml2.build pkgs/libxslt.build | install-libxml2 install-libxslt
+pkgs/lxml.tar.gz: BUILD_ENV_VARS = PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${PWD}/pkgs/libxml2.build/usr/local/lib/wasm32-wasi/pkgconfig:${PWD}/pkgs/libxslt.build/usr/local/lib/wasm32-wasi/pkgconfig
+pkgs/lxml.whl: BUILD_ENV_VARS = PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${PWD}/pkgs/libxml2.build/usr/local/lib/wasm32-wasi/pkgconfig:${PWD}/pkgs/libxslt.build/usr/local/lib/wasm32-wasi/pkgconfig
 
 pkgs/dateutil.tar.gz: PREPARE = python3 updatezinfo.py
 
@@ -292,12 +293,12 @@ pkgs/msgpack-python.tar.gz: PREPARE = make cython
 pkgs/numpy.whl: BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${CROSSFILE}"
 pkgs/numpy.whl: ${CROSSFILE}
 
-pkgs/shapely.whl: geos.build
+pkgs/shapely.whl: pkgs/geos.build
 # TODO: Static build don't work yet, because we would have to specify recursive dependencies manually
 # pkgs/shapely.whl: BUILD_ENV_VARS += WASIX_FORCE_STATIC_DEPENDENCIES=true
 # Set geos paths
-pkgs/shapely.whl: BUILD_ENV_VARS += GEOS_INCLUDE_PATH="${PWD}/geos.build/usr/local/include"
-pkgs/shapely.whl: BUILD_ENV_VARS += GEOS_LIBRARY_PATH="${PWD}/geos.build/usr/local/lib/wasm32-wasi"
+pkgs/shapely.whl: BUILD_ENV_VARS += GEOS_INCLUDE_PATH="${PWD}/pkgs/geos.build/usr/local/include"
+pkgs/shapely.whl: BUILD_ENV_VARS += GEOS_LIBRARY_PATH="${PWD}/pkgs/geos.build/usr/local/lib/wasm32-wasi"
 # Use numpy dev build from our registry. Our patches have been merged upstream, so for the next numpy release we can remove this.
 pkgs/shapely.whl: BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
 pkgs/shapely.whl: BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
@@ -305,9 +306,9 @@ pkgs/shapely.whl: BUILD_EXTRA_FLAGS = --skip-dependency-check
 
 # Needs to have the pypandoc executable in the repo
 pkgs/pypandoc_binary.whl: pypandoc_binary/pypandoc/files/pandoc
-pypandoc_binary/pypandoc/files/pandoc: pypandoc_binary pandoc.tar.xz
+pypandoc_binary/pypandoc/files/pandoc: pypandoc_binary pkgs/pandoc.tar.xz
 	mkdir -p pypandoc_binary/pypandoc/files
-	tar xfJ pandoc.tar.xz -C pypandoc_binary/pypandoc/files --strip-components=1 bin/pandoc
+	tar xfJ pkgs/pandoc.tar.xz -C pypandoc_binary/pypandoc/files --strip-components=1 bin/pandoc
 	touch $@
 
 pkgs/uvloop.whl: BUILD_ENV_VARS = WASIX_FORCE_STATIC_DEPENDENCIES=true
@@ -610,7 +611,9 @@ $(INSTALL_PYTHON_WASIX_BINARIES_WHEELS_TARGETS): install-pwb-%: ${INSTALL_DIR}/.
 clean: $(SUBMODULES)
 	rm -rf python python.webc
 	rm -rf cross-venv native-venv
-	rm -rf *.build
+	rm -rf pkgs/*.build
+	rm -rf pkgs/*.wheel
+	rm -rf pkgs/*.sdist
 
 .PRECIOUS: $(WHEELS) $(LIBS) $(UNPACKED_LIBS) $(BUILT_LIBS) $(BUILT_WHEELS)
-.PHONY: install install-wheels install-libs $(INSTALL_WHEELS_TARGETS) $(INSTALL_LIBS_TARGETS) clean 
+.PHONY: install install-wheels install-libs $(INSTALL_WHEELS_TARGETS) $(INSTALL_LIBS_TARGETS) clean wheels libs external-wheels
