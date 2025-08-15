@@ -96,16 +96,16 @@ BUILT_LIBS=$(addprefix pkgs/,$(addsuffix .tar.xz,$(LIBS)))
 
 # Names of the wheels and libs that we want to install
 BUILT_WHEELS_TO_INSTALL_NAMES=$(filter-out $(DONT_INSTALL),$(WHEELS))
-BUILT_LIBS_TO_INSTALL_NAMES=$(filter-out $(DONT_INSTALL),$(LIBS))
 PWB_WHEELS_TO_INSTALL_NAMES=$(filter-out $(DONT_INSTALL),$(PYTHON_WASIX_BINARIES_WHEELS))
+BUILT_LIBS_TO_INSTALL_NAMES=$(filter-out $(DONT_INSTALL),$(LIBS))
 # Paths to the .whl and .tar.xz files that we want to install
 BUILT_WHEELS_TO_INSTALL=$(addprefix pkgs/,$(addsuffix .whl,$(BUILT_WHEELS_TO_INSTALL_NAMES)))
-BUILT_LIBS_TO_INSTALL=$(addprefix pkgs/,$(addsuffix .tar.xz,$(BUILT_LIBS_TO_INSTALL_NAMES)))
 PWB_WHEELS_TO_INSTALL=$(addprefix ${PYTHON_WASIX_BINARIES}/wheels/,$(addsuffix .whl,$(PWB_WHEELS_TO_INSTALL_NAMES)))
+BUILT_LIBS_TO_INSTALL=$(addprefix pkgs/,$(addsuffix .tar.xz,$(BUILT_LIBS_TO_INSTALL_NAMES)))
 # Marker files to indicate that the wheels and libs have been installed
 ALL_INSTALLED_WHEELS=$(addprefix ${INSTALL_DIR}/.,$(addsuffix .installed,$(BUILT_WHEELS_TO_INSTALL_NAMES)))
 ALL_INSTALLED_WHEELS+=$(addprefix ${INSTALL_DIR}/.pwb-,$(addsuffix .installed,$(PWB_WHEELS_TO_INSTALL_NAMES)))
-ALL_INSTALLED_LIBS=$(addprefix ${WASIX_SYSROOT}/.,$(addsuffix .installed,$(BUILT_LIBS_TO_INSTALL)))
+ALL_INSTALLED_LIBS=$(addprefix ${WASIX_SYSROOT}/.,$(addsuffix .installed,$(BUILT_LIBS_TO_INSTALL_NAMES)))
 
 # mkdir but resets the timestamp if it didnt exist before
 define reset_builddir
