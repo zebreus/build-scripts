@@ -46,7 +46,7 @@ WHEELS+=regex
 WHEELS+=lxml
 WHEELS+=protobuf
 WHEELS+=grpc
-
+WHEELS+=numpy1
 
 PYTHON_WASIX_BINARIES_WHEELS=
 PYTHON_WASIX_BINARIES_WHEELS+=cryptography-45.0.4-cp313-abi3-any
@@ -85,6 +85,8 @@ DONT_INSTALL=
 # Dont install pypandoc because it uses the same name as pypandoc_binary
 DONT_INSTALL+=pypandoc
 DONT_INSTALL+=psycopg-binary
+# Dont install numpy1, because we already have numpy 2
+DONT_INSTALL+=numpy1
 
 SUBMODULES=$(WHEELS) $(LIBS)
 
@@ -305,6 +307,12 @@ pkgs/msgpack-python.tar.gz: PREPARE = make cython
 # Depends on a meson crossfile
 pkgs/numpy.whl: BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
 pkgs/numpy.whl: ${MESON_CROSSFILE}
+
+# Depends on a meson crossfile
+pkgs/numpy1.tar.gz: BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
+pkgs/numpy1.tar.gz: ${MESON_CROSSFILE}
+pkgs/numpy1.whl: BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
+pkgs/numpy1.whl: ${MESON_CROSSFILE}
 
 pkgs/shapely.whl: pkgs/geos.build
 # TODO: Static build don't work yet, because we would have to specify recursive dependencies manually
