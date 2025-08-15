@@ -44,6 +44,8 @@ WHEELS+=shapely
 WHEELS+=regex
 WHEELS+=lxml
 WHEELS+=protobuf
+WHEELS+=grpc
+
 
 PYTHON_WASIX_BINARIES_WHEELS=
 PYTHON_WASIX_BINARIES_WHEELS+=cryptography-45.0.4-cp313-abi3-any
@@ -92,17 +94,17 @@ UNPACKED_SDISTS=$(addprefix pkgs/,$(addsuffix .sdist,$(WHEELS)))
 UNPACKED_LIBS=$(addprefix pkgs/,$(addsuffix .build,$(LIBS)))
 BUILT_LIBS=$(addprefix pkgs/,$(addsuffix .tar.xz,$(LIBS)))
 
-DONT_INSTALL_LIBS=$(addprefix pkgs/,$(addsuffix .tar.xz,$(DONT_INSTALL)))
-DONT_INSTALL_WHEELS=$(addprefix pkgs/,$(addsuffix .whl,$(DONT_INSTALL)))
-
-PYTHON_WASIX_BINARIES_WHEELS_TO_INSTALL=$(filter-out $(DONT_INSTALL),$(PYTHON_WASIX_BINARIES_WHEELS))
-
-BUILT_WHEELS_TO_INSTALL=$(filter-out $(DONT_INSTALL_WHEELS),$(BUILT_WHEELS))
-BUILT_PYTHON_WASIX_BINARIES_WHEELS_TO_INSTALL=$(addprefix ${PYTHON_WASIX_BINARIES}/wheels/,$(addsuffix .whl,$(PYTHON_WASIX_BINARIES_WHEELS_TO_INSTALL)))
-BUILT_LIBS_TO_INSTALL=$(filter-out $(DONT_INSTALL_LIBS),$(BUILT_LIBS))
-
-ALL_INSTALLED_WHEELS=$(addprefix ${INSTALL_DIR}/.,$(addsuffix .installed,$(BUILT_WHEELS_TO_INSTALL)))
-ALL_INSTALLED_WHEELS+=$(addprefix ${INSTALL_DIR}/.pwb-,$(addsuffix .installed,$(filter-out $(DONT_INSTALL),$(PYTHON_WASIX_BINARIES_WHEELS_TO_INSTALL))))
+# Names of the wheels and libs that we want to install
+BUILT_WHEELS_TO_INSTALL_NAMES=$(filter-out $(DONT_INSTALL),$(WHEELS))
+BUILT_LIBS_TO_INSTALL_NAMES=$(filter-out $(DONT_INSTALL),$(LIBS))
+PWB_WHEELS_TO_INSTALL_NAMES=$(filter-out $(DONT_INSTALL),$(PYTHON_WASIX_BINARIES_WHEELS))
+# Paths to the .whl and .tar.xz files that we want to install
+BUILT_WHEELS_TO_INSTALL=$(addprefix pkgs/,$(addsuffix .whl,$(BUILT_WHEELS_TO_INSTALL_NAMES)))
+BUILT_LIBS_TO_INSTALL=$(addprefix pkgs/,$(addsuffix .tar.xz,$(BUILT_LIBS_TO_INSTALL_NAMES)))
+PWB_WHEELS_TO_INSTALL=$(addprefix ${PYTHON_WASIX_BINARIES}/wheels/,$(addsuffix .whl,$(PWB_WHEELS_TO_INSTALL_NAMES)))
+# Marker files to indicate that the wheels and libs have been installed
+ALL_INSTALLED_WHEELS=$(addprefix ${INSTALL_DIR}/.,$(addsuffix .installed,$(BUILT_WHEELS_TO_INSTALL_NAMES)))
+ALL_INSTALLED_WHEELS+=$(addprefix ${INSTALL_DIR}/.pwb-,$(addsuffix .installed,$(PWB_WHEELS_TO_INSTALL_NAMES)))
 ALL_INSTALLED_LIBS=$(addprefix ${WASIX_SYSROOT}/.,$(addsuffix .installed,$(BUILT_LIBS_TO_INSTALL)))
 
 # mkdir but resets the timestamp if it didnt exist before
@@ -155,9 +157,9 @@ endef
 # Uses an older hash, because the latest version requires tail call support
 RUN_WITH_HASKELL=nix shell 'gitlab:haskell-wasm/ghc-wasm-meta/6a8b8457df83025bed2a8759f5502725a827104b?host=gitlab.haskell.org' --command
 
-all: $(BUILT_LIBS_TO_INSTALL) $(BUILT_WHEELS_TO_INSTALL) $(BUILT_PYTHON_WASIX_BINARIES_WHEELS_TO_INSTALL)
+all: $(BUILT_LIBS_TO_INSTALL) $(BUILT_WHEELS_TO_INSTALL) $(PWB_WHEELS_TO_INSTALL)
 wheels: $(BUILT_WHEELS_TO_INSTALL)
-external-wheels: $(BUILT_PYTHON_WASIX_BINARIES_WHEELS_TO_INSTALL)
+external-wheels: $(PWB_WHEELS_TO_INSTALL)
 libs: $(BUILT_LIBS_TO_INSTALL)
 
 #####     Downloading and uploading the python webc     #####
@@ -172,7 +174,7 @@ python: python.webc
 	wasmer package unpack python.webc --out-dir python
 	cp python/modules/python python/artifacts/wasix-install/cpython/bin/python3.wasm
 	touch python
-python-with-packages: python pkgs/postgresql.build pkgs/zbar.build pkgs/libjpeg-turbo.build pkgs/geos.build $(BUILT_WHEELS_TO_INSTALL) $(BUILT_PYTHON_WASIX_BINARIES_WHEELS_TO_INSTALL)
+python-with-packages: python pkgs/postgresql.build pkgs/zbar.build pkgs/libjpeg-turbo.build pkgs/geos.build $(BUILT_WHEELS_TO_INSTALL) $(PWB_WHEELS_TO_INSTALL)
 	### Prepare a python release with all the deps
 	# Copy the base python package
 	rm -rf python-with-packages
@@ -244,6 +246,10 @@ protobuf:
 	$(reset_submodule)
 	# The bazel toolchain files need to be in the repository
 	cp -r resources/bazel-toolchain protobuf/wasix-toolchain
+
+grpc:
+	$(reset_submodule)
+	cd grpc/third_party/abseil-cpp && git am ../../../patches/abseil-cpp-0001-Enable-mmap-for-WASI.patch
 
 #####     Building wheels     #####
 
@@ -592,7 +598,6 @@ pkgs/libxml2.build: libxml2
 # Use `install-SUBMODULE` to install a specific submodule
 # Use `install-wheels` to install all wheels
 # Use `install-libs` to install all libs
-
 
 ${WASIX_SYSROOT}/.%.installed: %.tar.xz
 	test -n "${WASIX_SYSROOT}" || (echo "You must set WASIX_SYSROOT to your wasix sysroot" && exit 1)

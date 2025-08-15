@@ -1,0 +1,137 @@
+From 9b6266c83997184c8c34afa4b84a377e1ab16df5 Mon Sep 17 00:00:00 2001
+From: Zebreus <zebreus@zebre.us>
+Date: Fri, 15 Aug 2025 18:12:30 +0200
+Subject: [PATCH] Add support for WASIX
+
+---
+ include/grpc/event_engine/port.h     |  2 +-
+ include/grpc/support/port_platform.h | 32 ++++++++++++++++
+ src/core/lib/iomgr/port.h            | 56 ++++++++++++++++++++++++++++
+ 3 files changed, 89 insertions(+), 1 deletion(-)
+
+diff --git a/include/grpc/event_engine/port.h b/include/grpc/event_engine/port.h
+index 3055a667e0..691b7fb23f 100644
+--- a/include/grpc/event_engine/port.h
++++ b/include/grpc/event_engine/port.h
+@@ -20,7 +20,7 @@
+ #if defined(GPR_ANDROID) || defined(GPR_LINUX) || defined(GPR_APPLE) ||     \
+     defined(GPR_FREEBSD) || defined(GPR_OPENBSD) || defined(GPR_SOLARIS) || \
+     defined(GPR_AIX) || defined(GPR_NACL) || defined(GPR_FUCHSIA) ||        \
+-    defined(GRPC_POSIX_SOCKET) || defined(GPR_NETBSD)
++    defined(GRPC_POSIX_SOCKET) || defined(GPR_NETBSD) || defined(GPR_WASIX)
+ #define GRPC_EVENT_ENGINE_POSIX
+ #include <arpa/inet.h>
+ #include <netdb.h>
+diff --git a/include/grpc/support/port_platform.h b/include/grpc/support/port_platform.h
+index 04a90fbf8a..674f44b538 100644
+--- a/include/grpc/support/port_platform.h
++++ b/include/grpc/support/port_platform.h
+@@ -523,6 +523,38 @@
+ #else /* _LP64 */
+ #define GPR_ARCH_32 1
+ #endif /* _LP64 */
++#elif defined(__wasi__) // TODO: Change to wasix and upstream once clang supports wasix
++#define GPR_PLATFORM_STRING "wasix"
++#ifndef _BSD_SOURCE
++#define _BSD_SOURCE
++#endif
++#ifndef _DEFAULT_SOURCE
++#define _DEFAULT_SOURCE
++#endif
++#ifndef _GNU_SOURCE
++#define _GNU_SOURCE
++#endif
++#define GPR_WASIX 1
++#define GPR_CPU_POSIX 1
++#define GPR_GCC_ATOMIC 1
++#define GPR_POSIX_ENV 1
++#define GPR_POSIX_STRING 1
++#define GPR_POSIX_SYNC 1
++// Would introduce fork+exec which is not supported in Wasix
++// #define GPR_POSIX_SUBPROCESS 1
++// This also broke something
++// #define GPR_HAS_PTHREAD_H 1
++#define GPR_GETPID_IN_UNISTD_H 1
++#define GPR_POSIX_LOG 1
++#define GPR_POSIX_TMPFILE 1
++#define GPR_POSIX_STAT 1
++#define GPR_POSIX_TIME 1
++#define GPR_LINUX_PTHREAD_NAME 1
++#ifdef _LP64
++#define GPR_ARCH_64 1
++#else /* _LP64 */
++#define GPR_ARCH_32 1
++#endif /* _LP64 */
+ #else
+ #error "Could not auto-detect platform"
+ #endif
+diff --git a/src/core/lib/iomgr/port.h b/src/core/lib/iomgr/port.h
+index 4899e17346..dc61d3baba 100644
+--- a/src/core/lib/iomgr/port.h
++++ b/src/core/lib/iomgr/port.h
+@@ -226,6 +226,62 @@
+ #define GRPC_POSIX_NO_SPECIAL_WAKEUP_FD 1
+ #define GRPC_POSIX_SOCKETUTILS 1
+ #define GRPC_POSIX_SYSCONF 1
++#elif defined(GPR_WASIX)
++/// From linux
++// Confirmed
++#define GRPC_HAVE_ARPA_NAMESER 1
++// Confirmed
++#define GRPC_HAVE_IFADDRS 1
++// Confirmed
++#define GRPC_HAVE_IPV6_RECVPKTINFO 1
++// Confirmed
++#define GRPC_HAVE_IP_PKTINFO 1
++// Confirmed
++#define GRPC_HAVE_MSG_NOSIGNAL 1
++// Confirmed
++#define GRPC_HAVE_UNIX_SOCKET 1
++// Not supported, we are missing CMSG_NEXTHDR and friends
++// #define GRPC_HAVE_TCP_INQ 1
++// Missing header
++// #define GRPC_LINUX_ERRQUEUE 1
++// Missing header
++// #define GRPC_HAVE_VSOCK 1
++// Never checked
++// #define GRPC_LINUX_MULTIPOLL_WITH_EPOLL 1
++// We dont want to use fork
++// #define GRPC_POSIX_FORK 1
++// Not tested
++#define GRPC_POSIX_HOST_NAME_MAX 1
++// Confirmed
++#define GRPC_POSIX_SOCKET 1
++// Confirmed
++#define GRPC_POSIX_WAKEUP_FD 1
++// Does not work worse than when it's not defined
++#define GRPC_LINUX_EPOLL 1
++// TODO: We have an implementation of epoll_create1 so it could work
++#define GRPC_LINUX_EPOLL_CREATE1 1
++// Mutally exclusive with GRPC_LINUX_EVENTFD
++// TODO
++// #define GRPC_LINUX_EVENTFD 1
++//
++// TCP_USER_TIMEOUT wasn't imported to glibc until 2.18. Use Linux system
++// header instead.
++//
++// Missing header
++// #define GRPC_LINUX_TCP_H 1
++#define GRPC_LINUX_EVENTFD 1
++// Not confirmed, just guessing
++#define GRPC_MSG_IOVLEN_TYPE int
++
++#ifndef GRPC_LINUX_EVENTFD
++// Confirmed
++#define GRPC_POSIX_NO_SPECIAL_WAKEUP_FD 1
++#endif
++// Confirmed
++#define GRPC_POSIX_SOCKETUTILS
++
++// Not needed because we have GRPC_POSIX_HOST_NAME_MAX
++// #define GRPC_POSIX_SYSCONF 1
+ #elif !defined(GPR_NO_AUTODETECT_PLATFORM)
+ #error "Platform not recognized"
+ #endif
+-- 
+2.48.1
+
