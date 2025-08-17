@@ -22,6 +22,19 @@ wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'pydantic_
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'jiter*.whl'))
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'lxml*.whl'))
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'rpds_py*.whl'))
+wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'aiohttp*.whl'))
+wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'ddtrace*.whl'))
+# wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'google_crc32c*.whl'))
+wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'httptools*.whl'))
+wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'orjson*.whl'))
+wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'peewee*.whl'))
+wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'pynacl*.whl'))
+wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'pyyaml*.whl'))
+wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'regex*.whl'))
+wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'shapely*.whl'))
+wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'tiktoken*.whl'))
+wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'tokenizers*.whl'))
+wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'tornado*.whl'))
 
 # Create JSON for each wheel file
 with open(package_list, 'w') as package_list_file:
