@@ -199,3 +199,6 @@
 [submodule "certifi"]
 	path = certifi
 	url = https://github.com/certifi/python-certifi.git
+[submodule "charset_normalizer"]
+	path = charset_normalizer
+	url = https://github.com/jawah/charset_normalizer.git

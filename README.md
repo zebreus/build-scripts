@@ -150,6 +150,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * urllib3: 2.5.0
 * idna: 3.10
 * certifi: 2025.08.03
+* charset-normalizer: 3.4.3
 
 psycopg3-c is just the sdist of psycopg3-binary
 
