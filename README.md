@@ -103,7 +103,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 
 * numpy: numpy/numpy main
 * markupsafe: 3.0.2
-* pandas: 2.2.3
+* pandas: 2.3.1
 * pytz: 2025.2
 * dateutil: 2.9.0
 * tzdata: 2025.2
