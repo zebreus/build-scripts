@@ -142,7 +142,7 @@ PYTHON_WASIX_BINARIES_WHEELS+=tornado-6.5.2-cp39-abi3-wasix_wasm32
 #PYTHON_WASIX_BINARIES_WHEELS+=uvloop-0.21.0-cp313-cp313-wasix_wasm32
 # Included: Not moved to build-scripts yet. Does not seem native.
 # TODO: Move to build-scripts
-PYTHON_WASIX_BINARIES_WHEELS+=watchdog-6.0.0-py3-none-any.whl
+PYTHON_WASIX_BINARIES_WHEELS+=watchdog-6.0.0-py3-none-any
 
 # Libs build a .tar.xz file with a sysroot
 LIBS=
