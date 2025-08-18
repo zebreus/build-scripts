@@ -78,9 +78,8 @@ PYTHON_WASIX_BINARIES_WHEELS+=cryptography-43.0.3-cp313-abi3-wasix_wasm32
 # Included: Not moved to build-scripts yet
 # TODO: Move to build-scripts
 PYTHON_WASIX_BINARIES_WHEELS+=ddtrace-3.10.2-cp313-cp313-wasix_wasm32
-# Included: Not moved to build-scripts yet
-# TODO: Move to build-scripts
-PYTHON_WASIX_BINARIES_WHEELS+=google_crc32c-1.7.1-py3-none-any
+# Not included: Source build in build-scripts
+# PYTHON_WASIX_BINARIES_WHEELS+=google_crc32c-1.7.1-py3-none-any
 # Included: Not moved to build-scripts yet
 # TODO: Move to build-scripts
 PYTHON_WASIX_BINARIES_WHEELS+=httptools-0.6.4-cp313-cp313-wasix_wasm32
