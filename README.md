@@ -95,6 +95,15 @@ The easiest way to setup all the environment variables is to activate the wasix-
 
 Then you can run `make all` to build all wheels and libraries.
 
+### Patches
+
+For the most part we try to keep patches to a minimum and contribute changes back upstream if they provide any additional value besides adding WASIX support.
+
+Patches are mostly applied to make existing build processes that don't support a WASI target work. In the rare cases where software uses features that are not available in WASIX we might also patch it to add workarounds/remove broken code paths. We try to keep software as vanilla as possible.
+
+One exception is `numpy` where we have a special patch that helps when building other crates. More on that below.
+
+
 ### Versions
 
 Here is a list of the versions of the wheels and libraries that are included in this package:
@@ -175,6 +184,10 @@ psycopg3-c is just the sdist of psycopg3-binary
 ### Notes
 
 All built library packages should include a pkg-config file for each library.
+
+When building wheels that depend on detecting numpy headers via `numpy.get_include()` at compiletime it might be required to set the `NUMPY_ONLY_GET_INCLUDE` environment variable. We have a special patch that detects that variable when importing numpy and only exports the `get_include()` function in that case. Otherwise importing numpy causes it to load all native modules and crash when crosscompiling because wasm native modules won't work on x86_64 CPUs.
+
+While `wasix-clang` tries to be as lightweight as possible while still behaving like clang, we have a special `WASIX_FORCE_STATIC_DEPENDENCIES` environment variable that forces all libraries to be static. While WASIX does have full support we don't always like to use shared libs for reasons.
 
 #### [Variables in pkg-config files](https://www.gnu.org/prep/standards/html_node/Directory-Variables.html)
 
