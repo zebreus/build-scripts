@@ -1,3 +1,4 @@
+# Skipped because it gets stuck after the test is run
 import helloworld_pb2
 import helloworld_pb2_grpc
 import grpc
