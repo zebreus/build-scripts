@@ -36,6 +36,7 @@ wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'shapely*.
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'tiktoken*.whl'))
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'tokenizers*.whl'))
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'tornado*.whl'))
+wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'watchdog*.whl'))
 
 # Create JSON for each wheel file
 with open(package_list, 'w') as package_list_file:
