@@ -50,6 +50,13 @@ WHEELS+=numpy1
 WHEELS+=python-crc32c
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
+#
+# Use the following command to list all new wheels in the python-wasix-binaries repository:
+#
+# diff <(git ls-tree 531b962aae070e058138c17614f8cbe3e2607d72:wheels | grep -Po '[^\t ]*.whl') <(git ls-tree HEAD:wheels | grep -Po '[^\t ]*.whl') | grep '^>' | cut -d' ' -f2 | sort
+#
+# Don't forget to update the commit hash above afterwards!
+
 PYTHON_WASIX_BINARIES_WHEELS=
 
 # Included: Not moved to build-scripts yet
@@ -59,6 +66,8 @@ PYTHON_WASIX_BINARIES_WHEELS+=aiohttp-3.12.4-cp313-cp313-wasix_wasm32
 #PYTHON_WASIX_BINARIES_WHEELS+=cffi-1.17.1-cp313-cp313-wasix_wasm32
 # Included: Rust
 PYTHON_WASIX_BINARIES_WHEELS+=cryptography-45.0.4-cp313-abi3-wasix_wasm32
+# Included: Rust
+PYTHON_WASIX_BINARIES_WHEELS+=cryptography-43.0.3-cp313-abi3-wasix_wasm32
 # Not included: Source build in build-scripts
 #PYTHON_WASIX_BINARIES_WHEELS+=dateutil-cp313-cp313-wasix_wasm32
 # Included: Not moved to build-scripts yet
@@ -95,6 +104,9 @@ PYTHON_WASIX_BINARIES_WHEELS+=peewee-3.18.2-cp313-cp313-wasix_wasm32
 #PYTHON_WASIX_BINARIES_WHEELS+=psycopg_c-3.2.9-cp313-cp313-wasix_wasm32
 # Not included: Source build in build-scripts
 #PYTHON_WASIX_BINARIES_WHEELS+=psycopg_pool-3.3.0.dev1-py3-none-any
+# Included: Not moved to build-scripts yet
+# TODO: Move to build-scripts
+PYTHON_WASIX_BINARIES_WHEELS+=pyarrow-19.0.1-cp313-cp313-wasix_wasm32
 # Not included: Source build in build-scripts
 #PYTHON_WASIX_BINARIES_WHEELS+=pycryptodome-3.23.0-cp37-abi3-wasix_wasm32
 # Not included: Source build in build-scripts
@@ -128,6 +140,9 @@ PYTHON_WASIX_BINARIES_WHEELS+=tornado-6.5.2-cp39-abi3-wasix_wasm32
 #PYTHON_WASIX_BINARIES_WHEELS+=tzdata-cp313-cp313-wasix_wasm32
 # Not included: Source build in build-scripts
 #PYTHON_WASIX_BINARIES_WHEELS+=uvloop-0.21.0-cp313-cp313-wasix_wasm32
+# Included: Not moved to build-scripts yet. Does not seem native.
+# TODO: Move to build-scripts
+PYTHON_WASIX_BINARIES_WHEELS+=watchdog-6.0.0-py3-none-any.whl
 
 # Libs build a .tar.xz file with a sysroot
 LIBS=
@@ -162,6 +177,8 @@ DONT_INSTALL+=pypandoc
 DONT_INSTALL+=psycopg-binary
 # Dont install numpy1, because we already have numpy 2
 DONT_INSTALL+=numpy1
+# Dont install cryptography 43, because we already have 45
+DONT_INSTALL+=cryptography-43.0.3-cp313-abi3-wasix_wasm32
 
 SUBMODULES=$(WHEELS) $(LIBS)
 
