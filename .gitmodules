@@ -190,3 +190,6 @@
 [submodule "requests"]
 	path = requests
 	url = https://github.com/psf/requests.git
+[submodule "urllib3"]
+	path = urllib3
+	url = https://github.com/urllib3/urllib3.git
