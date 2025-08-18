@@ -196,3 +196,6 @@
 [submodule "idna"]
 	path = idna
 	url = https://github.com/kjd/idna.git
+[submodule "certifi"]
+	path = certifi
+	url = https://github.com/certifi/python-certifi.git

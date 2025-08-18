@@ -149,6 +149,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * requests: 2.32.4
 * urllib3: 2.5.0
 * idna: 3.10
+* certifi: 2025.08.03
 
 psycopg3-c is just the sdist of psycopg3-binary
 
