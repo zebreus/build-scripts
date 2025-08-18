@@ -398,10 +398,10 @@ pkgs/shapely.whl: BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
 pkgs/shapely.whl: BUILD_EXTRA_FLAGS = --skip-dependency-check
 
 # Needs to have the pypandoc executable in the repo
-pkgs/pypandoc_binary.whl: pypandoc_binary/pypandoc/files/pandoc
-pypandoc_binary/pypandoc/files/pandoc: pypandoc_binary pkgs/pandoc.tar.xz
-	mkdir -p pypandoc_binary/pypandoc/files
-	tar xfJ pkgs/pandoc.tar.xz -C pypandoc_binary/pypandoc/files --strip-components=1 bin/pandoc
+pkgs/pypandoc_binary.whl: pkgs/pypandoc_binary.sdist/pypandoc/files/pandoc
+pkgs/pypandoc_binary.sdist/pypandoc/files/pandoc: pkgs/pypandoc_binary.sdist pkgs/pandoc.tar.xz
+	mkdir -p pkgs/pypandoc_binary.sdist/pypandoc/files
+	tar xfJ pkgs/pandoc.tar.xz -C pkgs/pypandoc_binary.sdist/pypandoc/files --strip-components=1 bin/pandoc
 	touch $@
 
 pkgs/uvloop.whl: BUILD_ENV_VARS = WASIX_FORCE_STATIC_DEPENDENCIES=true
