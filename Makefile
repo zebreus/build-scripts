@@ -176,7 +176,7 @@ LIBS+=google-crc32c
 
 DONT_BUILD=
 # Dont build psycopg-binary, because it does not work
-DONT_BUILT+=psycopg-binary
+DONT_BUILD+=psycopg-binary
 
 DONT_INSTALL=$(DONT_BUILD)
 # Dont install pypandoc because it uses the same name as pypandoc_binary
