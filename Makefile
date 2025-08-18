@@ -50,6 +50,7 @@ WHEELS+=numpy1
 WHEELS+=python-crc32c
 WHEELS+=requests
 WHEELS+=urllib3
+WHEELS+=idna
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
 #
