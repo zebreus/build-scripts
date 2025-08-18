@@ -187,3 +187,6 @@
 [submodule "google-crc32c"]
 	path = google-crc32c
 	url = https://github.com/google/crc32c.git
+[submodule "requests"]
+	path = requests
+	url = https://github.com/psf/requests.git
