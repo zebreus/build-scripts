@@ -760,5 +760,7 @@ clean: $(SUBMODULES)
 	rm -rf pkgs/*.wheel
 	rm -rf pkgs/*.sdist
 
+init: $(SUBMODULES)
+
 .PRECIOUS: $(WHEELS) $(LIBS) $(UNPACKED_LIBS) $(BUILT_LIBS) $(BUILT_WHEELS)
-.PHONY: install install-wheels install-libs $(INSTALL_WHEELS_TARGETS) $(INSTALL_LIBS_TARGETS) clean wheels libs external-wheels
+.PHONY: install install-wheels install-libs $(INSTALL_WHEELS_TARGETS) $(INSTALL_LIBS_TARGETS) clean init all wheels libs external-wheels
