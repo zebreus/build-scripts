@@ -286,14 +286,8 @@ native-venv:
 cross-venv: native-venv python
 	rm -rf ./cross-venv
 	source ./native-venv/bin/activate && python3 -m crossenv python/artifacts/wasix-install/cpython/bin/python3.wasm ./cross-venv --cc wasix-clang --cxx wasix-clang++
-	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple build-pip install cffi numpy==2.4.0.dev0
+	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple build-pip install cffi
 	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple pip install build six
-# cross-venv: native-venv python
-# 	rm -rf ./cross-venv
-# 	source ./native-venv/bin/activate && python3 -m crossenv python/artifacts/wasix-install/cpython/bin/python3.wasm ./cross-venv --cc wasix-clang --cxx wasix-clang++
-# 	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple build-pip install cffi numpy==2.4.0.dev0
-# 	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple cross-pip install setuptools>=61.0.0 Cython
-# 	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple pip install build six 
 
 #####     Preparing submodules     #####
 
@@ -380,6 +374,8 @@ pkgs/dateutil.tar.gz: PREPARE = python3 updatezinfo.py
 pkgs/msgpack-python.tar.gz: PREPARE = make cython
 
 # Depends on a meson crossfile
+pkgs/numpy.tar.gz: BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
+pkgs/numpy.tar.gz: ${MESON_CROSSFILE}
 pkgs/numpy.whl: BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
 pkgs/numpy.whl: ${MESON_CROSSFILE}
 
@@ -398,6 +394,7 @@ pkgs/shapely.whl: BUILD_ENV_VARS += GEOS_LIBRARY_PATH="${PWD}/pkgs/geos.build/us
 # Use numpy dev build from our registry. Our patches have been merged upstream, so for the next numpy release we can remove this.
 pkgs/shapely.whl: BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
 pkgs/shapely.whl: BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
+pkgs/shapely.whl: BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
 pkgs/shapely.whl: BUILD_EXTRA_FLAGS = --skip-dependency-check
 
 # Needs to have the pypandoc executable in the repo
@@ -413,8 +410,14 @@ pkgs/uvloop.whl: BUILD_EXTRA_FLAGS = '-C--build-option=build_ext --use-system-li
 pkgs/mysqlclient.whl: BUILD_ENV_VARS = WASIX_FORCE_STATIC_DEPENDENCIES=true PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig
 
 # Use numpy dev build from our registry. Our patches have been merged upstream, so for the next numpy release we can remove this.
+pkgs/pandas.tar.gz: BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
+pkgs/pandas.tar.gz: BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
+pkgs/pandas.tar.gz: BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
+pkgs/pandas.tar.gz: BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
+pkgs/pandas.tar.gz: ${MESON_CROSSFILE}
 pkgs/pandas.whl: BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
 pkgs/pandas.whl: BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
+pkgs/pandas.whl: BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
 pkgs/pandas.whl: BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
 pkgs/pandas.whl: ${MESON_CROSSFILE}
 
