@@ -5,6 +5,13 @@ PYTHON_PACKAGE=${1:-"python-with-packages"}
 for testfile in tests/*.py; do
     # Extract just the filename without path
     TEST_NAME=$(basename "$testfile")
+
+    # Skip test if it is a *.skip.py file
+    if [[ "$TEST_NAME" == *.skip.py ]]; then
+        echo -e "\033[0;33mSkipping:\033[0m \033[1m$TEST_NAME\033[0m"
+        continue
+    fi
+    
     
     # Print colorful running message
     echo -e "\033[0;34m▶ Running:\033[0m \033[1m$TEST_NAME\033[0m"

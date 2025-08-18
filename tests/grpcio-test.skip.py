@@ -5,12 +5,10 @@ from concurrent import futures
 import time
 import unittest
 
-# Step 4: Implement the server
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
     def SayHello(self, request, context):
         return helloworld_pb2.HelloReply(message=f"Hello, {request.name}!")
 
-# Step 5: Unit test
 class TestGRPCBasic(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
