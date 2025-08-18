@@ -48,6 +48,7 @@ WHEELS+=protobuf
 WHEELS+=grpc
 WHEELS+=numpy1
 WHEELS+=python-crc32c
+WHEELS+=requests
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
 #
