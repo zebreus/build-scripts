@@ -52,6 +52,7 @@ WHEELS+=requests
 WHEELS+=urllib3
 WHEELS+=idna
 WHEELS+=certifi
+WHEELS+=charset_normalizer
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
 #
@@ -460,6 +461,8 @@ pkgs/protobuf.tar.gz: protobuf
 #   B: wasix-clang supports automatically adding the wasm32-wasi subdir of every linker path to the linker path
 pkgs/python-crc32c.whl: pkgs/google-crc32c.build
 pkgs/python-crc32c.whl: BUILD_ENV_VARS = CRC32C_INSTALL_PREFIX=${PWD}/pkgs/google-crc32c.build/usr/local WASIX_FORCE_STATIC_DEPENDENCIES=true
+
+pkgs/charset_normalizer.whl: BUILD_ENV_VARS = CHARSET_NORMALIZER_USE_MYPYC=1
 
 #####     Building libraries     #####
 
