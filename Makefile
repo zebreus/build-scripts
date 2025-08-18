@@ -171,10 +171,16 @@ LIBS+=libxslt
 LIBS+=libxml2
 LIBS+=google-crc32c
 
-DONT_INSTALL=
+# Packages that are broken can be marked as DONT_BUILD
+# Packages that work but should not be included in the default install can be marked as DONT_INSTALL
+
+DONT_BUILD=
+# Dont build psycopg-binary, because it does not work
+DONT_BUILT+=psycopg-binary
+
+DONT_INSTALL=$(DONT_BUILD)
 # Dont install pypandoc because it uses the same name as pypandoc_binary
 DONT_INSTALL+=pypandoc
-DONT_INSTALL+=psycopg-binary
 # Dont install numpy1, because we already have numpy 2
 DONT_INSTALL+=numpy1
 # Dont install cryptography 43, because we already have 45
@@ -182,12 +188,12 @@ DONT_INSTALL+=cryptography-43.0.3-cp313-abi3-wasix_wasm32
 
 SUBMODULES=$(WHEELS) $(LIBS)
 
-BUILT_WHEELS=$(addprefix pkgs/,$(addsuffix .whl,$(WHEELS)))
+BUILT_WHEELS=$(addprefix pkgs/,$(addsuffix .whl,$(filter-out $(DONT_BUILD),$(WHEELS))))
 UNPACKED_WHEELS=$(addprefix pkgs/,$(addsuffix .wheel,$(WHEELS)))
 BUILT_SDISTS=$(addprefix pkgs/,$(addsuffix .tar.gz,$(WHEELS)))
 UNPACKED_SDISTS=$(addprefix pkgs/,$(addsuffix .sdist,$(WHEELS)))
 UNPACKED_LIBS=$(addprefix pkgs/,$(addsuffix .build,$(LIBS)))
-BUILT_LIBS=$(addprefix pkgs/,$(addsuffix .tar.xz,$(LIBS)))
+BUILT_LIBS=$(addprefix pkgs/,$(addsuffix .tar.xz,$(filter-out $(DONT_BUILD),$(LIBS))))
 
 # Names of the wheels and libs that we want to install
 BUILT_WHEELS_TO_INSTALL_NAMES=$(filter-out $(DONT_INSTALL),$(WHEELS))
