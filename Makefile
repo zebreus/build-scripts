@@ -365,8 +365,8 @@ pkgs/pillow.whl: BUILD_EXTRA_FLAGS = -Cplatform-guessing=disable
 
 # We need to install, because we can only specify one sysroot in pkgconfig
 pkgs/lxml.tar.gz: pkgs/libxml2.build pkgs/libxslt.build | install-libxml2 install-libxslt
-pkgs/lxml.tar.gz: BUILD_ENV_VARS = PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${PWD}/pkgs/libxml2.build/usr/local/lib/wasm32-wasi/pkgconfig:${PWD}/pkgs/libxslt.build/usr/local/lib/wasm32-wasi/pkgconfig
-pkgs/lxml.whl: BUILD_ENV_VARS = PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${PWD}/pkgs/libxml2.build/usr/local/lib/wasm32-wasi/pkgconfig:${PWD}/pkgs/libxslt.build/usr/local/lib/wasm32-wasi/pkgconfig
+pkgs/lxml.tar.gz: BUILD_ENV_VARS = PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${PWD}/pkgs/libxml2.build/usr/local/lib/wasm32-wasi/pkgconfig:${PWD}/pkgs/libxslt.build/usr/local/lib/wasm32-wasi/pkgconfig WASIX_FORCE_STATIC_DEPENDENCIES=true
+pkgs/lxml.whl: BUILD_ENV_VARS = PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${PWD}/pkgs/libxml2.build/usr/local/lib/wasm32-wasi/pkgconfig:${PWD}/pkgs/libxslt.build/usr/local/lib/wasm32-wasi/pkgconfig WASIX_FORCE_STATIC_DEPENDENCIES=true
 
 pkgs/dateutil.tar.gz: PREPARE = python3 updatezinfo.py
 
