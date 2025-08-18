@@ -193,3 +193,6 @@
 [submodule "urllib3"]
 	path = urllib3
 	url = https://github.com/urllib3/urllib3.git
+[submodule "idna"]
+	path = idna
+	url = https://github.com/kjd/idna.git
