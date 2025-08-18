@@ -1,0 +1,57 @@
+From 5ef273343126e50a81a3aa55e3e8d4bb62e26196 Mon Sep 17 00:00:00 2001
+From: Zebreus <zebreus@zebre.us>
+Date: Mon, 18 Aug 2025 18:08:34 +0200
+Subject: [PATCH] Add support for using wasix numpy in builds by setting a
+ special environment variable
+
+---
+ numpy/__init__.py | 22 +++++++++++++++++++++-
+ 1 file changed, 21 insertions(+), 1 deletion(-)
+
+diff --git a/numpy/__init__.py b/numpy/__init__.py
+index 91da496a95..c9eb8f56d2 100644
+--- a/numpy/__init__.py
++++ b/numpy/__init__.py
+@@ -101,6 +101,7 @@
+ """
+ import sys
+ import warnings
++import os
+ 
+ from ._globals import _NoValue, _CopyMode
+ # These exceptions were moved in 1.25 and are hidden from __dir__()
+@@ -122,6 +123,25 @@
+ 
+ if __NUMPY_SETUP__:
+     sys.stderr.write('Running from numpy source directory.\n')
++elif os.environ.get('NUMPY_ONLY_GET_INCLUDE', 'UNKNOWN') != "UNKNOWN":
++    # This is a hack to allow build systems to use numpy's get_include
++    # to find headers for wasm, while not importing the rest of numpy.
++    # (Which would fail because WASIX native modules obviously don't work on linux).
++    def get_include():
++        import os
++        return os.path.join(os.path.dirname(__file__), '_core', 'include')
++    import types
++    f2py = types.ModuleType('numpy.f2py')
++    f2py.__file__ = os.path.join(os.path.dirname(__file__), 'f2py', '__init__.py')
++    del types
++    sys.modules['numpy.f2py'] = f2py
++    my_code = '''
++def get_include():
++    import os
++    return os.path.join(os.path.dirname(__file__), 'src')
++'''
++    exec(my_code, f2py.__dict__)
++    sys.modules[__name__].f2py = f2py
+ else:
+     # Allow distributors to run custom init code before importing numpy.core
+     from . import _distributor_init
+@@ -458,4 +478,4 @@ def _pyinstaller_hooks_dir():
+ 
+ 
+ # Remove symbols imported for internal use
+-del sys, warnings
++del sys, warnings, os
+-- 
+2.48.1
+
