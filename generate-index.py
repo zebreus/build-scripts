@@ -28,6 +28,7 @@ wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'ddtrace*.
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'httptools*.whl'))
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'orjson*.whl'))
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'peewee*.whl'))
+wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'pyarrow*.whl'))
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'pynacl*.whl'))
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'pyyaml*.whl'))
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'regex*.whl'))
