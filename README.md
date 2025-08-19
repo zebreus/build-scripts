@@ -210,3 +210,19 @@ for f in $(find "$INSTALL_DIR" -name '*.so') ; do echo $f ; wasm-tools print $f 
 ```
 
 to check which python libraries depend on shared libs. We try to keep that to a minimum, so wheels contain everything that is required to use a package.
+
+### Structure
+
+There is the pkgs folder that contains most stuff
+
+For each project that can be built there are multiple files depending on the type.
+
+Nearly everything starts with a `*.src` folder. That one contains the clean checkout of the submodule we try not to modify the `*.src`. Based on the `*.src` folder you can then make a `*.prepared` folder. The `*.prepared` is a copy of `*.src`, but with a few of our patches applied. From the `*.prepared` folder you can then create a `*.build` folder. This is the directory in which the buildstep is executed.
+
+For python modules the buildstep involves creating a `*.tar.gz` sdist from the `*.build` folder. The `*.tar.gz` is then unzipped to a `*.sdist` folder. From that `.sdist` folder a `*.whl` wheel is created.
+
+For WASIX libraries (and application) the buildstep installs the library with the correct directory structure into a `*.lib` folder. That folder is then packed into a final `*.tar.xz`
+
+```
+TODO: Make this more understandable
+```
