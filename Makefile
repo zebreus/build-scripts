@@ -53,6 +53,7 @@ WHEELS+=urllib3
 WHEELS+=idna
 WHEELS+=certifi
 WHEELS+=charset_normalizer
+WHEELS+=pypng
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
 #
