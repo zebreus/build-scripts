@@ -1,207 +1,207 @@
 [submodule "numpy"]
-	path = numpy
+	path = pkgs/numpy.source
 	url = https://github.com/numpy/numpy.git
 [submodule "markupsafe"]
-	path = markupsafe
+	path = pkgs/markupsafe.source
 	url = https://github.com/pallets/markupsafe.git
 [submodule "pandas"]
-	path = pandas
+	path = pkgs/pandas.source
 	url = https://github.com/pandas-dev/pandas.git
 [submodule "pytz"]
-	path = pytz
+	path = pkgs/pytz.source
 	url = https://github.com/stub42/pytz.git
 [submodule "dateutil"]
-	path = dateutil
+	path = pkgs/dateutil.source
 	url = https://github.com/dateutil/dateutil.git
 [submodule "tzdata"]
-	path = tzdata
+	path = pkgs/tzdata.source
 	url = https://github.com/python/tzdata.git
 [submodule "six"]
-	path = six
+	path = pkgs/six.source
 	url = https://github.com/benjaminp/six.git
 [submodule "msgpack-python"]
-	path = msgpack-python
+	path = pkgs/msgpack-python.source
 	url = https://github.com/msgpack/msgpack-python
 [submodule "pycryptodome"]
-	path = pycryptodome
+	path = pkgs/pycryptodome.source
 	url = https://github.com/Legrandin/pycryptodome.git
 [submodule "pycryptodomex"]
-	path = pycryptodomex
+	path = pkgs/pycryptodomex.source
 	url = https://github.com/Legrandin/pycryptodome.git
 [submodule "zbar"]
-	path = zbar
+	path = pkgs/zbar.source
 	url = https://github.com/mchehab/zbar.git
 [submodule "pyzbar"]
-	path = pyzbar
+	path = pkgs/pyzbar.source
 	url = https://github.com/NaturalHistoryMuseum/pyzbar.git
 [submodule "libffi"]
-	path = libffi
+	path = pkgs/libffi.source
 	url = https://github.com/wasix-org/libffi
 [submodule "cython"]
-	path = cython
+	path = pkgs/cython.source
 	url = https://github.com/cython/cython.git
 [submodule "pypandoc"]
-	path = pypandoc
+	path = pkgs/pypandoc.source
 	url = https://github.com/JessicaTegner/pypandoc.git
 [submodule "pypandoc_binary"]
-	path = pypandoc_binary
+	path = pkgs/pypandoc_binary.source
 	url = https://github.com/JessicaTegner/pypandoc.git
 [submodule "pandoc"]
-	path = pandoc
+	path = pkgs/pandoc.source
 	url = https://github.com/haskell-wasm/pandoc.git
 [submodule "postgresql"]
-	path = postgresql
+	path = pkgs/postgresql.source
 	url = https://git.postgresql.org/git/postgresql.git
 [submodule "psycopg"]
-	path = psycopg
+	path = pkgs/psycopg.source
 	url = https://github.com/psycopg/psycopg.git
 [submodule "psycopg-pool"]
-	path = psycopg-pool
+	path = pkgs/psycopg-pool.source
 	url = https://github.com/psycopg/psycopg.git
 [submodule "psycopg-binary"]
-	path = psycopg-binary
+	path = pkgs/psycopg-binary.source
 	url = https://github.com/psycopg/psycopg.git
 [submodule "brotli"]
-	path = brotli
+	path = pkgs/brotli.source
 	url = https://github.com/google/brotli.git
 [submodule "brotlicffi"]
-	path = brotlicffi
+	path = pkgs/brotlicffi.source
 	url = https://github.com/python-hyper/brotlicffi.git
 [submodule "cffi"]
-	path = cffi
+	path = pkgs/cffi.source
 	url = https://github.com/python-cffi/cffi.git
 [submodule "pillow"]
-	path = pillow
+	path = pkgs/pillow.source
 	url = https://github.com/python-pillow/Pillow.git
 [submodule "zlib"]
-	path = zlib
+	path = pkgs/zlib.source
 	url = https://github.com/madler/zlib.git
 [submodule "libjpeg-turbo"]
-	path = libjpeg-turbo
+	path = pkgs/libjpeg-turbo.source
 	url = https://github.com/libjpeg-turbo/libjpeg-turbo.git
 [submodule "xz"]
-	path = xz
+	path = pkgs/xz.source
 	url = https://github.com/tukaani-project/xz.git
 [submodule "libtiff"]
-	path = libtiff
+	path = pkgs/libtiff.source
 	url = https://gitlab.com/libtiff/libtiff.git
 [submodule "libwebp"]
-	path = libwebp
+	path = pkgs/libwebp.source
 	url = https://chromium.googlesource.com/webm/libwebp
 [submodule "giflib"]
-	path = giflib
+	path = pkgs/giflib.source
 	url = https://git.code.sf.net/p/giflib/code
 [submodule "libpng"]
-	path = libpng
+	path = pkgs/libpng.source
 	url = https://git.code.sf.net/p/libpng/code
 [submodule "SDL"]
-	path = SDL3
+	path = pkgs/SDL3.source
 	url = https://github.com/libsdl-org/SDL.git
 [submodule "openjpeg"]
-	path = openjpeg
+	path = pkgs/openjpeg.source
 	url = https://github.com/uclouvain/openjpeg.git
 [submodule "matplotlib"]
-	path = matplotlib
+	path = pkgs/matplotlib.source
 	url = https://github.com/matplotlib/matplotlib.git
 [submodule "libuv"]
-	path = libuv
+	path = pkgs/libuv.source
 	url = https://github.com/libuv/libuv.git
 [submodule "uvloop"]
-	path = uvloop
+	path = pkgs/uvloop.source
 	url = https://github.com/MagicStack/uvloop.git
 [submodule "mariadb-connector-c"]
-	path = mariadb-connector-c
+	path = pkgs/mariadb-connector-c.source
 	url = https://github.com/mariadb-corporation/mariadb-connector-c.git
 [submodule "openssl"]
-	path = openssl
+	path = pkgs/openssl.source
 	url = https://github.com/openssl/openssl
 [submodule "mysqlclient"]
-	path = mysqlclient
+	path = pkgs/mysqlclient.source
 	url = https://github.com/PyMySQL/mysqlclient.git
 [submodule "python-qrcode"]
-	path = python-qrcode
+	path = pkgs/python-qrcode.source
 	url = https://github.com/lincolnloop/python-qrcode.git
 [submodule "pycparser"]
-	path = pycparser
+	path = pkgs/pycparser.source
 	url = https://github.com/eliben/pycparser.git
 [submodule "pydantic"]
-	path = pydantic
+	path = pkgs/pydantic.source
 	url = https://github.com/pydantic/pydantic.git
 [submodule "typing_extensions"]
-	path = typing_extensions
+	path = pkgs/typing_extensions.source
 	url = https://github.com/python/typing_extensions.git
 [submodule "typing-inspection"]
-	path = typing-inspection
+	path = pkgs/typing-inspection.source
 	url = https://github.com/pydantic/typing-inspection.git
 [submodule "annotated-types"]
-	path = annotated-types
+	path = pkgs/annotated-types.source
 	url = https://github.com/annotated-types/annotated-types.git
 [submodule "bzip2"]
-	path = bzip2
+	path = pkgs/bzip2.source
 	url = git://sourceware.org/git/bzip2.git
 [submodule "python-wasix-binaries"]
-	path = python-wasix-binaries
+	path = pkgs/python-wasix-binaries.source
 	url = https://github.com/wasix-org/python-wasix-binaries
 [submodule "util-linux"]
-	path = util-linux
+	path = pkgs/util-linux.source
 	url = https://github.com/util-linux/util-linux
 [submodule "openssh"]
-	path = openssh
+	path = pkgs/openssh.source
 	url = https://github.com/openssh/openssh-portable.git
 [submodule "dropbear"]
-	path = dropbear
+	path = pkgs/dropbear.source
 	url = https://github.com/mkj/dropbear.git
 [submodule "shapely"]
-	path = shapely
+	path = pkgs/shapely.source
 	url = https://github.com/shapely/shapely.git
 [submodule "tinyxml2"]
-	path = tinyxml2
+	path = pkgs/tinyxml2.source
 	url = https://github.com/leethomason/tinyxml2.git
 [submodule "geos"]
-	path = geos
+	path = pkgs/geos.source
 	url = https://github.com/libgeos/geos.git
 [submodule "mrab-regex"]
-	path = regex
+	path = pkgs/regex.source
 	url = https://github.com/mrabarnett/mrab-regex.git
 [submodule "lxml"]
-	path = lxml
+	path = pkgs/lxml.source
 	url = https://github.com/lxml/lxml.git
 [submodule "libxslt"]
-	path = libxslt
+	path = pkgs/libxslt.source
 	url = https://gitlab.gnome.org/GNOME/libxslt.git
 [submodule "libxml2"]
-	path = libxml2
+	path = pkgs/libxml2.source
 	url = https://gitlab.gnome.org/GNOME/libxml2.git
 [submodule "protobuf"]
-	path = protobuf
+	path = pkgs/protobuf.source
 	url = https://github.com/protocolbuffers/protobuf.git
 [submodule "grpc"]
-	path = grpc
+	path = pkgs/grpc.source
 	url = https://github.com/grpc/grpc.git
 [submodule "numpy1"]
-	path = numpy1
+	path = pkgs/numpy1.source
 	url = https://github.com/numpy/numpy.git
 [submodule "python-crc32c"]
-	path = python-crc32c
+	path = pkgs/python-crc32c.source
 	url = https://github.com/googleapis/python-crc32c.git
 [submodule "google-crc32c"]
-	path = google-crc32c
+	path = pkgs/google-crc32c.source
 	url = https://github.com/google/crc32c.git
 [submodule "requests"]
-	path = requests
+	path = pkgs/requests.source
 	url = https://github.com/psf/requests.git
 [submodule "urllib3"]
-	path = urllib3
+	path = pkgs/urllib3.source
 	url = https://github.com/urllib3/urllib3.git
 [submodule "idna"]
-	path = idna
+	path = pkgs/idna.source
 	url = https://github.com/kjd/idna.git
 [submodule "certifi"]
-	path = certifi
+	path = pkgs/certifi.source
 	url = https://github.com/certifi/python-certifi.git
 [submodule "charset_normalizer"]
-	path = charset_normalizer
+	path = pkgs/charset_normalizer.source
 	url = https://github.com/jawah/charset_normalizer.git
 [submodule "pypng"]
-	path = pypng
+	path = pkgs/pypng.source
 	url = https://gitlab.com/drj11/pypng.git
