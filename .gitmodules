@@ -202,3 +202,6 @@
 [submodule "charset_normalizer"]
 	path = charset_normalizer
 	url = https://github.com/jawah/charset_normalizer.git
+[submodule "pypng"]
+	path = pypng
+	url = https://gitlab.com/drj11/pypng.git
