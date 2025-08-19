@@ -13,4 +13,5 @@ __pycache__
 # Unpacked wheels
 /pkgs/*.wheel
 # Unpacked libs
+/pkgs/*.lib
 /pkgs/*.build
