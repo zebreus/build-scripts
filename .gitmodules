@@ -211,3 +211,6 @@
 [submodule "pkgs/arrow.source"]
 	path = pkgs/arrow.source
 	url = https://github.com/apache/arrow.git
+[submodule "pkgs/rapidjson.source"]
+	path = pkgs/rapidjson.source
+	url = https://github.com/Tencent/rapidjson.git

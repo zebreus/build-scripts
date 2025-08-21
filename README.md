@@ -185,6 +185,7 @@ psycopg3-c is just the sdist of psycopg3-binary
 * libxml2: 2.14.5
 * google-crc32c: 1.1.2
 * arrow: 19.0.1
+* rapidjson: 1.1.0
 
 ### Notes
 
