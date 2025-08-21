@@ -176,6 +176,7 @@ LIBS+=geos
 LIBS+=libxslt
 LIBS+=libxml2
 LIBS+=google-crc32c
+LIBS+=rapidjson
 
 # Packages that are broken can be marked as DONT_BUILD
 # Packages that work but should not be included in the default install can be marked as DONT_INSTALL
@@ -769,6 +770,17 @@ $(call lib,google-crc32c):
 	cd $(call build,$@) && rm -rf shared static
 	cd $(call build,$@) && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=OFF -DCRC32C_BUILD_TESTS=OFF -DCRC32C_USE_GLOG=OFF -DCRC32C_BUILD_BENCHMARKS=OFF 
 	cd $(call build,$@) && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=ON -DCRC32C_BUILD_TESTS=OFF -DCRC32C_USE_GLOG=OFF -DCRC32C_BUILD_BENCHMARKS=OFF
+	cd $(call build,$@) && cmake --build static -j16
+	cd $(call build,$@) && cmake --build shared -j16
+	$(reset_install_dir) $@
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install static
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
+	touch $@
+
+$(call lib,rapidjson):
+	cd $(call build,$@) && rm -rf shared static
+	cd $(call build,$@) && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=OFF -DRAPIDJSON_BUILD_TESTS=OFF
+	cd $(call build,$@) && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=ON -DRAPIDJSON_BUILD_TESTS=OFF
 	cd $(call build,$@) && cmake --build static -j16
 	cd $(call build,$@) && cmake --build shared -j16
 	$(reset_install_dir) $@
