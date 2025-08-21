@@ -51,7 +51,7 @@ async def test_tcp_echo_server():
 async def main():
     await test_sleep()
     await test_task_creation()
-    test_tcp_echo_server():
+    await test_tcp_echo_server()
     print("✅ All uvloop tests passed.")
 
 if __name__ == "__main__":
