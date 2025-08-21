@@ -402,6 +402,11 @@ $(call prepared,grpc):
 	$(prepare_submodule)
 	cd $@/third_party/abseil-cpp && git am $(call patches_for,abseil-cpp)
 
+$(call prepared,rapidjson):
+	$(prepare_submodule)
+	cd $@ && git cherry-pick c6a6c7be4d927b57ca4c40cbcfadaf6dfc5212cb
+	cd $@ && git cherry-pick 20de638fece2706eff6e372a6bcacd322a423240
+
 #####     Building wheels     #####
 
 # A target to build a wheel from a python submodule
@@ -778,14 +783,12 @@ $(call lib,google-crc32c):
 	touch $@
 
 $(call lib,rapidjson):
-	cd $(call build,$@) && rm -rf shared static
-	cd $(call build,$@) && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=OFF -DRAPIDJSON_BUILD_TESTS=OFF
-	cd $(call build,$@) && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=ON -DRAPIDJSON_BUILD_TESTS=OFF
-	cd $(call build,$@) && cmake --build static -j16
-	cd $(call build,$@) && cmake --build shared -j16
+	cd $(call build,$@) && rm -rf header_only
+	cd $(call build,$@) && cmake -B header_only -DCMAKE_BUILD_TYPE=Release -DRAPIDJSON_BUILD_TESTS=OFF -DRAPIDJSON_BUILD_EXAMPLES=OFF
+	cd $(call build,$@) && cmake --build header_only -j16
 	$(reset_install_dir) $@
-	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install static
-	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install header_only
+	sed -i 's|/usr/local/include|$${CMAKE_CURRENT_LIST_DIR}/../../../include|' ${PWD}/$@/usr/local/lib/cmake/RapidJSON/RapidJSONConfig.cmake
 	touch $@
 
 #####     Installing wheels and libs     #####
