@@ -819,5 +819,12 @@ clean: init
 	rm -rf $(call wheel,*)
 	rm -rf $(call sdist,*)
 
+clean-artifacts:
+	rm -rf artifacts
+	mkdir -p artifacts
+	rm -rf $(call tarxz,*)
+	rm -rf $(call targz,*)
+	rm -rf $(call whl,*)
+
 .SECONDARY: $(BUILT_SDISTS) $(BUILT_LIBS) $(BUILT_WHEELS) $(SUBMODULES) $(UNPACKED_LIBS)
 .PHONY: all wheels libs external-wheels test install install-wheels install-libs clean init $(INSTALL_WHEELS_TARGETS) $(INSTALL_LIBS_TARGETS)
