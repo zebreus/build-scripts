@@ -804,7 +804,7 @@ $(INSTALL_LIBS_TARGETS): install-%: ${WASIX_SYSROOT}/.%.installed
 INSTALL_PYTHON_WASIX_BINARIES_WHEELS_TARGETS=$(addprefix install-pwb-,$(PYTHON_WASIX_BINARIES_WHEELS))
 $(INSTALL_PYTHON_WASIX_BINARIES_WHEELS_TARGETS): install-pwb-%: ${INSTALL_DIR}/.pwb-%.installed
 
-init: $(SUBMODULES)
+init: $(addsuffix /.git,$(SUBMODULES))
 
 clean: init
 	rm -rf python python.webc
