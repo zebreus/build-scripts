@@ -205,3 +205,6 @@
 [submodule "pypng"]
 	path = pkgs/pypng.source
 	url = https://gitlab.com/drj11/pypng.git
+[submodule "pkgs/pyarrow.source"]
+	path = pkgs/pyarrow.source
+	url = https://github.com/apache/arrow.git

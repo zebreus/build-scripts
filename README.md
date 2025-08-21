@@ -149,6 +149,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * certifi: 2025.08.03
 * charset-normalizer: 3.4.3
 * pypng: 0.20250521.0
+* pyarrow: 19.0.1
 
 psycopg3-c is just the sdist of psycopg3-binary
 
