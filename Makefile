@@ -301,6 +301,10 @@ wheels: $(BUILT_WHEELS)
 external-wheels: $(PWB_WHEELS_TO_INSTALL)
 libs: $(BUILT_LIBS)
 
+install: install-wheels install-libs
+install-wheels: $(ALL_INSTALLED_WHEELS)
+install-libs: $(ALL_INSTALLED_LIBS)
+
 #####     Downloading and uploading the python webc     #####
 
 PYTHON_WEBC=zebreus/python
@@ -784,10 +788,6 @@ ${INSTALL_DIR}/.pwb-%.installed: ${PYTHON_WASIX_BINARIES}/wheels/%.whl
 	unzip -oq $< -d ${INSTALL_DIR}
 	touch $@
 
-install: install-wheels install-libs
-install-wheels: $(ALL_INSTALLED_WHEELS)
-install-libs: $(ALL_INSTALLED_LIBS)
-
 INSTALL_WHEELS_TARGETS=$(addprefix install-,$(WHEELS))
 INSTALL_LIBS_TARGETS=$(addprefix install-,$(LIBS))
 $(INSTALL_WHEELS_TARGETS): install-%: ${INSTALL_DIR}/.%.installed
@@ -796,7 +796,9 @@ $(INSTALL_LIBS_TARGETS): install-%: ${WASIX_SYSROOT}/.%.installed
 INSTALL_PYTHON_WASIX_BINARIES_WHEELS_TARGETS=$(addprefix install-pwb-,$(PYTHON_WASIX_BINARIES_WHEELS))
 $(INSTALL_PYTHON_WASIX_BINARIES_WHEELS_TARGETS): install-pwb-%: ${INSTALL_DIR}/.pwb-%.installed
 
-clean: $(SUBMODULES)
+init: $(SUBMODULES)
+
+clean: init
 	rm -rf python python.webc
 	rm -rf cross-venv native-venv
 	rm -rf python-with-packages
@@ -809,7 +811,5 @@ clean: $(SUBMODULES)
 	rm -rf $(call wheel,*)
 	rm -rf $(call sdist,*)
 
-init: $(SUBMODULES)
-
-.PRECIOUS: $(WHEELS) $(LIBS) $(UNPACKED_LIBS) $(BUILT_LIBS) $(BUILT_WHEELS) $(SUBMODULES)
-.PHONY: install install-wheels install-libs $(INSTALL_WHEELS_TARGETS) $(INSTALL_LIBS_TARGETS) clean init all wheels libs external-wheels
+.SECONDARY: $(BUILT_SDISTS) $(BUILT_LIBS) $(BUILT_WHEELS) $(SUBMODULES) $(UNPACKED_LIBS)
+.PHONY: all wheels libs external-wheels install install-wheels install-libs clean init $(INSTALL_WHEELS_TARGETS) $(INSTALL_LIBS_TARGETS)
