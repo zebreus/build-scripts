@@ -6,8 +6,9 @@ SHELL:=/usr/bin/bash
 
 PWD:=$(shell pwd)
 PYTHON_WASIX_BINARIES:=${PWD}/python-wasix-binaries
-MESON_CROSSFILE=$(shell pwd)/resources/wasi.meson.cross
-BAZEL_TOOLCHAIN=$(shell pwd)/resources/bazel-toolchain
+MESON_CROSSFILE=${PWD}/resources/wasi.meson.cross
+BAZEL_TOOLCHAIN=${PWD}/resources/bazel-toolchain
+PATCH_DIR=${PWD}/patches
 
 # Wheels build a .whl file
 WHEELS=
@@ -191,41 +192,73 @@ DONT_INSTALL+=numpy1
 # Dont install cryptography 43, because we already have 45
 DONT_INSTALL+=cryptography-43.0.3-cp313-abi3-wasix_wasm32
 
-SUBMODULES=$(WHEELS) $(LIBS)
 
-BUILT_WHEELS=$(addprefix pkgs/,$(addsuffix .whl,$(filter-out $(DONT_BUILD),$(WHEELS))))
-UNPACKED_WHEELS=$(addprefix pkgs/,$(addsuffix .wheel,$(WHEELS)))
-BUILT_SDISTS=$(addprefix pkgs/,$(addsuffix .tar.gz,$(WHEELS)))
-UNPACKED_SDISTS=$(addprefix pkgs/,$(addsuffix .sdist,$(WHEELS)))
-UNPACKED_LIBS=$(addprefix pkgs/,$(addsuffix .lib,$(LIBS)))
-BUILT_LIBS=$(addprefix pkgs/,$(addsuffix .tar.xz,$(filter-out $(DONT_BUILD),$(LIBS))))
+# Helper function to get the project name from a path
+project_name = $(basename $(basename $(notdir $(1))))
+patches_for = $(shell find ${PATCH_DIR} -name '$(call project_name,$(1))-00*.patch' | sort)
+
+# Helper functions to generate the paths to targets
+# Targets should only ever be addressed by these functions
+in_pkgs_with_suffix = $(addprefix pkgs/,$(addsuffix $(1),$(call project_name,$(2))))
+source = $(call in_pkgs_with_suffix,.source,$(1))
+prepared = $(call in_pkgs_with_suffix,.prepared,$(1))
+build = $(call in_pkgs_with_suffix,.build,$(1))
+targz = $(call in_pkgs_with_suffix,.tar.gz,$(1))
+tarxz = $(call in_pkgs_with_suffix,.tar.xz,$(1))
+sdist = $(call in_pkgs_with_suffix,.sdist,$(1))
+whl = $(call in_pkgs_with_suffix,.whl,$(1))
+wheel = $(call in_pkgs_with_suffix,.wheel,$(1))
+lib = $(call in_pkgs_with_suffix,.lib,$(1))
+
+WHEEL_SUBMODULES=$(call source,$(WHEELS))
+LIB_SUBMODULES=$(call source,$(LIBS))
+SUBMODULES=$(WHEEL_SUBMODULES) $(LIB_SUBMODULES)
+PREPARED_SUBMODULES=$(call prepared,$(SUBMODULES))
+
+BUILT_WHEELS=$(call whl,$(filter-out $(DONT_BUILD),$(WHEELS)))
+UNPACKED_WHEELS=$(call wheel,$(WHEELS))
+BUILT_SDISTS=$(call targz,$(WHEELS))
+UNPACKED_SDISTS=$(call sdist,$(WHEELS))
+UNPACKED_LIBS=$(call lib,$(LIBS))
+BUILT_LIBS=$(call tarxz,$(filter-out $(DONT_BUILD),$(LIBS)))
 
 # Names of the wheels and libs that we want to install
 BUILT_WHEELS_TO_INSTALL_NAMES=$(filter-out $(DONT_INSTALL),$(WHEELS))
 PWB_WHEELS_TO_INSTALL_NAMES=$(filter-out $(DONT_INSTALL),$(PYTHON_WASIX_BINARIES_WHEELS))
 BUILT_LIBS_TO_INSTALL_NAMES=$(filter-out $(DONT_INSTALL),$(LIBS))
 # Paths to the .whl and .tar.xz files that we want to install
-BUILT_WHEELS_TO_INSTALL=$(addprefix pkgs/,$(addsuffix .whl,$(BUILT_WHEELS_TO_INSTALL_NAMES)))
+BUILT_WHEELS_TO_INSTALL=$(call whl,$(BUILT_WHEELS_TO_INSTALL_NAMES))
 PWB_WHEELS_TO_INSTALL=$(addprefix ${PYTHON_WASIX_BINARIES}/wheels/,$(addsuffix .whl,$(PWB_WHEELS_TO_INSTALL_NAMES)))
-BUILT_LIBS_TO_INSTALL=$(addprefix pkgs/,$(addsuffix .tar.xz,$(BUILT_LIBS_TO_INSTALL_NAMES)))
+BUILT_LIBS_TO_INSTALL=$(call tarxz,$(BUILT_LIBS_TO_INSTALL_NAMES))
 # Marker files to indicate that the wheels and libs have been installed
 ALL_INSTALLED_WHEELS=$(addprefix ${INSTALL_DIR}/.,$(addsuffix .installed,$(BUILT_WHEELS_TO_INSTALL_NAMES)))
 ALL_INSTALLED_WHEELS+=$(addprefix ${INSTALL_DIR}/.pwb-,$(addsuffix .installed,$(PWB_WHEELS_TO_INSTALL_NAMES)))
 ALL_INSTALLED_LIBS=$(addprefix ${WASIX_SYSROOT}/.,$(addsuffix .installed,$(BUILT_LIBS_TO_INSTALL_NAMES)))
 
 # mkdir but resets the timestamp if it didnt exist before
-define reset_builddir
+define reset_install_dir
 bash -c 'rm -rf $$1 ; mkdir $$1 && touch -t 197001010000.00 $$1 || true' .
 endef
 
 define reset_submodule =
-rm -rf $@
-git restore $@
-git submodule update --init --recursive $@
-cd $@ && git clean -dxf >/dev/null 2>&1 || true
-cd $@ && make clean >/dev/null 2>&1 || true
+rm -rf $(realpath $(dir $@))
+git restore $(realpath $(dir $@))
+git submodule update --init --recursive $(realpath $(dir $@))
+cd $(realpath $(dir $@)) && git clean -dxf >/dev/null 2>&1 || true
+cd $(realpath $(dir $@)) && make clean >/dev/null 2>&1 || true
+cd $(realpath $(dir $@)) && git am --abort >/dev/null 2>&1 || true
+endef
+
+define prepare_submodule =
+test -n "$@" 
+cd $@ && git worktree remove . >/dev/null 2>&1 || true
+rm -rf ${PWD}/$@
+cd $(call source,$@) && git worktree prune >/dev/null 2>&1 || true
+cd $(call source,$@) && git worktree add --checkout --detach ${PWD}/$@
+# Quite a long command to clone submodules from the source directory instead of the remote
+cd $@ && git -c protocol.file.allow=always $$(cd ${PWD}/$(call source,$@) && git submodule foreach --recursive bash -c 'echo -c url.file://$$(pwd).insteadOf=$$(git remote get-url origin)' | grep -v Entering | xargs echo) submodule update --init --recursive --progress
 cd $@ && git am --abort >/dev/null 2>&1 || true
-cd $@ && find ../patches -name '$@-00*.patch' | sort | xargs -n1 git am
+cd $@ && echo | git am $(call patches_for,$(call project_name,$@))
 endef
 
 # Customizable build script
@@ -235,21 +268,21 @@ endef
 # PREPARE is a command to run before building the wheel. Defaults to empty. Runs inside the submodule directory
 define build_wheel =
 mkdir -p pkgs
-if test -n "${PREPARE}" ; then source ./cross-venv/bin/activate && cd $(subst .whl,.sdist,$@) && _= ${PREPARE} ; fi
-source ./cross-venv/bin/activate && cd $(subst .whl,.sdist,$@) && ${BUILD_ENV_VARS} python3 -m build --wheel ${BUILD_EXTRA_FLAGS}
+if test -n "${PREPARE}" ; then source ./cross-venv/bin/activate && cd $(call sdist,$@) && _= ${PREPARE} ; fi
+source ./cross-venv/bin/activate && cd $(call sdist,$@) && ${BUILD_ENV_VARS} python3 -m build --wheel ${BUILD_EXTRA_FLAGS}
 mkdir -p artifacts
-cp $(subst .whl,.sdist,$@)/dist/*[2y].whl artifacts
+cp $(call sdist,$@)/dist/*[2y].whl artifacts
 # [2y] is a hack to match anything ending in wasm32 or any
-ln -sf ../artifacts/$$(basename $(subst .whl,.sdist,$@)/dist/*[2y].whl) $@
+ln -sf ../artifacts/$$(basename $(call sdist,$@)/dist/*[2y].whl) $@
 endef
 
 define build_sdist =
 mkdir -p pkgs
-if test -n "${PREPARE}" ; then source ./cross-venv/bin/activate && cd $(subst pkgs/,,$(subst .tar.gz,,$@)) && _= ${PREPARE} ; fi
-source ./cross-venv/bin/activate && cd $(subst pkgs/,,$(subst .tar.gz,,$@))/${PYPROJECT_PATH} && ${BUILD_ENV_VARS} python3 -m build --sdist ${BUILD_EXTRA_FLAGS}
+if test -n "${PREPARE}" ; then source ./cross-venv/bin/activate && cd $(call build,$@) && _= ${PREPARE} ; fi
+source ./cross-venv/bin/activate && cd $(call build,$@)/${PYPROJECT_PATH} && ${BUILD_ENV_VARS} python3 -m build --sdist ${BUILD_EXTRA_FLAGS}
 mkdir -p artifacts
-cp $(subst pkgs/,,$(subst .tar.gz,,$@))/${PYPROJECT_PATH}/dist/*[0-9].tar.gz artifacts
-ln -sf ../artifacts/$$(basename $(subst pkgs/,,$(subst .tar.gz,,$@))/${PYPROJECT_PATH}/dist/*[0-9].tar.gz) $@
+cp $(call build,$@)/${PYPROJECT_PATH}/dist/*[0-9].tar.gz artifacts
+ln -sf ../artifacts/$$(basename $(call build,$@)/${PYPROJECT_PATH}/dist/*[0-9].tar.gz) $@
 endef
 
 # Bundle the first dependency to a tar.xz file in artifacts and link it to the target
@@ -280,7 +313,7 @@ python: python.webc
 	wasmer package unpack python.webc --out-dir python
 	cp python/modules/python python/artifacts/wasix-install/cpython/bin/python3.wasm
 	touch python
-python-with-packages: python pkgs/postgresql.lib pkgs/zbar.lib pkgs/libjpeg-turbo.lib pkgs/geos.lib $(BUILT_WHEELS_TO_INSTALL) $(PWB_WHEELS_TO_INSTALL)
+python-with-packages: python $(call lib,postgresql) $(call lib,zbar) $(call lib,libjpeg-turbo) $(call lib,geos) $(BUILT_WHEELS_TO_INSTALL) $(PWB_WHEELS_TO_INSTALL)
 	### Prepare a python release with all the deps
 	# Copy the base python package
 	rm -rf python-with-packages
@@ -291,11 +324,11 @@ python-with-packages: python pkgs/postgresql.lib pkgs/zbar.lib pkgs/libjpeg-turb
 
 	# Install the libs
 	mkdir -p python-with-packages/artifacts/wasix-install/lib
-	cp -L $(PWD)/pkgs/postgresql.lib/usr/local/lib/wasm32-wasi/*.so* python-with-packages/artifacts/wasix-install/lib
-	cp -L $(PWD)/pkgs/zbar.lib/usr/local/lib/wasm32-wasi/libzbar.so* python-with-packages/artifacts/wasix-install/lib
-	cp -L $(PWD)/pkgs/libjpeg-turbo.lib/usr/local/lib/wasm32-wasi/libjpeg.so* python-with-packages/artifacts/wasix-install/lib
+	cp -L $(PWD)/$(call lib,postgresql)/usr/local/lib/wasm32-wasi/*.so* python-with-packages/artifacts/wasix-install/lib
+	cp -L $(PWD)/$(call lib,zbar)/usr/local/lib/wasm32-wasi/libzbar.so* python-with-packages/artifacts/wasix-install/lib
+	cp -L $(PWD)/$(call lib,libjpeg-turbo)/usr/local/lib/wasm32-wasi/libjpeg.so* python-with-packages/artifacts/wasix-install/lib
 	# TODO: Build shapely without a shared geos dep
-	cp -L $(PWD)/pkgs/geos.lib/usr/local/lib/wasm32-wasi/libgeos* python-with-packages/artifacts/wasix-install/lib
+	cp -L $(PWD)/$(call lib,geos)/usr/local/lib/wasm32-wasi/libgeos* python-with-packages/artifacts/wasix-install/lib
 
 	# Copy the python-wasix-binaries wheels (tomlq is provided in the yq package (but only in the python implementation))
 	tomlq -i '.package.name = "$(PYTHON_WITH_PACKAGES_WEBC)"' python-with-packages/wasmer.toml --output-format toml
@@ -321,301 +354,304 @@ cross-venv: native-venv python
 
 # A target for making sure a submodule is clean
 # To override the reset behaviour, add a target for your submodule
-$(SUBMODULES): %: #Makefile
-$(SUBMODULES): %: %.prepared
-%.prepared:
-	touch $@
-%: | %/.git
+$(PREPARED_SUBMODULES): %:
+$(PREPARED_SUBMODULES): $(call prepared,%): $(call source,%) $(call patches_for,%) | $(call source,%)/.git
+$(call prepared,%):
+	$(prepare_submodule)
+$(call source,%): | $(call source,%)/.git
+$(call source,%)/.git:
 	$(reset_submodule)
+$(call build,%): $(call prepared,%)
+	mkdir -p pkgs
+	rm -rf $@
+	cp -rf $< $@
 
-numpy: $(shell find patches -name 'numpy*.patch')
-
-pycryptodomex:
-	$(reset_submodule)
+$(call prepared,pycryptodomex):
+	$(prepare_submodule)
 	# If that file exists, pycryptodome will be built with a separate namespace
-	touch pycryptodomex/.separate_namespace
+	touch $@/.separate_namespace
 
-pypandoc_binary:
-	$(reset_submodule)
+$(call prepared,pypandoc_binary):
+	$(prepare_submodule)
 	# pyproject.toml only works for the non-binary wheel, because they are still moving to pyproject.toml
 	mv $@/setup_binary.py $@/setup.py
 	rm $@/pyproject.toml
 	# The pandoc binary also needs to be copied, but we do that in the build step
 
-protobuf:
-	$(reset_submodule)
+$(call prepared,protobuf):
+	$(prepare_submodule)
 	# The bazel toolchain files need to be in the repository
-	cp -r $(BAZEL_TOOLCHAIN) protobuf/wasix-toolchain
+	cp -r $(BAZEL_TOOLCHAIN) $@/wasix-toolchain
 
-grpc:
-	$(reset_submodule)
-	cd grpc/third_party/abseil-cpp && git am ../../../patches/abseil-cpp-0001-Enable-mmap-for-WASI.patch
+$(call prepared,grpc):
+	$(prepare_submodule)
+	cd $@/third_party/abseil-cpp && git am $(call patches_for,abseil-cpp)
 
 #####     Building wheels     #####
 
 # A target to build a wheel from a python submodule
 # To override the build behaviour, add a target for your submodule
-$(BUILT_WHEELS): pkgs/%.whl: pkgs/%.sdist | cross-venv
-pkgs/%.whl: pkgs/%.sdist
+$(BUILT_WHEELS): $(call whl,%): $(call sdist,%) | cross-venv
+$(call whl,%): $(call sdist,%)
 	$(build_wheel)
-$(BUILT_SDISTS): pkgs/%.tar.gz: % | cross-venv
-pkgs/%.tar.gz: %
+$(BUILT_SDISTS): $(call targz,%): $(call build,%) | cross-venv
+$(call targz,%): $(call build,%)
 	$(build_sdist)
-$(UNPACKED_SDISTS): pkgs/%.sdist: pkgs/%.tar.gz | cross-venv
-pkgs/%.sdist: pkgs/%.tar.gz
+$(UNPACKED_SDISTS): $(call sdist,%): $(call targz,%) | cross-venv
+$(call sdist,%): $(call targz,%)
 	rm -rf $@
 	mkdir -p $@
 	tar -xzf $^ -C $@ --strip-components=1
-$(UNPACKED_WHEELS): pkgs/%.wheel: | cross-venv
-pkgs/%.wheel: pkgs/%.whl
+$(UNPACKED_WHEELS): $(call wheel,%): | cross-venv
+$(call wheel,%): $(call whl,%)
 	rm -rf $@
 	mkdir -p $@
 	unzip -oq $< -d $@ 
 
 # Depends on zbar headers being installed
 # setup.py is not in the root directory
-pkgs/pytz.tar.gz: PYPROJECT_PATH = build/dist
+$(call targz,pytz): PYPROJECT_PATH = build/dist
 # Build the tzdb locally
-pkgs/pytz.tar.gz: PREPARE = CCC_OVERRIDE_OPTIONS='^--target=x86_64-unknown-linux' CC=clang CXX=clang++ make build
+$(call targz,pytz): PREPARE = CCC_OVERRIDE_OPTIONS='^--target=x86_64-unknown-linux' CC=clang CXX=clang++ make build
 
-pkgs/psycopg.tar.gz: PYPROJECT_PATH = psycopg
-pkgs/psycopg-pool.tar.gz: PYPROJECT_PATH = psycopg_pool
+$(call targz,psycopg): PYPROJECT_PATH = psycopg
+$(call targz,psycopg-pool): PYPROJECT_PATH = psycopg_pool
 
-pkgs/psycopg-binary.tar.gz: PYPROJECT_PATH = psycopg_binary
-pkgs/psycopg-binary.tar.gz: PREPARE = rm -rf psycopg_binary && python3 tools/build/copy_to_binary.py
+$(call targz,psycopg-binary): PYPROJECT_PATH = psycopg_binary
+$(call targz,psycopg-binary): PREPARE = rm -rf psycopg_binary && python3 tools/build/copy_to_binary.py
 # Inject a mock pg_config to the PATH, so the build process can find it
-pkgs/psycopg-binary.whl: BUILD_ENV_VARS = PATH="${PWD}/resources:$$PATH" WASIX_FORCE_STATIC_DEPENDENCIES=true
+$(call whl,psycopg-binary): BUILD_ENV_VARS = PATH="${PWD}/resources:$$PATH" WASIX_FORCE_STATIC_DEPENDENCIES=true
 # Pretend we are a normal posix-like target, so we automatically include <endian.h>
-pkgs/psycopg-binary.whl: export CCC_OVERRIDE_OPTIONS = ^-D__linux__=1
+$(call whl,psycopg-binary): export CCC_OVERRIDE_OPTIONS = ^-D__linux__=1
 
-pkgs/pillow.whl: BUILD_ENV_VARS = PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig WASIX_FORCE_STATIC_DEPENDENCIES=true
-pkgs/pillow.whl: BUILD_EXTRA_FLAGS = -Cplatform-guessing=disable
+$(call whl,pillow): BUILD_ENV_VARS = PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig WASIX_FORCE_STATIC_DEPENDENCIES=true
+$(call whl,pillow): BUILD_EXTRA_FLAGS = -Cplatform-guessing=disable
 
 # We need to install, because we can only specify one sysroot in pkgconfig
-pkgs/lxml.tar.gz: pkgs/libxml2.lib pkgs/libxslt.lib | install-libxml2 install-libxslt
-pkgs/lxml.tar.gz: BUILD_ENV_VARS = PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${PWD}/pkgs/libxml2.lib/usr/local/lib/wasm32-wasi/pkgconfig:${PWD}/pkgs/libxslt.lib/usr/local/lib/wasm32-wasi/pkgconfig WASIX_FORCE_STATIC_DEPENDENCIES=true
-pkgs/lxml.whl: BUILD_ENV_VARS = PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${PWD}/pkgs/libxml2.lib/usr/local/lib/wasm32-wasi/pkgconfig:${PWD}/pkgs/libxslt.lib/usr/local/lib/wasm32-wasi/pkgconfig WASIX_FORCE_STATIC_DEPENDENCIES=true
+$(call targz,lxml): $(call lib,libxml2) $(call lib,libxslt) | install-libxml2 install-libxslt
+$(call targz,lxml): BUILD_ENV_VARS = PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${PWD}/$(call lib,libxml2)/usr/local/lib/wasm32-wasi/pkgconfig:${PWD}/$(call lib,libxslt)/usr/local/lib/wasm32-wasi/pkgconfig WASIX_FORCE_STATIC_DEPENDENCIES=true
+$(call whl,lxml): BUILD_ENV_VARS = PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${PWD}/$(call lib,libxml2)/usr/local/lib/wasm32-wasi/pkgconfig:${PWD}/$(call lib,libxslt)/usr/local/lib/wasm32-wasi/pkgconfig WASIX_FORCE_STATIC_DEPENDENCIES=true
 
-pkgs/dateutil.tar.gz: PREPARE = python3 updatezinfo.py
+$(call targz,dateutil): PREPARE = python3 updatezinfo.py
 
 # Needs to run a cython command before building the wheel	
-pkgs/msgpack-python.tar.gz: PREPARE = make cython
+$(call targz,msgpack-python): PREPARE = make cython
 
 # Depends on a meson crossfile
-pkgs/numpy.tar.gz: BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
-pkgs/numpy.tar.gz: ${MESON_CROSSFILE}
-pkgs/numpy.whl: BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
-pkgs/numpy.whl: ${MESON_CROSSFILE}
+$(call targz,numpy): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
+$(call targz,numpy): ${MESON_CROSSFILE}
+$(call whl,numpy): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
+$(call whl,numpy): ${MESON_CROSSFILE}
 
 # Depends on a meson crossfile
-pkgs/numpy1.tar.gz: BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
-pkgs/numpy1.tar.gz: ${MESON_CROSSFILE}
-pkgs/numpy1.whl: BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
-pkgs/numpy1.whl: ${MESON_CROSSFILE}
+$(call targz,numpy1): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
+$(call targz,numpy1): ${MESON_CROSSFILE}
+$(call whl,numpy1): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
+$(call whl,numpy1): ${MESON_CROSSFILE}
 
-pkgs/shapely.whl: pkgs/geos.lib
+$(call whl,shapely): $(call lib,geos)
 # TODO: Static build don't work yet, because we would have to specify recursive dependencies manually
-# pkgs/shapely.whl: BUILD_ENV_VARS += WASIX_FORCE_STATIC_DEPENDENCIES=true
+# $(call whl,shapely): BUILD_ENV_VARS += WASIX_FORCE_STATIC_DEPENDENCIES=true
 # Set geos paths
-pkgs/shapely.whl: BUILD_ENV_VARS += GEOS_INCLUDE_PATH="${PWD}/pkgs/geos.lib/usr/local/include"
-pkgs/shapely.whl: BUILD_ENV_VARS += GEOS_LIBRARY_PATH="${PWD}/pkgs/geos.lib/usr/local/lib/wasm32-wasi"
+$(call whl,shapely): BUILD_ENV_VARS += GEOS_INCLUDE_PATH="${PWD}/$(call lib,geos)/usr/local/include"
+$(call whl,shapely): BUILD_ENV_VARS += GEOS_LIBRARY_PATH="${PWD}/$(call lib,geos)/usr/local/lib/wasm32-wasi"
 # Use numpy dev build from our registry. Our patches have been merged upstream, so for the next numpy release we can remove this.
-pkgs/shapely.whl: BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
-pkgs/shapely.whl: BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
-pkgs/shapely.whl: BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
-pkgs/shapely.whl: BUILD_EXTRA_FLAGS = --skip-dependency-check
+$(call whl,shapely): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
+$(call whl,shapely): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
+$(call whl,shapely): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
+$(call whl,shapely): BUILD_EXTRA_FLAGS = --skip-dependency-check
 
 # Needs to have the pypandoc executable in the repo
-pkgs/pypandoc_binary.whl: pkgs/pypandoc_binary.sdist/pypandoc/files/pandoc
-pkgs/pypandoc_binary.sdist/pypandoc/files/pandoc: pkgs/pypandoc_binary.sdist pkgs/pandoc.tar.xz
-	mkdir -p pkgs/pypandoc_binary.sdist/pypandoc/files
-	tar xfJ pkgs/pandoc.tar.xz -C pkgs/pypandoc_binary.sdist/pypandoc/files --strip-components=1 bin/pandoc
+$(call whl,pypandoc_binary): $(call sdist,pypandoc_binary)/pypandoc/files/pandoc
+$(call sdist,pypandoc_binary)/pypandoc/files/pandoc: $(call sdist,pypandoc_binary) $(call tarxz,pandoc)
+	mkdir -p $(call sdist,pypandoc_binary)/pypandoc/files
+	tar xfJ $(call tarxz,pandoc) -C $(call sdist,pypandoc_binary)/pypandoc/files --strip-components=1 bin/pandoc
 	touch $@
 
-pkgs/uvloop.whl: BUILD_ENV_VARS = WASIX_FORCE_STATIC_DEPENDENCIES=true
-pkgs/uvloop.whl: BUILD_EXTRA_FLAGS = '-C--build-option=build_ext --use-system-libuv'
+$(call whl,uvloop): BUILD_ENV_VARS = WASIX_FORCE_STATIC_DEPENDENCIES=true
+$(call whl,uvloop): BUILD_EXTRA_FLAGS = '-C--build-option=build_ext --use-system-libuv'
 
-pkgs/mysqlclient.whl: BUILD_ENV_VARS = WASIX_FORCE_STATIC_DEPENDENCIES=true PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig
+$(call whl,mysqlclient): BUILD_ENV_VARS = WASIX_FORCE_STATIC_DEPENDENCIES=true PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig
 
 # Use numpy dev build from our registry. Our patches have been merged upstream, so for the next numpy release we can remove this.
-pkgs/pandas.tar.gz: BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
-pkgs/pandas.tar.gz: BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
-pkgs/pandas.tar.gz: BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
-pkgs/pandas.tar.gz: BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
-pkgs/pandas.tar.gz: ${MESON_CROSSFILE}
-pkgs/pandas.whl: BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
-pkgs/pandas.whl: BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
-pkgs/pandas.whl: BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
-pkgs/pandas.whl: BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
-pkgs/pandas.whl: ${MESON_CROSSFILE}
+$(call targz,pandas): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
+$(call targz,pandas): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
+$(call targz,pandas): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
+$(call targz,pandas): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
+$(call targz,pandas): ${MESON_CROSSFILE}
+$(call whl,pandas): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
+$(call whl,pandas): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
+$(call whl,pandas): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
+$(call whl,pandas): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
+$(call whl,pandas): ${MESON_CROSSFILE}
 
-pkgs/protobuf.tar.gz: protobuf
+$(call targz,protobuf):
 	mkdir -p pkgs
-	cd protobuf/python && CC=/usr/bin/gcc CXX=/usr/bin/g++ LD=/usr/bin/ld bazelisk build //python/dist:source_wheel --crosstool_top=//wasix-toolchain:wasix_toolchain --host_crosstool_top=@bazel_tools//tools/cpp:toolchain --cpu=wasm32-wasi
+	cd $(call build,protobuf)/python && CC=/usr/bin/gcc CXX=/usr/bin/g++ LD=/usr/bin/ld bazelisk build //python/dist:source_wheel --crosstool_top=//wasix-toolchain:wasix_toolchain --host_crosstool_top=@bazel_tools//tools/cpp:toolchain --cpu=wasm32-wasi
 	mkdir -p artifacts
-	install -m666 protobuf/bazel-bin/python/dist/protobuf.tar.gz artifacts
-	ln -sf ../artifacts/protobuf.tar.gz $@
+	install -m666 $(call build,protobuf)/bazel-bin/python/dist/protobuf.tar.gz artifacts
+	ln -rsf ${PWD}/artifacts/protobuf.tar.gz $@
 
 # TODO: Remove patch for python-crc32c once
 #   A: We dont store libs in the wasm32-wasi subdir anymore OR
 #   B: wasix-clang supports automatically adding the wasm32-wasi subdir of every linker path to the linker path
-pkgs/python-crc32c.whl: pkgs/google-crc32c.lib
-pkgs/python-crc32c.whl: BUILD_ENV_VARS = CRC32C_INSTALL_PREFIX=${PWD}/pkgs/google-crc32c.lib/usr/local WASIX_FORCE_STATIC_DEPENDENCIES=true
+$(call whl,python-crc32c): $(call lib,google-crc32c)
+$(call whl,python-crc32c): BUILD_ENV_VARS = CRC32C_INSTALL_PREFIX=${PWD}/$(call lib,google-crc32c)/usr/local WASIX_FORCE_STATIC_DEPENDENCIES=true
 
-pkgs/charset_normalizer.whl: BUILD_ENV_VARS = CHARSET_NORMALIZER_USE_MYPYC=1
+$(call whl,charset_normalizer): BUILD_ENV_VARS = CHARSET_NORMALIZER_USE_MYPYC=1
 
 #####     Building libraries     #####
 
-$(UNPACKED_LIBS): pkgs/%.lib: %
-$(BUILT_LIBS): pkgs/%.tar.xz: pkgs/%.lib
-pkgs/%.lib: %
+$(UNPACKED_LIBS): $(call lib,%): $(call build,%)
+$(BUILT_LIBS): $(call tarxz,%): $(call lib,%)
+$(call lib,%): $(call build,%)
 	echo "Missing build script for $@" >&2 && exit 1
-pkgs/%.tar.xz: pkgs/%.lib
+$(call tarxz,%): $(call lib,%)
 	$(package_lib)
 	touch $@
 
 # TODO: Add libjpeg support
-pkgs/zbar.lib: zbar
-	cd zbar && autoreconf -vfi
+$(call lib,zbar):
+	cd $(call build,$@) && autoreconf -vfi
 	# Force configure to build shared libraries. This is a hack, but it works.
-	cd zbar && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
-	cd zbar && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --enable-static --enable-shared --disable-video --disable-rpath --without-imagemagick --without-java --without-qt --without-gtk --without-xv --without-xshm --without-python
-	cd zbar && make
-	$(reset_builddir) $@
-	cd zbar && make install DESTDIR=${PWD}/$@
+	cd $(call build,$@) && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
+	cd $(call build,$@) && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --enable-static --enable-shared --disable-video --disable-rpath --without-imagemagick --without-java --without-qt --without-gtk --without-xv --without-xshm --without-python
+	cd $(call build,$@) && make
+	$(reset_install_dir) $@
+	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
 	touch $@
 
-pkgs/libffi.lib: libffi
-	cd libffi && autoreconf -vfi
-	cd libffi && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --host="wasm32-wasi" --enable-static --disable-shared --disable-dependency-tracking --disable-builddir --disable-multi-os-directory --disable-raw-api --disable-docs
-	cd libffi && make
-	$(reset_builddir) $@
-	cd libffi && make install DESTDIR=${PWD}/$@
+$(call lib,libffi):
+	cd $(call build,$@) && autoreconf -vfi
+	cd $(call build,$@) && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --host="wasm32-wasi" --enable-static --disable-shared --disable-dependency-tracking --disable-builddir --disable-multi-os-directory --disable-raw-api --disable-docs
+	cd $(call build,$@) && make
+	$(reset_install_dir) $@
+	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
 	touch $@
 
-pkgs/zlib.lib: zlib
-	cd zlib && rm -rf combined
-	cd zlib && cmake -B combined -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DZLIB_BUILD_MINIZIP=OFF
-	cd zlib && cmake --build combined -j16
-	$(reset_builddir) $@
-	cd zlib && DESTDIR=${PWD}/$@ cmake --install combined
+$(call lib,zlib):
+	cd $(call build,$@) && rm -rf combined
+	cd $(call build,$@) && cmake -B combined -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DZLIB_BUILD_MINIZIP=OFF
+	cd $(call build,$@) && cmake --build combined -j16
+	$(reset_install_dir) $@
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install combined
 	touch $@
 
-pkgs/pandoc.lib: pandoc
-	cd pandoc && ${RUN_WITH_HASKELL} wasm32-wasi-cabal update
-	cd pandoc && ${RUN_WITH_HASKELL} wasm32-wasi-cabal build pandoc-cli
+$(call lib,pandoc):
+	cd $(call build,$@) && ${RUN_WITH_HASKELL} wasm32-wasi-cabal update
+	cd $(call build,$@) && ${RUN_WITH_HASKELL} wasm32-wasi-cabal build pandoc-cli
 	# Most of these options are copied from https://github.com/tweag/pandoc-wasm/blob/master/.github/workflows/build.yml
-	wasm-opt --experimental-new-eh --low-memory-unused --converge --gufa --flatten --rereloop -Oz $$(find pandoc -type f -name pandoc.wasm) -o pandoc/pandoc.opt.wasm
-	$(reset_builddir) $@
+	wasm-opt --experimental-new-eh --low-memory-unused --converge --gufa --flatten --rereloop -Oz $$(find $(call build,$@) -type f -name pandoc.wasm) -o $(call build,$@)/pandoc.opt.wasm
+	$(reset_install_dir) $@
 	mkdir -p $@/bin
-	install -m 755 pandoc/pandoc.opt.wasm $@/bin/pandoc
+	install -m 755 $(call build,$@)/pandoc.opt.wasm $@/bin/pandoc
 	touch $@
 
-pkgs/postgresql.lib: postgresql
-	cd postgresql && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --without-icu --without-zlib --without-readline
-	cd postgresql && make MAKELEVEL=0 -C src/interfaces
-	cd postgresql && make MAKELEVEL=0 -C src/include
-	$(reset_builddir) $@
-	cd postgresql && make MAKELEVEL=0 -C src/interfaces install DESTDIR=${PWD}/$@
-	cd postgresql && make MAKELEVEL=0 -C src/include install DESTDIR=${PWD}/$@
+$(call lib,postgresql):
+	cd $(call build,$@) && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --without-icu --without-zlib --without-readline
+	cd $(call build,$@) && make MAKELEVEL=0 -C src/interfaces
+	cd $(call build,$@) && make MAKELEVEL=0 -C src/include
+	$(reset_install_dir) $@
+	cd $(call build,$@) && make MAKELEVEL=0 -C src/interfaces install DESTDIR=${PWD}/$@
+	cd $(call build,$@) && make MAKELEVEL=0 -C src/include install DESTDIR=${PWD}/$@
 	touch $@
 
-pkgs/brotli.lib: brotli
-	cd brotli && rm -rf out
-	cd brotli && cmake -DCMAKE_BUILD_TYPE=Release -B out -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi'
+$(call lib,brotli):
+	cd $(call build,$@) && rm -rf out
+	cd $(call build,$@) && cmake -DCMAKE_BUILD_TYPE=Release -B out -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi'
 # Brotli always tries to build the executable (which we dont need), which imports `chown` and `clock`, which we don't provide.
 # This workaround makes that work during linking, but it is not a proper solution.
 # CCC_OVERRIDE_OPTIONS should not be set during cmake setup, because it will erroneously detect emscripten otherwise.
 # TODO: Implement chown in wasix and unset CCC_OVERRIDE_OPTIONS
-	cd brotli && CCC_OVERRIDE_OPTIONS='^-Wl,--unresolved-symbols=import-dynamic' make -C out
-	$(reset_builddir) $@
-	cd brotli && CCC_OVERRIDE_OPTIONS='^-Wl,--unresolved-symbols=import-dynamic' make -C out install DESTDIR=${PWD}/$@
+	cd $(call build,$@) && CCC_OVERRIDE_OPTIONS='^-Wl,--unresolved-symbols=import-dynamic' make -C out
+	$(reset_install_dir) $@
+	cd $(call build,$@) && CCC_OVERRIDE_OPTIONS='^-Wl,--unresolved-symbols=import-dynamic' make -C out install DESTDIR=${PWD}/$@
 	touch $@
 
-pkgs/libjpeg-turbo.lib: libjpeg-turbo
-	cd libjpeg-turbo && rm -rf out
+$(call lib,libjpeg-turbo):
+	cd $(call build,$@) && rm -rf out
 	# They use a custom version of GNUInstallDirs.cmake does not support libdir starting with prefix.
 	# TODO: Add a sed command to fix that
-	cd libjpeg-turbo && cmake -DCMAKE_BUILD_TYPE=Release -B out -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi'
-	cd libjpeg-turbo && make -C out
-	$(reset_builddir) $@
-	cd libjpeg-turbo && make -C out install DESTDIR=${PWD}/$@
+	cd $(call build,$@) && cmake -DCMAKE_BUILD_TYPE=Release -B out -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi'
+	cd $(call build,$@) && make -C out
+	$(reset_install_dir) $@
+	cd $(call build,$@) && make -C out install DESTDIR=${PWD}/$@
 	touch $@
 
-pkgs/xz.lib: xz
-	cd xz && rm -rf static shared
-	cd xz && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_INSTALL_RPATH=YES -DCMAKE_SKIP_RPATH=YES
-	cd xz && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_INSTALL_RPATH=YES -DCMAKE_SKIP_RPATH=YES
-	cd xz && cmake --build shared -j16
-	cd xz && cmake --build static -j16
-	$(reset_builddir) $@
-	cd xz && DESTDIR=${PWD}/$@ cmake --install shared
-	cd xz && DESTDIR=${PWD}/$@ cmake --install static
+$(call lib,xz):
+	cd $(call build,$@) && rm -rf static shared
+	cd $(call build,$@) && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_INSTALL_RPATH=YES -DCMAKE_SKIP_RPATH=YES
+	cd $(call build,$@) && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_INSTALL_RPATH=YES -DCMAKE_SKIP_RPATH=YES
+	cd $(call build,$@) && cmake --build shared -j16
+	cd $(call build,$@) && cmake --build static -j16
+	$(reset_install_dir) $@
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install static
 	touch $@
 
-pkgs/libtiff.lib: libtiff
-	cd libtiff && bash autogen.sh
+$(call lib,libtiff):
+	cd $(call build,$@) && bash autogen.sh
 	# Force configure to build shared libraries. This is a hack, but it works.
-	cd libtiff && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
-	cd libtiff && PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi'
-	cd libtiff && PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig make -j4
-	$(reset_builddir) $@
-	cd libtiff && PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig make install DESTDIR=${PWD}/$@
+	cd $(call build,$@) && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
+	cd $(call build,$@) && PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi'
+	cd $(call build,$@) && PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig make -j4
+	$(reset_install_dir) $@
+	cd $(call build,$@) && PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig make install DESTDIR=${PWD}/$@
 	touch $@
 
-pkgs/libwebp.lib: libwebp
-	cd libwebp && bash autogen.sh
+$(call lib,libwebp):
+	cd $(call build,$@) && bash autogen.sh
 	# Force configure to build shared libraries. This is a hack, but it works.
-	cd libwebp && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
-	cd libwebp && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi'
-	cd libwebp && make
-	$(reset_builddir) $@
-	cd libwebp && PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig make install DESTDIR=${PWD}/$@
+	cd $(call build,$@) && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
+	cd $(call build,$@) && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi'
+	cd $(call build,$@) && make
+	$(reset_install_dir) $@
+	cd $(call build,$@) && PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig make install DESTDIR=${PWD}/$@
 	touch $@
 
-pkgs/giflib.lib: giflib resources/giflib.pc
-	cd giflib && make
-	$(reset_builddir) $@
-	cd giflib && make install PREFIX=/usr/local LIBDIR=/usr/local/lib/wasm32-wasi DESTDIR=${PWD}/$@
-	# giflib does not include a pkg-config file, so we need to install it manually. We need to bump the version in that file as well, when we update the version
+$(call lib,giflib): resources/giflib.pc
+	cd $(call build,$@) && make
+	$(reset_install_dir) $@
+	cd $(call build,$@) && make install PREFIX=/usr/local LIBDIR=/usr/local/lib/wasm32-wasi DESTDIR=${PWD}/$@
+	# $(call build,$@) does not include a pkg-config file, so we need to install it manually. We need to bump the version in that file as well, when we update the version
 	install -Dm644 ${PWD}/resources/giflib.pc ${PWD}/$@/usr/local/lib/wasm32-wasi/pkgconfig/giflib.pc
 	touch $@
 
-pkgs/libpng.lib: libpng
+$(call lib,libpng):
 	# Force configure to build shared libraries. This is a hack, but it works.
-	cd libpng && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
-	cd libpng && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi'
-	cd libpng && make
-	$(reset_builddir) $@
-	cd libpng && make install DESTDIR=${PWD}/$@
+	cd $(call build,$@) && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
+	cd $(call build,$@) && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi'
+	cd $(call build,$@) && make
+	$(reset_install_dir) $@
+	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
 	touch $@
 
-pkgs/SDL3.lib: SDL3
-	cd SDL3 && cmake . -DSDL_UNIX_CONSOLE_BUILD=ON -DSDL_RENDER_GPU=OFF -DSDL_VIDEO=OFF -DSDL_AUDIO=OFF -DSDL_JOYSTICK=OFF -DSDL_HAPTIC=OFF -DSDL_HIDAPI=OFF -DSDL_SENSOR=OFF -DSDL_POWER=OFF -DSDL_DIALOG=OFF -DSDL_STATIC=ON -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi'
-	cd SDL3 && make
-	$(reset_builddir) $@
-	cd SDL3 && make install DESTDIR=${PWD}/$@
+$(call lib,SDL3):
+	cd $(call build,$@) && cmake . -DSDL_UNIX_CONSOLE_BUILD=ON -DSDL_RENDER_GPU=OFF -DSDL_VIDEO=OFF -DSDL_AUDIO=OFF -DSDL_JOYSTICK=OFF -DSDL_HAPTIC=OFF -DSDL_HIDAPI=OFF -DSDL_SENSOR=OFF -DSDL_POWER=OFF -DSDL_DIALOG=OFF -DSDL_STATIC=ON -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi'
+	cd $(call build,$@) && make
+	$(reset_install_dir) $@
+	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
 	touch $@
 
-pkgs/openjpeg.lib: openjpeg
-	cd openjpeg && PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig cmake . -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi'
-	cd openjpeg && make
-	$(reset_builddir) $@
-	cd openjpeg && make install DESTDIR=${PWD}/$@
+$(call lib,openjpeg):
+	cd $(call build,$@) && PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig cmake . -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi'
+	cd $(call build,$@) && make
+	$(reset_install_dir) $@
+	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
 	touch $@
 
-pkgs/libuv.lib: libuv
-	cd libuv && rm -rf out
-	cd libuv && cmake -B out -DLIBUV_BUILD_TESTS=OFF -DCMAKE_SYSTEM_NAME=WASI -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi'
-	cd libuv && make -C out
-	$(reset_builddir) $@
-	cd libuv && make -C out install DESTDIR=${PWD}/$@
+$(call lib,libuv):
+	cd $(call build,$@) && rm -rf out
+	cd $(call build,$@) && cmake -B out -DLIBUV_BUILD_TESTS=OFF -DCMAKE_SYSTEM_NAME=WASI -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi'
+	cd $(call build,$@) && make -C out
+	$(reset_install_dir) $@
+	cd $(call build,$@) && make -C out install DESTDIR=${PWD}/$@
 	touch $@
 
 # TODO: Improve, after openssl is building
-pkgs/mariadb-connector-c.lib: mariadb-connector-c
-	# cd mariadb-connector-c && rm -rf out
-	cd mariadb-connector-c && PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig cmake -B out \
+$(call lib,mariadb-connector-c):
+	# cd $(call build,$@) && rm -rf out
+	cd $(call build,$@) && PKG_CONFIG_SYSROOT_DIR=${WASIX_SYSROOT} PKG_CONFIG_PATH=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/pkgconfig cmake -B out \
 	 -DCMAKE_SYSTEM_NAME=WASI \
 	 -DOPENSSL_INCLUDE_DIR=${WASIX_SYSROOT}/usr/local/include \
 	 -DOPENSSL_SSL_LIBRARY=${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi/libcrypto.a \
@@ -635,95 +671,95 @@ pkgs/mariadb-connector-c.lib: mariadb-connector-c
 	 -DINSTALL_INCLUDEDIR='include' \
 	 -DINSTALL_LIBDIR='lib/wasm32-wasi' \
 	 -DINSTALL_PCDIR='lib/wasm32-wasi/pkgconfig'
-	cd mariadb-connector-c && make -j16 -C out
-	$(reset_builddir) $@
-	cd mariadb-connector-c && make -j16 -C out install DESTDIR=${PWD}/$@
+	cd $(call build,$@) && make -j16 -C out
+	$(reset_install_dir) $@
+	cd $(call build,$@) && make -j16 -C out install DESTDIR=${PWD}/$@
 	cd ${PWD}/$@/usr/local/lib/wasm32-wasi/pkgconfig && sed -i "s|${WASIX_SYSROOT}/usr/local/lib/wasm32-wasi|\$${libdir}|g" libmariadb.pc
 	cd ${PWD}/$@/usr/local/lib/wasm32-wasi/pkgconfig && sed "s|libmariadb|libmysql|g" libmariadb.pc > libmysql.pc
 	cd ${PWD}/$@/usr/local/lib/wasm32-wasi && ln -s libmariadbclient.a ./libmysqlclient.a
 	cd ${PWD}/$@/usr/local/lib/wasm32-wasi && ln -s libmariadb.so ./libmysql.so
 	touch ${PWD}/$@/usr/local/lib/wasm32-wasi
 
-pkgs/openssl.lib: openssl
+$(call lib,openssl):
 	# Options adapted from https://github.com/wasix-org/openssl/commit/52cc90976bea2e4f224250ef72cfa992c42bf410
 	# Add no-pic to disable PIC
-	cd openssl && ./Configure no-asm no-tests no-apps no-afalgeng no-dgram no-secure-memory --prefix /usr/local --libdir=lib/wasm32-wasi
-	cd openssl && make -j8
-	$(reset_builddir) $@
-	cd openssl && make install_sw DESTDIR=${PWD}/$@
+	cd $(call build,$@) && ./Configure no-asm no-tests no-apps no-afalgeng no-dgram no-secure-memory --prefix /usr/local --libdir=lib/wasm32-wasi
+	cd $(call build,$@) && make -j8
+	$(reset_install_dir) $@
+	cd $(call build,$@) && make install_sw DESTDIR=${PWD}/$@
 	touch $@
 
 # We only build a static libuuid for now
-pkgs/util-linux.lib: util-linux
-	cd util-linux && bash autogen.sh
-	cd util-linux && ./configure --disable-all-programs --enable-libuuid --host=wasm32-wasi --enable-static --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi'
-	cd util-linux && make
-	$(reset_builddir) $@
-	cd util-linux && make install DESTDIR=${PWD}/$@
+$(call lib,util-linux):
+	cd $(call build,$@) && bash autogen.sh
+	cd $(call build,$@) && ./configure --disable-all-programs --enable-libuuid --host=wasm32-wasi --enable-static --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi'
+	cd $(call build,$@) && make
+	$(reset_install_dir) $@
+	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
 	touch $@
 
 
-pkgs/dropbear.lib: dropbear
-	cd dropbear && autoreconf -vfi
-	cd dropbear && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --enable-bundled-libtom --without-pam --enable-static --disable-utmp --disable-utmpx --disable-wtmp --disable-wtmpx --disable-lastlog --disable-loginfunc
-	cd dropbear && make -j8
-	$(reset_builddir) $@
-	cd dropbear && make install DESTDIR=${PWD}/$@
+$(call lib,dropbear):
+	cd $(call build,$@) && autoreconf -vfi
+	cd $(call build,$@) && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --enable-bundled-libtom --without-pam --enable-static --disable-utmp --disable-utmpx --disable-wtmp --disable-wtmpx --disable-lastlog --disable-loginfunc
+	cd $(call build,$@) && make -j8
+	$(reset_install_dir) $@
+	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
 	touch $@
 
-pkgs/tinyxml2.lib: tinyxml2
-	cd tinyxml2 && rm -rf shared static
-	cd tinyxml2 && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=OFF
-	cd tinyxml2 && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=ON
-	cd tinyxml2 && cmake --build static -j16
-	cd tinyxml2 && cmake --build shared -j16
-	$(reset_builddir) $@
-	cd tinyxml2 && DESTDIR=${PWD}/$@ cmake --install static
-	cd tinyxml2 && DESTDIR=${PWD}/$@ cmake --install shared
+$(call lib,tinyxml2):
+	cd $(call build,$@) && rm -rf shared static
+	cd $(call build,$@) && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=OFF
+	cd $(call build,$@) && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=ON
+	cd $(call build,$@) && cmake --build static -j16
+	cd $(call build,$@) && cmake --build shared -j16
+	$(reset_install_dir) $@
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install static
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
 	touch $@
 
-pkgs/geos.lib: geos
-	cd geos && rm -rf static shared
-	cd geos && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_GEOSOP=OFF -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_INSTALL_RPATH=YES -DCMAKE_SKIP_RPATH=YES
-	cd geos && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_GEOSOP=OFF -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_INSTALL_RPATH=YES -DCMAKE_SKIP_RPATH=YES
-	cd geos && cmake --build static -j16
-	cd geos && cmake --build shared -j16
-	$(reset_builddir) $@
-	cd geos && DESTDIR=${PWD}/$@ cmake --install static
-	cd geos && DESTDIR=${PWD}/$@ cmake --install shared
+$(call lib,geos):
+	cd $(call build,$@) && rm -rf static shared
+	cd $(call build,$@) && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_GEOSOP=OFF -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_INSTALL_RPATH=YES -DCMAKE_SKIP_RPATH=YES
+	cd $(call build,$@) && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_GEOSOP=OFF -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_INSTALL_RPATH=YES -DCMAKE_SKIP_RPATH=YES
+	cd $(call build,$@) && cmake --build static -j16
+	cd $(call build,$@) && cmake --build shared -j16
+	$(reset_install_dir) $@
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install static
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
 	touch $@
 
-pkgs/libxslt.lib: libxslt pkgs/xz.lib pkgs/libxml2.lib pkgs/zlib.lib
-	cd libxslt && rm -rf static shared
-	cd libxslt && CMAKE_PREFIX_PATH=${PWD}/pkgs/xz.lib/usr/local/lib/wasm32-wasi/cmake:${PWD}/pkgs/libxml2.lib/usr/local/lib/wasm32-wasi/cmake:${PWD}/pkgs/zlib.lib/usr/local/lib/wasm32-wasi/cmake cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_RPATH=YES -DLIBXSLT_WITH_PYTHON=OFF
-	cd libxslt && CMAKE_PREFIX_PATH=${PWD}/pkgs/xz.lib/usr/local/lib/wasm32-wasi/cmake:${PWD}/pkgs/libxml2.lib/usr/local/lib/wasm32-wasi/cmake:${PWD}/pkgs/zlib.lib/usr/local/lib/wasm32-wasi/cmake cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_RPATH=YES -DLIBXSLT_WITH_PYTHON=OFF
-	cd libxslt && cmake --build static -j16
-	cd libxslt && cmake --build shared -j16
-	$(reset_builddir) $@
-	cd libxslt && DESTDIR=${PWD}/$@ cmake --install static
-	cd libxslt && DESTDIR=${PWD}/$@ cmake --install shared
+$(call lib,libxslt): $(call lib,xz) $(call lib,libxml2) $(call lib,zlib)
+	cd $(call build,$@) && rm -rf static shared
+	cd $(call build,$@) && CMAKE_PREFIX_PATH=${PWD}/$(call lib,xz)/usr/local/lib/wasm32-wasi/cmake:${PWD}/$(call lib,libxml2)/usr/local/lib/wasm32-wasi/cmake:${PWD}/$(call lib,zlib)/usr/local/lib/wasm32-wasi/cmake cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_RPATH=YES -DLIBXSLT_WITH_PYTHON=OFF
+	cd $(call build,$@) && CMAKE_PREFIX_PATH=${PWD}/$(call lib,xz)/usr/local/lib/wasm32-wasi/cmake:${PWD}/$(call lib,libxml2)/usr/local/lib/wasm32-wasi/cmake:${PWD}/$(call lib,zlib)/usr/local/lib/wasm32-wasi/cmake cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_RPATH=YES -DLIBXSLT_WITH_PYTHON=OFF
+	cd $(call build,$@) && cmake --build static -j16
+	cd $(call build,$@) && cmake --build shared -j16
+	$(reset_install_dir) $@
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install static
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
 	touch $@
 
-pkgs/libxml2.lib: libxml2
-	cd libxml2 && rm -rf shared static
-	cd libxml2 && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=OFF -DLIBXML2_WITH_PYTHON=OFF
-	cd libxml2 && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=ON -DLIBXML2_WITH_PYTHON=OFF
-	cd libxml2 && cmake --build static -j16
-	cd libxml2 && cmake --build shared -j16
-	$(reset_builddir) $@
-	cd libxml2 && DESTDIR=${PWD}/$@ cmake --install static
-	cd libxml2 && DESTDIR=${PWD}/$@ cmake --install shared
+$(call lib,libxml2):
+	cd $(call build,$@) && rm -rf shared static
+	cd $(call build,$@) && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=OFF -DLIBXML2_WITH_PYTHON=OFF
+	cd $(call build,$@) && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=ON -DLIBXML2_WITH_PYTHON=OFF
+	cd $(call build,$@) && cmake --build static -j16
+	cd $(call build,$@) && cmake --build shared -j16
+	$(reset_install_dir) $@
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install static
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
 	touch $@
 
-pkgs/google-crc32c.lib: google-crc32c
-	cd google-crc32c && rm -rf shared static
-	cd google-crc32c && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=OFF -DCRC32C_BUILD_TESTS=OFF -DCRC32C_USE_GLOG=OFF -DCRC32C_BUILD_BENCHMARKS=OFF 
-	cd google-crc32c && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=ON -DCRC32C_BUILD_TESTS=OFF -DCRC32C_USE_GLOG=OFF -DCRC32C_BUILD_BENCHMARKS=OFF
-	cd google-crc32c && cmake --build static -j16
-	cd google-crc32c && cmake --build shared -j16
-	$(reset_builddir) $@
-	cd google-crc32c && DESTDIR=${PWD}/$@ cmake --install static
-	cd google-crc32c && DESTDIR=${PWD}/$@ cmake --install shared
+$(call lib,google-crc32c):
+	cd $(call build,$@) && rm -rf shared static
+	cd $(call build,$@) && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=OFF -DCRC32C_BUILD_TESTS=OFF -DCRC32C_USE_GLOG=OFF -DCRC32C_BUILD_BENCHMARKS=OFF 
+	cd $(call build,$@) && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=ON -DCRC32C_BUILD_TESTS=OFF -DCRC32C_USE_GLOG=OFF -DCRC32C_BUILD_BENCHMARKS=OFF
+	cd $(call build,$@) && cmake --build static -j16
+	cd $(call build,$@) && cmake --build shared -j16
+	$(reset_install_dir) $@
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install static
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
 	touch $@
 
 #####     Installing wheels and libs     #####
@@ -733,12 +769,12 @@ pkgs/google-crc32c.lib: google-crc32c
 # Use `install-wheels` to install all wheels
 # Use `install-libs` to install all libs
 
-${WASIX_SYSROOT}/.%.installed: %.tar.xz
+${WASIX_SYSROOT}/.%.installed: $(call tarxz,%)
 	test -n "${WASIX_SYSROOT}" || (echo "You must set WASIX_SYSROOT to your wasix sysroot" && exit 1)
 	tar mxJf $< -C ${WASIX_SYSROOT}
 	touch $@
 
-${INSTALL_DIR}/.%.installed: pkgs/%.whl
+${INSTALL_DIR}/.%.installed: $(call whl,%)
 	test -n "${INSTALL_DIR}" || (echo "You must set INSTALL_DIR to the python library path" && exit 1)
 	unzip -oq $< -d ${INSTALL_DIR}
 	touch $@
@@ -763,11 +799,17 @@ $(INSTALL_PYTHON_WASIX_BINARIES_WHEELS_TARGETS): install-pwb-%: ${INSTALL_DIR}/.
 clean: $(SUBMODULES)
 	rm -rf python python.webc
 	rm -rf cross-venv native-venv
-	rm -rf pkgs/*.lib
-	rm -rf pkgs/*.wheel
-	rm -rf pkgs/*.sdist
+	rm -rf python-with-packages
+	# Remove patched source repos
+	rm -rf $(call prepared,*)
+	# Remove active build directories
+	rm -rf $(call build,*)
+	# Remove unpacked packages
+	rm -rf $(call lib,*)
+	rm -rf $(call wheel,*)
+	rm -rf $(call sdist,*)
 
 init: $(SUBMODULES)
 
-.PRECIOUS: $(WHEELS) $(LIBS) $(UNPACKED_LIBS) $(BUILT_LIBS) $(BUILT_WHEELS)
+.PRECIOUS: $(WHEELS) $(LIBS) $(UNPACKED_LIBS) $(BUILT_LIBS) $(BUILT_WHEELS) $(SUBMODULES)
 .PHONY: install install-wheels install-libs $(INSTALL_WHEELS_TARGETS) $(INSTALL_LIBS_TARGETS) clean init all wheels libs external-wheels

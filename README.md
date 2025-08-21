@@ -2,14 +2,13 @@
 
 ## Python Index
 
-You can use this index for WASIX easily by providing this index to `pip` or `uv`:
-https://pythonindex.wasix.org/
+You can use this index for WASIX easily by providing this index to `pip` or `uv`: <https://pythonindex.wasix.org/>
 
 ### Using the index in your projects
 
 The actual **Simple API** endpoint that pip/uv expect lives under the `simple/` path, so the full base URL is:
 
-```
+```bash
 https://pythonindex.wasix.org/simple
 ```
 
@@ -66,7 +65,6 @@ After that, every `uv sync` / `uv pip install` inside the project will automatic
 
 ---
 
-
 ### Rebuilding the index
 
 All the supported native modules are already compiled in the [`artifacts/`](./artifacts) folder.
@@ -102,7 +100,6 @@ For the most part we try to keep patches to a minimum and contribute changes bac
 Patches are mostly applied to make existing build processes that don't support a WASI target work. In the rare cases where software uses features that are not available in WASIX we might also patch it to add workarounds/remove broken code paths. We try to keep software as vanilla as possible.
 
 One exception is `numpy` where we have a special patch that helps when building other crates. More on that below.
-
 
 ### Versions
 
@@ -213,11 +210,20 @@ to check which python libraries depend on shared libs. We try to keep that to a 
 
 ### Structure
 
+<!-- 
 There is the pkgs folder that contains most stuff
 
 For each project that can be built there are multiple files depending on the type.
 
-Nearly everything starts with a `*.src` folder. That one contains the clean checkout of the submodule we try not to modify the `*.src`. Based on the `*.src` folder you can then make a `*.prepared` folder. The `*.prepared` is a copy of `*.src`, but with a few of our patches applied. From the `*.prepared` folder you can then create a `*.build` folder. This is the directory in which the buildstep is executed.
+Every project has a its source added as a submodule as `*.source`. That one contains the clean checkout of the submodule. We try not to modify the `*.source` directory because otherwise git in the build-scripts repo gets really slow because it needs to track all the changes.
+
+Before building a project, the `*.source` repo is used to generate a `*.prepared` directory. This is a worktree of the `*.source` repo with some patches applied, if necessary. If no patches are necessary this is just a clean worktree. This one is persistent and will not get deleted, unless the source changes.
+
+When building the project the `*.prepared` is copied to a `*.build` directory. This is the directory in which the buildstep is executed. There may be a ton of temporary build artifacts in here. This repo may get removed between builds; don't make any manual changes in here.
+
+`*.source` is a clean repo of the upstream source
+`*.prepared` is a worktree of the submodule with our patches.
+`*.build` source directory we actually build in.
 
 For python modules the buildstep involves creating a `*.tar.gz` sdist from the `*.build` folder. The `*.tar.gz` is then unzipped to a `*.sdist` folder. From that `.sdist` folder a `*.whl` wheel is created.
 
@@ -226,3 +232,47 @@ For WASIX libraries (and application) the buildstep installs the library with th
 ```
 TODO: Make this more understandable
 ```
+-->
+
+Inside the pkgs/ folder there can be the following directories:
+
+* `*.source`: clean submodule checkout
+* `*.prepared`: patched worktree of source
+* `*.build`: temporary build directory
+* `*.tar.gz`: python sdist
+* `*.sdist`: unpacked python sdist
+* `*.whl`: compiled python wheel
+* `*.wheel`: unpacked python wheel
+* `*.lib`: unpacked library/application
+* `*.tar.xz`: packed library/application
+
+#### Base structure
+
+Each project follows a consistent flow through the first three main directories.
+
+* `*.source`
+  * This is a clean checkout of the project's upstream source code, tracked as a git submodule.
+  * We avoid modifying this directly, since changes here would slow down git operations in the build-scripts repo.
+* `*.prepared`
+  * A git worktree created from the `*.source` repository.
+  * If patches are needed, they're applied here.
+  * If no patches are needed, it's just a clean mirror of the source.
+  * This directory is persistent and only refreshed if the source changes so new patches can be developed in this directory
+* `*.build`
+  * A copy of the `*.prepared` directory, used for the actual build step.
+  * Contains all intermediate build artifacts.
+  * This directory is temporary and may be deleted between builds. Never make manual changes here.
+
+The remaining steps are different depending on the type of project.
+
+#### Python modules
+
+* The build step creates a `*.tar.gz` sdist from the `*.build` directory.
+* The sdist is then extracted into a `*.sdist` folder.
+* Finally, a wheel (`*.whl`) is built from the `*.sdist`.
+* If you want to you can make a `*.wheel` directory to view the unpacked wheel
+
+#### WASIX libraries and applications
+
+* The build step builds the library and installs it into a `*.lib` folder, following the correct directory structure.
+* That folder is then compressed into a final distributable *.tar.xz.
