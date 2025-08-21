@@ -176,6 +176,7 @@ LIBS+=geos
 LIBS+=libxslt
 LIBS+=libxml2
 LIBS+=google-crc32c
+LIBS+=arrow
 LIBS+=rapidjson
 
 # Packages that are broken can be marked as DONT_BUILD
@@ -780,6 +781,14 @@ $(call lib,google-crc32c):
 	$(reset_install_dir) $@
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install static
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
+	touch $@
+
+$(call lib,arrow):
+	cd $(call build,$@)/cpp && rm -rf static
+	cd $(call build,$@)/cpp && cmake -B static -DRapidJSON_SOURCE=BUNDLED -DCMAKE_SYSTEM_PROCESSOR="wasm32" -DCMAKE_SYSTEM_NAME="WASI" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR=lib/wasm32-wasi -DARROW_BUILD_SHARED=OFF -DARROW_BUILD_STATIC=ON --preset ninja-release-python-minimal -DARROW_IPC=ON
+	cd $(call build,$@)/cpp && cmake --build static -j16 -v
+	$(reset_install_dir) $@
+	cd $(call build,$@)/cpp && DESTDIR=${PWD}/$@ cmake --install static
 	touch $@
 
 $(call lib,rapidjson):
