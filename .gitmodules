@@ -140,7 +140,7 @@
 	path = pkgs/bzip2.source
 	url = git://sourceware.org/git/bzip2.git
 [submodule "python-wasix-binaries"]
-	path = pkgs/python-wasix-binaries.source
+	path = python-wasix-binaries
 	url = https://github.com/wasix-org/python-wasix-binaries
 [submodule "util-linux"]
 	path = pkgs/util-linux.source
