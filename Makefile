@@ -307,6 +307,8 @@ install-libs: $(ALL_INSTALLED_LIBS)
 
 test: python-with-packages
 	test -n "$$(command -v docker)" || (echo "You must have docker installed to run the tests" && exit 1)
+	docker kill wasix-tests-mysql || true
+	docker kill wasix-tests-postgres || true
 	docker run --rm -it -d --name wasix-tests-mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password  mysql:latest
 	docker run --rm -it -d --name wasix-tests-postgres -p 5432:5432 -e POSTGRES_USER=myuser -e POSTGRES_PASSWORD=mypassword -e POSTGRES_DB=mydatabase postgres
 	bash run-tests.sh
