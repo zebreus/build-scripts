@@ -305,6 +305,14 @@ install: install-wheels install-libs
 install-wheels: $(ALL_INSTALLED_WHEELS)
 install-libs: $(ALL_INSTALLED_LIBS)
 
+test: python-with-packages
+	test -n "$$(command -v docker)" || (echo "You must have docker installed to run the tests" && exit 1)
+	docker run --rm -it -d --name wasix-tests-mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password  mysql:latest
+	docker run --rm -it -d --name wasix-tests-postgres -p 5432:5432 -e POSTGRES_USER=myuser -e POSTGRES_PASSWORD=mypassword -e POSTGRES_DB=mydatabase postgres
+	bash run-tests.sh
+	docker kill wasix-tests-mysql || true
+	docker kill wasix-tests-postgres || true
+
 #####     Downloading and uploading the python webc     #####
 
 PYTHON_WEBC=zebreus/python
@@ -812,4 +820,4 @@ clean: init
 	rm -rf $(call sdist,*)
 
 .SECONDARY: $(BUILT_SDISTS) $(BUILT_LIBS) $(BUILT_WHEELS) $(SUBMODULES) $(UNPACKED_LIBS)
-.PHONY: all wheels libs external-wheels install install-wheels install-libs clean init $(INSTALL_WHEELS_TARGETS) $(INSTALL_LIBS_TARGETS)
+.PHONY: all wheels libs external-wheels test install install-wheels install-libs clean init $(INSTALL_WHEELS_TARGETS) $(INSTALL_LIBS_TARGETS)
