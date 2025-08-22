@@ -1,0 +1,19 @@
+{
+  "files.exclude": {
+    "/cross-venv": true,
+    "/native-venv": true,
+    "/python.webc": true,
+    "/python": true,
+    "/python-with-packages": false,
+    "__pycache__": true,
+    "/dist": true,
+    "/package-list.jsonl": true,
+    "/pkgs/*.wheel": true,
+    "/pkgs/*.lib": true,
+    "/pkgs/*.build": true,
+    "/pkgs/*.sdist": false,
+    "/pkgs/*.prepared": false
+  },
+  "explorer.excludeGitIgnore": false,
+  "search.useIgnoreFiles": false
+}
