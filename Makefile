@@ -239,7 +239,7 @@ ALL_INSTALLED_LIBS=$(addprefix ${WASIX_SYSROOT}/.,$(addsuffix .installed,$(BUILT
 
 # mkdir but resets the timestamp if it didnt exist before
 define reset_install_dir
-bash -c 'rm -rf $$1 ; mkdir $$1 && touch -t 197001010000.00 $$1 || true' .
+bash -c 'rm -rf $$1 ; mkdir $$1 && touch -t 201001010001.00 $$1 || true' .
 endef
 
 define reset_submodule =
