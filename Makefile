@@ -371,7 +371,8 @@ cross-venv: native-venv python
 # A target for making sure a submodule is clean
 # To override the reset behaviour, add a target for your submodule
 $(PREPARED_SUBMODULES): %:
-$(PREPARED_SUBMODULES): $(call prepared,%): $(call source,%) $(call patches_for,%) | $(call source,%)/.git
+$(foreach name,$(LIBS) $(WHEELS),$(eval pkgs/$(name).prepared: $(call patches_for,$(name))))
+$(PREPARED_SUBMODULES): $(call prepared,%): $(call source,%) | $(call source,%)/.git
 $(call prepared,%):
 	$(prepare_submodule)
 $(call source,%): | $(call source,%)/.git
