@@ -526,6 +526,7 @@ $(call whl,mysqlclient): BUILD_ENV_VARS = WASIX_FORCE_STATIC_DEPENDENCIES=true P
 # Use numpy dev build from our registry. Our patches have been merged upstream, so for the next numpy release we can remove this.
 $(call targz,pandas): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
 $(call targz,pandas): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
+# $(call targz,pandas): BUILD_ENV_VARS += PIP_NO_CACHE_DIR=1
 $(call targz,pandas): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
 $(call targz,pandas): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
 $(call targz,pandas): ${MESON_CROSSFILE}
