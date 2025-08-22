@@ -209,14 +209,17 @@
 	path = pkgs/pyarrow.source
 	url = https://github.com/apache/arrow.git
 [submodule "pkgs/arrow.source"]
+	path = pkgs/arrow.source
+	url = https://github.com/apache/arrow.git
+[submodule "pkgs/pyarrow19-0-1.source"]
+	path = pkgs/pyarrow19-0-1.source
+	url = https://github.com/apache/arrow.git
+[submodule "pkgs/arrow19-0-1.source"]
 	path = pkgs/arrow19-0-1.source
 	url = https://github.com/apache/arrow.git
 [submodule "pkgs/rapidjson.source"]
 	path = pkgs/rapidjson.source
 	url = https://github.com/Tencent/rapidjson.git
-[submodule "pkgs/arrow21-0-0.source"]
-	path = pkgs/arrow.source
-	url = https://github.com/apache/arrow.git
 [submodule "pkgs/numpy2-0-2.source"]
 	path = pkgs/numpy2-0-2.source
 	url = https://github.com/numpy/numpy.git
