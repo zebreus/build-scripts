@@ -153,6 +153,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * pypng: 0.20250521.0
 * pyarrow: 19.0.1
 * pyarrow: 21.0.0
+<!-- WHEEL_VERSIONS_END -->
 
 psycopg3-c is just the sdist of psycopg3-binary
 
@@ -190,6 +191,7 @@ psycopg3-c is just the sdist of psycopg3-binary
 * arrow: 19.0.1
 * arrow: 21.0.0
 * rapidjson: 1.1.0
+<!-- LIB_VERSIONS_END -->
 
 ### Notes
 
