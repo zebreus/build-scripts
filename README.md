@@ -142,6 +142,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * protobuf: 31.1
 * grpc: 1.74.1
 * numpy: 1.26.5
+* numpy: 2.0.2
 * python-crc32c: 1.7.1
 * requests: 2.32.4
 * urllib3: 2.5.0
