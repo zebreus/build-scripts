@@ -1,0 +1,34 @@
+From 33e60e54ff6277216c4a1d5a410ed6813ae07b9b Mon Sep 17 00:00:00 2001
+From: Zebreus <zebreus@zebre.us>
+Date: Fri, 22 Aug 2025 13:35:02 +0200
+Subject: [PATCH] BLD: allow targeting webassembly without emscripten
+
+---
+ numpy/_core/src/multiarray/lowlevel_strided_loops.c.src | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/numpy/_core/src/multiarray/lowlevel_strided_loops.c.src b/numpy/_core/src/multiarray/lowlevel_strided_loops.c.src
+index 0c4eb3dd9a..0a69a08e67 100644
+--- a/numpy/_core/src/multiarray/lowlevel_strided_loops.c.src
++++ b/numpy/_core/src/multiarray/lowlevel_strided_loops.c.src
+@@ -850,7 +850,7 @@ NPY_NO_EXPORT PyArrayMethod_StridedLoop *
+ // Enable auto-vectorization for floating point casts with clang
+ #if @is_native_half1@ || @is_float1@ || @is_double1@
+     #if @is_native_half2@ || @is_float2@ || @is_double2@
+-        #if defined(__clang__) && !defined(__EMSCRIPTEN__)
++        #if defined(__clang__) && !defined(__EMSCRIPTEN__) && !defined(__wasm__)
+             #if __clang_major__ >= 12
+                 _Pragma("clang fp exceptions(ignore)")
+             #endif
+@@ -965,7 +965,7 @@ static GCC_CAST_OPT_LEVEL int
+ 
+ #if @is_native_half1@ || @is_float1@ || @is_double1@
+     #if @is_native_half2@ || @is_float2@ || @is_double2@
+-        #if defined(__clang__) && !defined(__EMSCRIPTEN__)
++        #if defined(__clang__) && !defined(__EMSCRIPTEN__) && !defined(__wasm__)
+             #if __clang_major__ >= 12
+                 _Pragma("clang fp exceptions(strict)")
+             #endif
+-- 
+2.48.1
+

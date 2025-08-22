@@ -1,0 +1,27 @@
+From 8cb22d8faeec661eb0569d53ea0acb06ff1b5ff0 Mon Sep 17 00:00:00 2001
+From: Zebreus <zebreus@zebre.us>
+Date: Fri, 22 Aug 2025 13:27:25 +0200
+Subject: [PATCH] Make it compile on wasm
+
+---
+ numpy/_core/include/numpy/npy_cpu.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/numpy/_core/include/numpy/npy_cpu.h b/numpy/_core/include/numpy/npy_cpu.h
+index 91cf2d8254..1eebd1f337 100644
+--- a/numpy/_core/include/numpy/npy_cpu.h
++++ b/numpy/_core/include/numpy/npy_cpu.h
+@@ -111,8 +111,9 @@
+     #endif
+ #elif defined(__loongarch_lp64)
+     #define NPY_CPU_LOONGARCH64
+-#elif defined(__EMSCRIPTEN__)
++#elif defined(__EMSCRIPTEN__) || defined(__wasm__)
+     /* __EMSCRIPTEN__ is defined by emscripten: an LLVM-to-Web compiler */
++    /* __wasm__ is defined by clang when targeting wasm */
+     #define NPY_CPU_WASM
+ #else
+     #error Unknown CPU, please report this to numpy maintainers with \
+-- 
+2.48.1
+

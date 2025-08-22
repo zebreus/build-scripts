@@ -48,6 +48,7 @@ WHEELS+=lxml
 WHEELS+=protobuf
 WHEELS+=grpc
 WHEELS+=numpy1
+WHEELS+=numpy2-3-2
 WHEELS+=python-crc32c
 WHEELS+=requests
 WHEELS+=urllib3
@@ -191,7 +192,9 @@ DONT_INSTALL=$(DONT_BUILD)
 # Dont install pypandoc because it uses the same name as pypandoc_binary
 DONT_INSTALL+=pypandoc
 # Dont install numpy1, because we already have numpy 2
+DONT_INSTALL+=numpy2-3-2
 DONT_INSTALL+=numpy1
+DONT_INSTALL+=numpy2-3-2
 # Dont install cryptography 43, because we already have 45
 DONT_INSTALL+=cryptography-43.0.3-cp313-abi3-wasix_wasm32
 
@@ -471,6 +474,10 @@ $(call targz,numpy1): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CRO
 $(call targz,numpy1): ${MESON_CROSSFILE}
 $(call whl,numpy1): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
 $(call whl,numpy1): ${MESON_CROSSFILE}
+$(call targz,numpy2-3-2): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}" -Cbuild-dir=build
+$(call targz,numpy2-3-2): ${MESON_CROSSFILE}
+$(call whl,numpy2-3-2): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}" -Cbuild-dir=build
+$(call whl,numpy2-3-2): ${MESON_CROSSFILE}
 
 $(call whl,shapely): $(call lib,geos)
 # TODO: Static build don't work yet, because we would have to specify recursive dependencies manually
