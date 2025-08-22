@@ -1,0 +1,24 @@
+From 8a53990f4b992ac092f28b87e95f48d8a9e0472d Mon Sep 17 00:00:00 2001
+From: Zebreus <zebreus@zebre.us>
+Date: Fri, 22 Aug 2025 14:00:44 +0200
+Subject: [PATCH] Include arrow headers in cython extensions
+
+---
+ python/CMakeLists.txt | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/python/CMakeLists.txt b/python/CMakeLists.txt
+index c69b7bf424..8bf512781f 100644
+--- a/python/CMakeLists.txt
++++ b/python/CMakeLists.txt
+@@ -910,6 +910,7 @@ foreach(module ${CYTHON_EXTENSIONS})
+   set_source_files_properties(${module_SRC} PROPERTIES CYTHON_IS_CXX TRUE)
+ 
+   cython_add_module(${module_name} ${module_name}_pyx ${module_name}_output ${module_SRC})
++  target_include_directories(${module_name} PRIVATE ${ARROW_INCLUDE_DIR})
+ 
+   if(directories)
+     string(REPLACE ";" "/" module_output_directory ${directories})
+-- 
+2.48.1
+

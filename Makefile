@@ -57,6 +57,8 @@ WHEELS+=idna
 WHEELS+=certifi
 WHEELS+=charset_normalizer
 WHEELS+=pypng
+WHEELS+=pyarrow
+WHEELS+=pyarrow19-0-1
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
 #
@@ -112,9 +114,8 @@ PYTHON_WASIX_BINARIES_WHEELS+=peewee-3.18.2-cp313-cp313-wasix_wasm32
 #PYTHON_WASIX_BINARIES_WHEELS+=psycopg_c-3.2.9-cp313-cp313-wasix_wasm32
 # Not included: Source build in build-scripts
 #PYTHON_WASIX_BINARIES_WHEELS+=psycopg_pool-3.3.0.dev1-py3-none-any
-# Included: Not moved to build-scripts yet
-# TODO: Move to build-scripts
-PYTHON_WASIX_BINARIES_WHEELS+=pyarrow-19.0.1-cp313-cp313-wasix_wasm32
+# Not included: Source build in build-scripts
+# PYTHON_WASIX_BINARIES_WHEELS+=pyarrow-19.0.1-cp313-cp313-wasix_wasm32
 # Not included: Source build in build-scripts
 #PYTHON_WASIX_BINARIES_WHEELS+=pycryptodome-3.23.0-cp37-abi3-wasix_wasm32
 # Not included: Source build in build-scripts
@@ -200,7 +201,8 @@ DONT_INSTALL+=numpy2-0-2
 DONT_INSTALL+=numpy2-3-2
 # Dont install cryptography 43, because we already have 45
 DONT_INSTALL+=cryptography-43.0.3-cp313-abi3-wasix_wasm32
-
+# Dont install old pyarrow, because we already have the new one
+DONT_INSTALL+=pyarrow19-0-1
 
 # Helper function to get the project name from a path
 project_name = $(basename $(basename $(notdir $(1))))
@@ -416,6 +418,15 @@ $(call prepared,rapidjson):
 	cd $@ && git cherry-pick c6a6c7be4d927b57ca4c40cbcfadaf6dfc5212cb
 	cd $@ && git cherry-pick 20de638fece2706eff6e372a6bcacd322a423240
 
+$(call prepared,pyarrow):
+	$(prepare_submodule)
+	# Tag so we get a clean name after applying the patch
+	cd $@ && git tag -fam "" apache-arrow-21.0.0
+
+$(call prepared,pyarrow19-0-1):
+	$(prepare_submodule)
+	# Tag so we get a clean name after applying the patch
+	cd $@ && git tag -fam "" apache-arrow-19.0.1
 #####     Building wheels     #####
 
 # A target to build a wheel from a python submodule
@@ -530,6 +541,26 @@ $(call targz,protobuf):
 	mkdir -p artifacts
 	install -m666 $(call build,protobuf)/bazel-bin/python/dist/protobuf.tar.gz artifacts
 	ln -rsf ${PWD}/artifacts/protobuf.tar.gz $@
+
+$(call targz,pyarrow19-0-1): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
+$(call targz,pyarrow19-0-1): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
+$(call targz,pyarrow19-0-1): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
+$(call targz,pyarrow19-0-1): PYPROJECT_PATH = python
+$(call whl,pyarrow19-0-1): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
+$(call whl,pyarrow19-0-1): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
+$(call whl,pyarrow19-0-1): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
+$(call whl,pyarrow19-0-1): BUILD_ENV_VARS += CMAKE_PREFIX_PATH=${PWD}/$(call lib,arrow19-0-1)/usr/local/lib/wasm32-wasi/cmake
+$(call whl,pyarrow19-0-1): $(call lib,arrow19-0-1)
+
+$(call targz,pyarrow): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
+$(call targz,pyarrow): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
+$(call targz,pyarrow): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
+$(call targz,pyarrow): PYPROJECT_PATH = python
+$(call whl,pyarrow): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
+$(call whl,pyarrow): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
+$(call whl,pyarrow): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
+$(call whl,pyarrow): BUILD_ENV_VARS += CMAKE_PREFIX_PATH=${PWD}/$(call lib,arrow)/usr/local/lib/wasm32-wasi/cmake
+$(call whl,pyarrow): $(call lib,arrow)
 
 # TODO: Remove patch for python-crc32c once
 #   A: We dont store libs in the wasm32-wasi subdir anymore OR
@@ -802,6 +833,14 @@ $(call lib,google-crc32c):
 	touch $@
 
 $(call lib,arrow19-0-1):
+	cd $(call build,$@)/cpp && rm -rf static
+	cd $(call build,$@)/cpp && cmake -B static -DRapidJSON_SOURCE=BUNDLED -DCMAKE_SYSTEM_PROCESSOR="wasm32" -DCMAKE_SYSTEM_NAME="WASI" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR=lib/wasm32-wasi -DARROW_BUILD_SHARED=OFF -DARROW_BUILD_STATIC=ON --preset ninja-release-python-minimal -DARROW_IPC=ON
+	cd $(call build,$@)/cpp && cmake --build static -j16 -v
+	$(reset_install_dir) $@
+	cd $(call build,$@)/cpp && DESTDIR=${PWD}/$@ cmake --install static
+	touch $@
+
+$(call lib,arrow):
 	cd $(call build,$@)/cpp && rm -rf static
 	cd $(call build,$@)/cpp && cmake -B static -DRapidJSON_SOURCE=BUNDLED -DCMAKE_SYSTEM_PROCESSOR="wasm32" -DCMAKE_SYSTEM_NAME="WASI" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR=lib/wasm32-wasi -DARROW_BUILD_SHARED=OFF -DARROW_BUILD_STATIC=ON --preset ninja-release-python-minimal -DARROW_IPC=ON
 	cd $(call build,$@)/cpp && cmake --build static -j16 -v
