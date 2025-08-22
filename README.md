@@ -150,6 +150,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * charset-normalizer: 3.4.3
 * pypng: 0.20250521.0
 * pyarrow: 19.0.1
+* pyarrow: 21.0.0
 
 psycopg3-c is just the sdist of psycopg3-binary
 
@@ -185,6 +186,7 @@ psycopg3-c is just the sdist of psycopg3-binary
 * libxml2: 2.14.5
 * google-crc32c: 1.1.2
 * arrow: 19.0.1
+* arrow: 21.0.0
 * rapidjson: 1.1.0
 
 ### Notes

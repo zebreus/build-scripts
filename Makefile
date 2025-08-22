@@ -177,6 +177,7 @@ LIBS+=libxslt
 LIBS+=libxml2
 LIBS+=google-crc32c
 LIBS+=arrow19-0-1
+LIBS+=arrow
 LIBS+=rapidjson
 
 # Packages that are broken can be marked as DONT_BUILD

@@ -1,0 +1,25 @@
+From 39f8b6f7181b71b9b081ad14b0c68d2bd391ad9a Mon Sep 17 00:00:00 2001
+From: Zebreus <zebreus@zebre.us>
+Date: Thu, 21 Aug 2025 14:30:55 +0200
+Subject: [PATCH] Add wasm32 CPU support
+
+---
+ cpp/cmake_modules/SetupCxxFlags.cmake | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/cpp/cmake_modules/SetupCxxFlags.cmake b/cpp/cmake_modules/SetupCxxFlags.cmake
+index fdb28b540e..bdc815c97b 100644
+--- a/cpp/cmake_modules/SetupCxxFlags.cmake
++++ b/cpp/cmake_modules/SetupCxxFlags.cmake
+@@ -40,6 +40,8 @@ if(NOT DEFINED ARROW_CPU_FLAG)
+     set(ARROW_CPU_FLAG "riscv64")
+   elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "loongarch64")
+     set(ARROW_CPU_FLAG "loongarch64")
++  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "wasm32")
++    set(ARROW_CPU_FLAG "wasm32")
+   else()
+     message(FATAL_ERROR "Unknown system processor")
+   endif()
+-- 
+2.48.1
+

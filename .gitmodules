@@ -206,7 +206,7 @@
 	path = pkgs/pypng.source
 	url = https://gitlab.com/drj11/pypng.git
 [submodule "pkgs/pyarrow.source"]
-	path = pkgs/pyarrow19-0-1.source
+	path = pkgs/pyarrow.source
 	url = https://github.com/apache/arrow.git
 [submodule "pkgs/arrow.source"]
 	path = pkgs/arrow19-0-1.source
@@ -214,3 +214,6 @@
 [submodule "pkgs/rapidjson.source"]
 	path = pkgs/rapidjson.source
 	url = https://github.com/Tencent/rapidjson.git
+[submodule "pkgs/arrow21-0-0.source"]
+	path = pkgs/arrow.source
+	url = https://github.com/apache/arrow.git
