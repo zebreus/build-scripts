@@ -25,6 +25,7 @@ wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'jiter*.wh
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'orjson*.whl'))
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'peewee*.whl'))
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'primp*.whl'))
+wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'psycopg*.whl'))
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'pydantic_core*.whl'))
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'pynacl*.whl'))
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'pyyaml*.whl'))
@@ -33,6 +34,12 @@ wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'tiktoken*
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'tokenizers*.whl'))
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'tornado*.whl'))
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'watchdog*.whl'))
+
+# These packages will be excluded from the index
+excluded_prefixes = (
+    'artifacts/psycopg',  # For now we use psycopg builds from python-wasix-binaries
+)
+wheel_files = [f for f in wheel_files if not f.startswith(excluded_prefixes)]
 
 # Create JSON for each wheel file
 with open(package_list, 'w') as package_list_file:
