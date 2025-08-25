@@ -34,6 +34,7 @@ wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'tiktoken*
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'tokenizers*.whl'))
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'tornado*.whl'))
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'watchdog*.whl'))
+wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'watchfiles*.whl'))
 
 # These packages will be excluded from the index
 excluded_prefixes = (
