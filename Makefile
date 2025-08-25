@@ -328,8 +328,9 @@ test: python-with-packages
 
 #####     Downloading and uploading the python webc     #####
 
-PYTHON_WEBC=zebreus/python
+PYTHON_WEBC=zebreus/python-raw
 PYTHON_WITH_PACKAGES_WEBC=zebreus/python-with-packages
+PYTHON_WITH_LIBS_WEBC=zebreus/python
 
 python.webc python.version:
 	wasmer package download $(PYTHON_WEBC) -o python.webc
@@ -338,7 +339,29 @@ python: python.webc
 	wasmer package unpack python.webc --out-dir python
 	cp python/modules/python python/artifacts/wasix-install/cpython/bin/python3.wasm
 	touch python
-python-with-packages: python $(call lib,postgresql) $(call lib,zbar) $(call lib,libjpeg-turbo) $(call lib,geos) $(BUILT_WHEELS_TO_INSTALL) $(PWB_WHEELS_TO_INSTALL)
+python-with-libs: python | $(call lib,postgresql) $(call lib,zbar) $(call lib,libjpeg-turbo) $(call lib,geos)
+	### Prepare a python release with all the deps
+	# Copy the base python package
+	rm -rf python-with-libs
+	cp -r python python-with-libs
+
+	# Install the libs
+	mkdir -p python-with-libs/artifacts/wasix-install/lib
+	cp -L $(PWD)/$(call lib,postgresql)/usr/local/lib/wasm32-wasi/*.so* python-with-libs/artifacts/wasix-install/lib
+	cp -L $(PWD)/$(call lib,zbar)/usr/local/lib/wasm32-wasi/libzbar.so* python-with-libs/artifacts/wasix-install/lib
+	cp -L $(PWD)/$(call lib,libjpeg-turbo)/usr/local/lib/wasm32-wasi/libjpeg.so* python-with-libs/artifacts/wasix-install/lib
+	# TODO: Build shapely without a shared geos dep
+	cp -L $(PWD)/$(call lib,geos)/usr/local/lib/wasm32-wasi/libgeos*.so* python-with-libs/artifacts/wasix-install/lib
+
+	# Copy the python-wasix-binaries wheels (tomlq is provided in the yq package (but only in the python implementation))
+	tomlq -i '.package.name = "$(PYTHON_WITH_LIBS_WEBC)"' python-with-libs/wasmer.toml --output-format toml
+	tomlq -i '.fs."/lib" = "./artifacts/wasix-install/lib"' python-with-libs/wasmer.toml --output-format toml
+	tomlq -i '.module[0]."source" = "./artifacts/wasix-install/cpython/bin/python3.wasm"' python-with-libs/wasmer.toml --output-format toml
+
+	echo 'Build python-with-libs'
+	echo 'To test it run: `bash run-tests.sh`'
+	echo 'To publish it run: `wasmer package publish python-with-libs`' 
+python-with-packages: python | $(call lib,postgresql) $(call lib,zbar) $(call lib,libjpeg-turbo) $(call lib,geos) $(BUILT_WHEELS_TO_INSTALL) $(PWB_WHEELS_TO_INSTALL)
 	### Prepare a python release with all the deps
 	# Copy the base python package
 	rm -rf python-with-packages
@@ -353,7 +376,7 @@ python-with-packages: python $(call lib,postgresql) $(call lib,zbar) $(call lib,
 	cp -L $(PWD)/$(call lib,zbar)/usr/local/lib/wasm32-wasi/libzbar.so* python-with-packages/artifacts/wasix-install/lib
 	cp -L $(PWD)/$(call lib,libjpeg-turbo)/usr/local/lib/wasm32-wasi/libjpeg.so* python-with-packages/artifacts/wasix-install/lib
 	# TODO: Build shapely without a shared geos dep
-	cp -L $(PWD)/$(call lib,geos)/usr/local/lib/wasm32-wasi/libgeos* python-with-packages/artifacts/wasix-install/lib
+	cp -L $(PWD)/$(call lib,geos)/usr/local/lib/wasm32-wasi/libgeos*.so* python-with-packages/artifacts/wasix-install/lib
 
 	# Copy the python-wasix-binaries wheels (tomlq is provided in the yq package (but only in the python implementation))
 	tomlq -i '.package.name = "$(PYTHON_WITH_PACKAGES_WEBC)"' python-with-packages/wasmer.toml --output-format toml
@@ -381,10 +404,11 @@ cross-venv: native-venv python
 # To override the reset behaviour, add a target for your submodule
 $(PREPARED_SUBMODULES): %:
 $(foreach name,$(LIBS) $(WHEELS),$(eval pkgs/$(name).prepared: $(call patches_for,$(name))))
-$(PREPARED_SUBMODULES): $(call prepared,%): $(call source,%) | $(call source,%)/.git
+$(PREPARED_SUBMODULES): $(call prepared,%): $(call source,%)
 $(call prepared,%):
 	$(prepare_submodule)
-$(call source,%): | $(call source,%)/.git
+$(call source,%): $(call source,%)/.git
+	touch $@
 $(call source,%)/.git:
 	$(reset_submodule)
 $(call build,%): $(call prepared,%)
@@ -552,7 +576,6 @@ $(call whl,pyarrow19-0-1): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythoni
 $(call whl,pyarrow19-0-1): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
 $(call whl,pyarrow19-0-1): BUILD_ENV_VARS += CMAKE_PREFIX_PATH=${PWD}/$(call lib,arrow19-0-1)/usr/local/lib/wasm32-wasi/cmake
 $(call whl,pyarrow19-0-1): $(call lib,arrow19-0-1)
-
 $(call targz,pyarrow): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
 $(call targz,pyarrow): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
 $(call targz,pyarrow): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
@@ -562,6 +585,8 @@ $(call whl,pyarrow): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.w
 $(call whl,pyarrow): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
 $(call whl,pyarrow): BUILD_ENV_VARS += CMAKE_PREFIX_PATH=${PWD}/$(call lib,arrow)/usr/local/lib/wasm32-wasi/cmake
 $(call whl,pyarrow): $(call lib,arrow)
+# TODO: When arrow supports setting rpath for all its libs, we can enable this and start working on shared builds
+# $(call whl,pyarrow): BUILD_ENV_VARS += PYARROW_BUNDLE_ARROW_CPP=ON PYARROW_BUNDLE_CYTHON_CPP=ON
 
 # TODO: Remove patch for python-crc32c once
 #   A: We dont store libs in the wasm32-wasi subdir anymore OR
@@ -833,6 +858,14 @@ $(call lib,google-crc32c):
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
 	touch $@
 
+# Two patches two make it work with bundled
+# A: Manually add rpath origin to libarrow_compute
+# B: Add symlinks to versioned libraries in the install dir
+#
+# TODO: Upstream ARROW_RPATH_ORIGIN currently only sets the rpath for libarrow.so, but not for other libraries like libarrow_compute.so.
+# Once that is fixed, we can start looking into the bundling options for pyarrow.
+#
+# ARROW_BUILD_SHARED=ON here also makes the pyarrow build shared.
 $(call lib,arrow19-0-1):
 	cd $(call build,$@)/cpp && rm -rf static
 	cd $(call build,$@)/cpp && cmake -B static -DRapidJSON_SOURCE=BUNDLED -DCMAKE_SYSTEM_PROCESSOR="wasm32" -DCMAKE_SYSTEM_NAME="WASI" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR=lib/wasm32-wasi -DARROW_BUILD_SHARED=OFF -DARROW_BUILD_STATIC=ON --preset ninja-release-python-minimal -DARROW_IPC=ON
@@ -840,7 +873,6 @@ $(call lib,arrow19-0-1):
 	$(reset_install_dir) $@
 	cd $(call build,$@)/cpp && DESTDIR=${PWD}/$@ cmake --install static
 	touch $@
-
 $(call lib,arrow):
 	cd $(call build,$@)/cpp && rm -rf static
 	cd $(call build,$@)/cpp && cmake -B static -DRapidJSON_SOURCE=BUNDLED -DCMAKE_SYSTEM_PROCESSOR="wasm32" -DCMAKE_SYSTEM_NAME="WASI" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR=lib/wasm32-wasi -DARROW_BUILD_SHARED=OFF -DARROW_BUILD_STATIC=ON --preset ninja-release-python-minimal -DARROW_IPC=ON

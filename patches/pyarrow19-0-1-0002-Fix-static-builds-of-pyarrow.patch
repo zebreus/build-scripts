@@ -1,0 +1,46 @@
+From 6b27671b087e54473a87d95318ea19e5389b0024 Mon Sep 17 00:00:00 2001
+From: Zebreus <zebreus@zebre.us>
+Date: Mon, 25 Aug 2025 15:03:20 +0200
+Subject: [PATCH] Fix static builds of pyarrow
+
+---
+ python/CMakeLists.txt | 14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/python/CMakeLists.txt b/python/CMakeLists.txt
+index 8bf512781f..cd8c55f7f2 100644
+--- a/python/CMakeLists.txt
++++ b/python/CMakeLists.txt
+@@ -471,12 +471,13 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL
+                PROPERTY COMPILE_FLAGS " -Wno-cast-qual ")
+ endif()
+ 
+-if(NOT PYARROW_CPP_LINK_LIBS)
+-  if(ARROW_BUILD_SHARED)
++if(ARROW_BUILD_SHARED)
++  if(NOT PYARROW_CPP_LINK_LIBS)
+     list(APPEND PYARROW_CPP_LINK_LIBS Arrow::arrow_shared)
+-  else()
+-    list(APPEND PYARROW_CPP_LINK_LIBS Arrow::arrow_static)
+   endif()
++else()
++  # On static builds we always need the arrow library
++  list(APPEND PYARROW_CPP_LINK_LIBS Arrow::arrow_static)
+ endif()
+ 
+ add_library(arrow_python SHARED ${PYARROW_CPP_SRCS})
+@@ -490,7 +491,10 @@ target_include_directories(arrow_python PUBLIC ${PYARROW_CPP_ROOT_DIR}
+ if(ARROW_BUILD_SHARED)
+   target_link_libraries(arrow_python PUBLIC ${PYARROW_CPP_LINK_LIBS})
+ else()
+-  target_link_libraries(arrow_python PRIVATE ${PYARROW_CPP_LINK_LIBS})
++  # On static builds we need to link everything into arrow_python
++  # Private, because otherwise the cython extensions start linking the static lib directly
++  # whole-archive to ensure everything is exported
++  target_link_libraries(arrow_python PRIVATE -Wl,--whole-archive ${PYARROW_CPP_LINK_LIBS} -Wl,--no-whole-archive)
+ endif()
+ target_link_libraries(arrow_python PUBLIC Python3::NumPy)
+ target_compile_definitions(arrow_python PRIVATE ARROW_PYTHON_EXPORTING)
+-- 
+2.48.1
+
