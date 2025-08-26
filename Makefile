@@ -1,6 +1,9 @@
 ifndef WASIX_SYSROOT
 $(error You need to define WASIX_SYSROOT)
 endif
+ifeq ("$(wildcard $(WASIX_SYSROOT)/include)","")
+$(error Your WASIX_SYSROOT at $(WASIX_SYSROOT) does not contain an include directory)
+endif
 
 SHELL:=/usr/bin/bash
 
