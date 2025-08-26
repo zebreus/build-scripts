@@ -132,11 +132,12 @@ multipass shell wasix-test
   curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sudo sh -s -- install $(! test -f /.dockerenv || echo "linux --init none") --no-confirm
   source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
   
-  # grpc requires bazel. We use bazelisk for bazel
-  sudo apt install npm
-  npm install -g @bazel/bazelisk
+  # grpc and protobuf require bazel. I found bazelisk the easiest way to install bazel
+  wget https://github.com/bazelbuild/bazelisk/releases/download/v1.27.0/bazelisk-linux-amd64
+  sudo install -m755 bazelisk-linux-amd64 /usr/bin/bazel
+  rm bazelisk-linux-amd64
   ```
-  
+
 </details>
 
 ### Patches
