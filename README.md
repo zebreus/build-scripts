@@ -93,6 +93,52 @@ The easiest way to setup all the environment variables is to activate the wasix-
 
 Then you can run `make all` to build all wheels and libraries.
 
+### Usage with [wasix-clang](https://github.com/wasix-org/wasix-clang)
+
+Example for building a numpy wheel from scratch:
+
+```bash
+# Install common dependencies
+sudo apt install -y git git-lfs build-essential make cmake python3.13 python3.13-venv autopoint libtool pkg-config autoconf dejagnu meson ninja-build bison flex perl patchelf po4a yq
+# Some packages need some more exotic or big dependencies. More details in the spoiler below
+
+# Install wasix-clang
+curl -sSf https://raw.githubusercontent.com/wasix-org/wasix-clang/refs/heads/main/setup.sh | bash
+source ~/wasix-clang/activate
+
+# Fetch this repo
+git clone https://github.com/wasix-org/build-scripts.git
+cd build-scripts
+
+# Build numpy
+make pkgs/numpy.whl
+```
+
+The above example was tested in a freshly installed ubuntu VM created with:
+
+```bash
+multipass launch 25.04 -n wasix-test --disk 50G --cpus 4 --memory 16G
+multipass shell wasix-test
+```
+
+<details>
+  <summary>More dependencies</summary>
+  
+  ```bash
+  # giflib docs require these but they are quite big
+  sudo apt install -y xmlto imagemagick
+  
+  # pandoc requires a haskell toolchain for wasm32 which we build with nix
+  curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sudo sh -s -- install $(! test -f /.dockerenv || echo "linux --init none") --no-confirm
+  source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+  
+  # grpc requires bazel. We use bazelisk for bazel
+  sudo apt install npm
+  npm install -g @bazel/bazelisk
+  ```
+  
+</details>
+
 ### Patches
 
 For the most part we try to keep patches to a minimum and contribute changes back upstream if they provide any additional value besides adding WASIX support.
