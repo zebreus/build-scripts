@@ -9,6 +9,7 @@ PYTHON_WASIX_BINARIES:=${PWD}/python-wasix-binaries
 MESON_CROSSFILE=${PWD}/resources/wasi.meson.cross
 BAZEL_TOOLCHAIN=${PWD}/resources/bazel-toolchain
 PATCH_DIR=${PWD}/patches
+GIT:=git -c 'user.name=build-scripts' -c 'user.email=wasix@wasmer.io'
 
 # Wheels build a .whl file
 WHEELS=
@@ -253,23 +254,23 @@ endef
 
 define reset_submodule =
 rm -rf $(realpath $(dir $@))
-git restore $(realpath $(dir $@))
-git submodule update --init --recursive $(realpath $(dir $@))
-cd $(realpath $(dir $@)) && git clean -dxf >/dev/null 2>&1 || true
+$(GIT) restore $(realpath $(dir $@))
+$(GIT) submodule update --init --recursive $(realpath $(dir $@))
+cd $(realpath $(dir $@)) && $(GIT) clean -dxf >/dev/null 2>&1 || true
 cd $(realpath $(dir $@)) && make clean >/dev/null 2>&1 || true
-cd $(realpath $(dir $@)) && git am --abort >/dev/null 2>&1 || true
+cd $(realpath $(dir $@)) && $(GIT) am --abort >/dev/null 2>&1 || true
 endef
 
 define prepare_submodule =
 test -n "$@" 
-cd $@ && git worktree remove . >/dev/null 2>&1 || true
+cd $@ && $(GIT) worktree remove . >/dev/null 2>&1 || true
 rm -rf ${PWD}/$@
-cd $(call source,$@) && git worktree prune >/dev/null 2>&1 || true
-cd $(call source,$@) && git worktree add --checkout --detach ${PWD}/$@
+cd $(call source,$@) && $(GIT) worktree prune >/dev/null 2>&1 || true
+cd $(call source,$@) && $(GIT) worktree add --checkout --detach ${PWD}/$@
 # Quite a long command to clone submodules from the source directory instead of the remote
-cd $@ && git -c protocol.file.allow=always $$(cd ${PWD}/$(call source,$@) && git submodule foreach --recursive bash -c 'echo -c url.file://$$(pwd).insteadOf=$$(git remote get-url origin)' | grep -v Entering | xargs echo) submodule update --init --recursive --progress
-cd $@ && git am --abort >/dev/null 2>&1 || true
-cd $@ && echo | git am $(call patches_for,$(call project_name,$@))
+cd $@ && $(GIT) -c protocol.file.allow=always $$(cd ${PWD}/$(call source,$@) && $(GIT) submodule foreach --recursive bash -c 'echo -c url.file://$$(pwd).insteadOf=$$($(GIT) remote get-url origin)' | grep -v Entering | xargs echo) submodule update --init --recursive --progress
+cd $@ && $(GIT) am --abort >/dev/null 2>&1 || true
+cd $@ && echo | $(GIT) am $(call patches_for,$(call project_name,$@))
 endef
 
 # Customizable build script
@@ -435,22 +436,22 @@ $(call prepared,protobuf):
 
 $(call prepared,grpc):
 	$(prepare_submodule)
-	cd $@/third_party/abseil-cpp && git am $(call patches_for,abseil-cpp)
+	cd $@/third_party/abseil-cpp && $(GIT) am $(call patches_for,abseil-cpp)
 
 $(call prepared,rapidjson):
 	$(prepare_submodule)
-	cd $@ && git cherry-pick c6a6c7be4d927b57ca4c40cbcfadaf6dfc5212cb
-	cd $@ && git cherry-pick 20de638fece2706eff6e372a6bcacd322a423240
+	cd $@ && $(GIT) cherry-pick c6a6c7be4d927b57ca4c40cbcfadaf6dfc5212cb
+	cd $@ && $(GIT) cherry-pick 20de638fece2706eff6e372a6bcacd322a423240
 
 $(call prepared,pyarrow):
 	$(prepare_submodule)
 	# Tag so we get a clean name after applying the patch
-	cd $@ && git tag -fam "" apache-arrow-21.0.0
+	cd $@ && $(GIT) tag -fam "" apache-arrow-21.0.0
 
 $(call prepared,pyarrow19-0-1):
 	$(prepare_submodule)
 	# Tag so we get a clean name after applying the patch
-	cd $@ && git tag -fam "" apache-arrow-19.0.1
+	cd $@ && $(GIT) tag -fam "" apache-arrow-19.0.1
 #####     Building wheels     #####
 
 # A target to build a wheel from a python submodule
