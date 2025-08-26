@@ -328,9 +328,9 @@ test: python-with-packages
 
 #####     Downloading and uploading the python webc     #####
 
-PYTHON_WEBC=zebreus/python-raw
+PYTHON_WEBC=zebreus/python
 PYTHON_WITH_PACKAGES_WEBC=zebreus/python-with-packages
-PYTHON_WITH_LIBS_WEBC=zebreus/python
+PYTHON_WITH_LIBS_WEBC=zebreus/python-with-libs
 
 python.webc python.version:
 	wasmer package download $(PYTHON_WEBC) -o python.webc
