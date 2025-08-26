@@ -566,7 +566,8 @@ $(call whl,pandas): ${MESON_CROSSFILE}
 
 $(call targz,protobuf):
 	mkdir -p pkgs
-	cd $(call build,protobuf)/python && CC=/usr/bin/gcc CXX=/usr/bin/g++ LD=/usr/bin/ld bazel build //python/dist:source_wheel --crosstool_top=//wasix-toolchain:wasix_toolchain --host_crosstool_top=@bazel_tools//tools/cpp:toolchain --cpu=wasm32-wasi
+	cd $(call build,protobuf)/python && bazel clean --expunge
+	cd $(call build,protobuf)/python && CC=/usr/bin/clang CXX=/usr/bin/clang++ LD=/usr/bin/ld AR=/usr/bin/ar AS=/usr/bin/as bazel build //python/dist:source_wheel --crosstool_top=//wasix-toolchain:wasix_toolchain --host_crosstool_top=@bazel_tools//tools/cpp:toolchain --cpu=wasm32-wasi
 	mkdir -p artifacts
 	install -m666 $(call build,protobuf)/bazel-bin/python/dist/protobuf.tar.gz artifacts
 	ln -rsf ${PWD}/artifacts/protobuf.tar.gz $@
