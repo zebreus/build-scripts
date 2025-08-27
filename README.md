@@ -240,6 +240,7 @@ psycopg3-c is just the sdist of psycopg3-binary
 * rapidjson: 1.1.0
 * icu: 77.1
 * readline: 8.3
+* ncurses: 6.4.20230225
 <!-- LIB_VERSIONS_END -->
 
 ### Notes

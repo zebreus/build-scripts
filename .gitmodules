@@ -232,3 +232,6 @@
 [submodule "pkgs/readline.source"]
 	path = pkgs/readline.source
 	url = https://git.savannah.gnu.org/git/readline.git
+[submodule "pkgs/ncurses.source"]
+	path = pkgs/ncurses.source
+	url = https://github.com/ThomasDickey/ncurses-snapshots.git
