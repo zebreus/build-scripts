@@ -226,3 +226,6 @@
 [submodule "pkgs/numpy2-3-2.source"]
 	path = pkgs/numpy2-3-2.source
 	url = https://github.com/numpy/numpy.git
+[submodule "pkgs/icu.source"]
+	path = pkgs/icu.source
+	url = https://github.com/unicode-org/icu.git

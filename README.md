@@ -238,6 +238,7 @@ psycopg3-c is just the sdist of psycopg3-binary
 * arrow: 19.0.1
 * arrow: 21.0.0
 * rapidjson: 1.1.0
+* icu: 77.1
 <!-- LIB_VERSIONS_END -->
 
 ### Notes
