@@ -337,7 +337,7 @@ PYTHON_WITH_PACKAGES_WEBC=zebreus/python-with-packages
 PYTHON_WITH_LIBS_WEBC=zebreus/python-with-libs
 
 python.webc python.version:
-	wasmer package download $(PYTHON_WEBC) -o python.webc
+	wasmer package download $(PYTHON_WEBC) -o python.webc --registry wasmer.io
 	touch python.webc
 python: python.webc
 	wasmer package unpack python.webc --out-dir python
@@ -364,7 +364,7 @@ python-with-libs: python | $(call lib,postgresql) $(call lib,zbar) $(call lib,li
 
 	echo 'Build python-with-libs'
 	echo 'To test it run: `bash run-tests.sh`'
-	echo 'To publish it run: `wasmer package publish python-with-libs`' 
+	echo 'To publish it run: `wasmer package publish --registry wasmer.io python-with-libs`' 
 python-with-packages: python | $(call lib,postgresql) $(call lib,zbar) $(call lib,libjpeg-turbo) $(call lib,geos) $(BUILT_WHEELS_TO_INSTALL) $(PWB_WHEELS_TO_INSTALL)
 	### Prepare a python release with all the deps
 	# Copy the base python package
@@ -389,7 +389,7 @@ python-with-packages: python | $(call lib,postgresql) $(call lib,zbar) $(call li
 
 	echo 'Build python-with-packages'
 	echo 'To test it run: `bash run-tests.sh`'
-	echo 'To publish it run: `wasmer package publish python-with-packages`' 
+	echo 'To publish it run: `wasmer package publish --registry wasmer.io python-with-packages`' 
 
 #####     Preparing a wasm crossenv     #####
 
