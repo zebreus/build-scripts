@@ -1,0 +1,25 @@
+From 4effa7be31ec0d88a7209ca868271cdc7dfdb837 Mon Sep 17 00:00:00 2001
+From: "M.Amin Rayej" <m.amin.rayej@gmail.com>
+Date: Wed, 27 Aug 2025 16:56:03 +0200
+Subject: [PATCH] add wasix support
+
+---
+ include/MKterm.h.awk.in | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/MKterm.h.awk.in b/include/MKterm.h.awk.in
+index e79840d9..da8830b9 100644
+--- a/include/MKterm.h.awk.in
++++ b/include/MKterm.h.awk.in
+@@ -124,7 +124,7 @@ BEGIN {
+ 	print  ""
+ 	print  "/* Assume POSIX termio if we have the header and function */"
+ 	print  "/* #if HAVE_TERMIOS_H && HAVE_TCGETATTR */"
+-	print  "#if @HAVE_TERMIOS_H@ && @HAVE_TCGETATTR@"
++	print  "#if @HAVE_TERMIOS_H@ && @HAVE_TCGETATTR@ || defined(__wasi__)"
+ 	print  ""
+ 	print  "#undef  TERMIOS"
+ 	print  "#define TERMIOS 1"
+-- 
+2.48.1
+

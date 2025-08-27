@@ -187,6 +187,7 @@ LIBS+=arrow19-0-1
 LIBS+=arrow
 LIBS+=rapidjson
 LIBS+=icu
+LIBS+=ncurses
 
 # Packages that are broken can be marked as DONT_BUILD
 # Packages that work but should not be included in the default install can be marked as DONT_INSTALL
@@ -902,6 +903,15 @@ $(call lib,icu):
 	cd $(call build,$@)/icu4c && cd target && make -j8
 	$(reset_install_dir) $@
 	cd $(call build,$@)/icu4c && cd target && make install DESTDIR=${PWD}/$@
+	touch $@
+
+$(call lib,ncurses):
+	cd $(call build,$@) && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --with-normal --with-debug --without-tests --disable-home-terminfo  --enable-pc-files --enable-ext-colors --enable-const --enable-symlinks --with-pkg-config-libdir=/usr/local/lib/wasm32-wasi/pkgconfig # Shared is working but disabled for now --with-shared
+	cd $(call build,$@) && make -j8
+	cd $(call build,$@) && mv progs/tic progs/tic.old && cp /usr/bin/tic progs/tic # Use host tic for building
+	$(reset_install_dir) $@
+	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
+	cd $(call build,$@) && cp progs/tic.old ${PWD}/$@/usr/local/bin/tic # Restore the wasm tic
 	touch $@
 
 #####     Installing wheels and libs     #####
