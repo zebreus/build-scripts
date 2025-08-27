@@ -229,3 +229,6 @@
 [submodule "pkgs/icu.source"]
 	path = pkgs/icu.source
 	url = https://github.com/unicode-org/icu.git
+[submodule "pkgs/readline.source"]
+	path = pkgs/readline.source
+	url = https://git.savannah.gnu.org/git/readline.git
