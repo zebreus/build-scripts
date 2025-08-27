@@ -186,6 +186,7 @@ LIBS+=google-crc32c
 LIBS+=arrow19-0-1
 LIBS+=arrow
 LIBS+=rapidjson
+LIBS+=icu
 
 # Packages that are broken can be marked as DONT_BUILD
 # Packages that work but should not be included in the default install can be marked as DONT_INSTALL
@@ -893,6 +894,14 @@ $(call lib,rapidjson):
 	$(reset_install_dir) $@
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install header_only
 	sed -i 's|/usr/local/include|$${CMAKE_CURRENT_LIST_DIR}/../../../include|' ${PWD}/$@/usr/local/lib/cmake/RapidJSON/RapidJSONConfig.cmake
+	touch $@
+
+$(call lib,icu):
+	cd $(call build,$@)/icu4c && rm -rf target && mkdir -p target
+	cd $(call build,$@)/icu4c && cd target && ../source/runConfigureICU Linux --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --disable-tools  --disable-tests  --disable-samples --disable-extras --enable-shared --enable-static
+	cd $(call build,$@)/icu4c && cd target && make -j8
+	$(reset_install_dir) $@
+	cd $(call build,$@)/icu4c && cd target && make install DESTDIR=${PWD}/$@
 	touch $@
 
 #####     Installing wheels and libs     #####
