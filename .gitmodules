@@ -235,3 +235,6 @@
 [submodule "pkgs/ncurses.source"]
 	path = pkgs/ncurses.source
 	url = https://github.com/ThomasDickey/ncurses-snapshots.git
+[submodule "pkgs/packaging.source"]
+	path = pkgs/packaging.source
+	url = https://github.com/pypa/packaging.git

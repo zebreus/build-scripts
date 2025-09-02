@@ -200,6 +200,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * pypng: 0.20250521.0
 * pyarrow: 19.0.1
 * pyarrow: 21.0.0
+* packaging: 25.0
 <!-- WHEEL_VERSIONS_END -->
 
 psycopg3-c is just the sdist of psycopg3-binary
