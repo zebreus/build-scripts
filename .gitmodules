@@ -241,3 +241,6 @@
 [submodule "pkgs/pyparsing.source"]
 	path = pkgs/pyparsing.source
 	url = https://github.com/pyparsing/pyparsing.git
+[submodule "pkgs/cycler.source"]
+	path = pkgs/cycler.source
+	url = https://github.com/matplotlib/cycler.git

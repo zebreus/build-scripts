@@ -202,6 +202,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * pyarrow: 21.0.0
 * packaging: 25.0
 * pyparsing: 3.2.3
+* cycler: 0.12.1
 <!-- WHEEL_VERSIONS_END -->
 
 psycopg3-c is just the sdist of psycopg3-binary
