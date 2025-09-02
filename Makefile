@@ -63,6 +63,7 @@ WHEELS+=charset_normalizer
 WHEELS+=pypng
 WHEELS+=pyarrow
 WHEELS+=pyarrow19-0-1
+WHEELS+=matplotlib
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
 #
@@ -457,6 +458,11 @@ $(call prepared,pyarrow19-0-1):
 	$(prepare_submodule)
 	# Tag so we get a clean name after applying the patch
 	cd $@ && $(GIT) tag -fam "" apache-arrow-19.0.1
+
+$(call prepared,matplotlib):
+	$(prepare_submodule)
+	# Tag so we get a clean name after applying the patches
+	cd $@ && $(GIT) tag -fam "" v3.10.6
 #####     Building wheels     #####
 
 # A target to build a wheel from a python submodule
@@ -592,6 +598,17 @@ $(call whl,pyarrow): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.w
 $(call whl,pyarrow): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
 $(call whl,pyarrow): BUILD_ENV_VARS += CMAKE_PREFIX_PATH=${PWD}/$(call lib,arrow)/usr/local/lib/wasm32-wasi/cmake
 $(call whl,pyarrow): $(call lib,arrow)
+
+$(call targz,matplotlib): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
+$(call targz,matplotlib): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
+$(call targz,matplotlib): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
+$(call targz,matplotlib): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
+$(call targz,matplotlib): ${MESON_CROSSFILE}
+$(call whl,matplotlib): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
+$(call whl,matplotlib): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
+$(call whl,matplotlib): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
+$(call whl,matplotlib): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
+$(call whl,matplotlib): ${MESON_CROSSFILE}
 # TODO: When arrow supports setting rpath for all its libs, we can enable this and start working on shared builds
 # $(call whl,pyarrow): BUILD_ENV_VARS += PYARROW_BUNDLE_ARROW_CPP=ON PYARROW_BUNDLE_CYTHON_CPP=ON
 
