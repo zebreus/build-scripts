@@ -6,18 +6,21 @@ test -n "$BASH_VERSION" || { echo "This script requires bash"; exit 1; }
 test -f "generate-index.py" || { echo "This script must be run from the root of the build-scripts directory"; exit 1; }
 test -z "$(git status --porcelain)" || { echo "There are uncommitted changes in the repository. Please commit or stash them before running this script."; exit 1; }
 
+# lib = C library
+# wheel = python wheel with complex build steps
+# pure-wheel = pure python wheel
 TYPE="$1"
 URL="$2"
 NAME="$3"
 VERSION="$4"
 
-if [[ "$TYPE" != "wheel" && "$TYPE" != "lib" ]]; then
-    echo "Usage: $0 <lib|wheel> <url> <name> [version]"
+if [[ "$TYPE" != "wheel" && "$TYPE" != "lib" && "$TYPE" != "pure-wheel" ]]; then
+    echo "Usage: $0 <lib|wheel|pure-wheel> <url> <name> [version]"
     exit 1
 fi
 
-test -n "$URL" || { echo "Usage: $0 <lib|wheel> <url> <name> [version]"; exit 1; }
-test -n "$NAME" || { echo "Usage: $0 <lib|wheel> <url> <name> [version]"; exit 1; }
+test -n "$URL" || { echo "Usage: $0 <lib|wheel|pure-wheel> <url> <name> [version]"; exit 1; }
+test -n "$NAME" || { echo "Usage: $0 <lib|wheel|pure-wheel> <url> <name> [version]"; exit 1; }
 
 LIB_MARKER='<!-- LIB_VERSIONS_END -->'
 WHEEL_MARKER='<!-- WHEEL_VERSIONS_END -->'
@@ -95,3 +98,19 @@ sed -i "/${MARKER}/i* $NAME: $README_VERSION" "$README_FILE"
 
 git add "$README_FILE"
 git commit -m "Add $NAME submodule at version $README_VERSION"
+
+if [ "$TYPE" == "pure-wheel" ]; then
+    set -xe
+    MAKEFILE_WHEELS_MARKER='# WHEELS_END'
+    sed -i "/${MAKEFILE_WHEELS_MARKER}/iWHEELS+=$NAME" "Makefile"
+
+    make -B "pkgs/$NAME.source"
+    make "pkgs/$NAME.tar.gz"
+    make "pkgs/$NAME.whl"
+
+    git add "Makefile"
+    git commit -m "Add $NAME to the buildscripts"
+
+    git add "pkgs/$NAME.tar.gz" "pkgs/$NAME.whl" artifacts/${NAME}*.whl artifacts/${NAME}*.tar.gz
+    git commit -m "Add prebuilt wheel for $NAME"
+fi
