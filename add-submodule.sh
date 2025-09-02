@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 shopt -s extglob
+set -xe
 
 test -n "$BASH_VERSION" || { echo "This script requires bash"; exit 1; }
 test -f "generate-index.py" || { echo "This script must be run from the root of the build-scripts directory"; exit 1; }
@@ -33,7 +34,7 @@ if [ ! -f "$README_FILE" ]; then
 fi
 grep -vq "${MARKER}" "$README_FILE" || { echo "The marker ${MARKER} does nto exist in the README.md file. Please add it before running this script."; exit 1; }
 
-PWD="$(pwd)"
+BUILD_SCRIPTS_ROOT="$(pwd)"
 DIRECTORY="pkgs/$NAME.source"
 
 test -e "$DIRECTORY" && { echo "Directory $DIRECTORY already exists. Please remove it before adding a new submodule."; exit 1; }
@@ -84,7 +85,7 @@ if ! resolve_version; then
     done
 fi
 echo "Using version: $VERSION"
-cd ${PWD}
+cd ${BUILD_SCRIPTS_ROOT}
 git add "$DIRECTORY" .gitmodules
 
 README_VERSION="$(echo "$VERSION" | sed 's/[^0-9.]*//g')"
