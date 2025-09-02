@@ -65,6 +65,7 @@ WHEELS+=pyarrow
 WHEELS+=pyarrow19-0-1
 WHEELS+=matplotlib
 WHEELS+=packaging
+WHEELS+=pyparsing
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
 #
