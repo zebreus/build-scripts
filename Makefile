@@ -67,6 +67,7 @@ WHEELS+=matplotlib
 WHEELS+=packaging
 WHEELS+=pyparsing
 WHEELS+=cycler
+WHEELS+=kiwisolver
 # WHEELS_END
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
