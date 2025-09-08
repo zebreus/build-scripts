@@ -1,7 +1,9 @@
 # Cmake toolchain description file for the Makefile for WASI
 cmake_minimum_required(VERSION 3.5.0)
 
-set(CMAKE_SYSTEM_NAME WASI) # Generic for now, to not trigger a Warning
+# Don't set this to WASI as that leaves `UNIX` set to false.
+set(CMAKE_SYSTEM_NAME UnixPaths) # Set to UnixPaths to get a UNIX like environment. We dont care about the other setting set in there.
+set(WASI 1)
 set(CMAKE_SYSTEM_VERSION 1)
 set(CMAKE_SYSTEM_PROCESSOR wasm32)
 set(CMAKE_C_COMPILER_ID Clang)

@@ -11,6 +11,7 @@ PWD:=$(shell pwd)
 PYTHON_WASIX_BINARIES:=${PWD}/python-wasix-binaries
 MESON_CROSSFILE=${PWD}/resources/wasi.meson.cross
 BAZEL_TOOLCHAIN=${PWD}/resources/bazel-toolchain
+CMAKE_TOOLCHAIN=${PWD}/resources/wasix-toolchain.cmake
 PATCH_DIR=${PWD}/patches
 GIT:=git -c 'user.name=build-scripts' -c 'user.email=wasix@wasmer.io'
 
@@ -196,6 +197,7 @@ LIBS+=rapidjson
 LIBS+=icu
 LIBS+=ncurses
 LIBS+=readline
+LIBS+=curl
 
 # Packages that are broken can be marked as DONT_BUILD
 # Packages that work but should not be included in the default install can be marked as DONT_INSTALL
@@ -952,6 +954,45 @@ $(call lib,readline):
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
 	touch $@
+
+# Quite the dance to get 
+# * statically linked curl binary
+# * working shared and static libraries with brotli, zlib and openssl support
+# * curl-config and pkg-config files that work and do not contain absolute paths
+$(call lib,curl): $(call lib,zlib) $(call lib,openssl) $(call lib,brotli)
+	cd $(call build,$@) && rm -rf deps-sysroot && mkdir -p deps-sysroot
+	cd $(call build,$@) && cp -ru ${PWD}/$(call lib,openssl)/* deps-sysroot
+	cd $(call build,$@) && cp -ru ${PWD}/$(call lib,zlib)/* deps-sysroot
+	cd $(call build,$@) && cp -ru ${PWD}/$(call lib,brotli)/* deps-sysroot
+	cd $(call build,$@) && rm -rf shared static
+	cd $(call build,$@) && PKG_CONFIG_SYSROOT_DIR=${PWD}/$(call build,$@)/deps-sysroot PKG_CONFIG_PATH=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/pkgconfig cmake -B static --toolchain ${CMAKE_TOOLCHAIN} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=NO -DCURL_ZLIB=ON -DCURL_BROTLI=ON -DBUILD_STATIC_CURL=ON -DOPENSSL_USE_STATIC_LIBS=ON -DZLIB_INCLUDE_DIR=${PWD}/$(call build,$@)/deps-sysroot/usr/local/include -DZLIB_LIBRARY=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/libz.a -DBROTLI_INCLUDE_DIR=${PWD}/$(call build,$@)/deps-sysroot/usr/local/include -DBROTLICOMMON_LIBRARY=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/libbrotlicommon.a -DBROTLIDEC_LIBRARY=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/libbrotlidec.a
+	cd $(call build,$@) && PKG_CONFIG_SYSROOT_DIR=${PWD}/$(call build,$@)/deps-sysroot PKG_CONFIG_PATH=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/pkgconfig cmake -B shared --toolchain ${CMAKE_TOOLCHAIN} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=NO -DCURL_ZLIB=ON -DCURL_BROTLI=ON -DBUILD_CURL_EXE=OFF -DZLIB_INCLUDE_DIR=${PWD}/$(call build,$@)/deps-sysroot/usr/local/include -DZLIB_LIBRARY=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/libz.so -DBROTLI_INCLUDE_DIR=${PWD}/$(call build,$@)/deps-sysroot/usr/local/include -DBROTLICOMMON_LIBRARY=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/libbrotlicommon.so -DBROTLIDEC_LIBRARY=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/libbrotlidec.so
+	cd $(call build,$@) && cmake --build static -j16
+	cd $(call build,$@) && cmake --build shared -j16
+	$(reset_install_dir) $@
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install static
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
+	# cmake generates absolute paths in its pkg-config and curl-config files, which we need to fix up
+	cd $(call lib,$@) && sed -Ei 's|${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/lib([a-zA-Z0-9]+).(a\|so)|-l\1|g' usr/local/lib/wasm32-wasi/pkgconfig/libcurl.pc usr/local/bin/curl-config usr/local/lib/wasm32-wasi/cmake/CURL/CURLTargets.cmake
+	cd $(call lib,$@) && sed -i "s|$$(command -v $$CC)|$$CC|g" usr/local/bin/curl-config
+	touch $@
+
+# # Building curl with autotools does not work currently, because one of the conftests requires LD_LIBRARY_PATH to work properly with binfmt
+# # However it still has two issues:
+# # 1. Only the current working directory is mounted into the wasmer runtime as /home, so all paths are broken
+# # 2. If the ld library path contains a path to a WASIX shared library that wasmer itself requires (like
+# #    libz.so), then it crashes because it's not the right elf format (obviously)
+# $(call lib,curl): $(call lib,zlib) $(call lib,openssl) $(call lib,brotli)
+# 	cd $(call build,$@) && rm -rf deps-sysroot && mkdir -p deps-sysroot
+# 	cd $(call build,$@) && cp -Lru ${PWD}/$(call lib,openssl)/* deps-sysroot
+# 	cd $(call build,$@) && cp -Lru ${PWD}/$(call lib,zlib)/* deps-sysroot
+# 	cd $(call build,$@) && cp -Lru ${PWD}/$(call lib,brotli)/* deps-sysroot
+# 	cd $(call build,$@) && autoreconf -vfi
+# 	cd $(call build,$@) && PKG_CONFIG_SYSROOT_DIR=${PWD}/$(call build,$@)/deps-sysroot PKG_CONFIG_PATH=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/pkgconfig ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --enable-shared=yes --enable-static=yes --enable-pic=yes --enable-optimize --with-openssl --with-zlib --with-brotli
+# 	cd $(call build,$@) && make -j16
+# 	$(reset_install_dir) $@
+# 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
+# 	touch $@
 
 #####     Installing wheels and libs     #####
 
