@@ -246,7 +246,8 @@ psycopg3-c is just the sdist of psycopg3-binary
 * icu: 77.1
 * readline: 8.2
 * ncurses: 6.4.20230225
-* curl: 180421831667192855792660
+* curl: curl/curl ab18c04218ff316cd67b1e928c5cee579b2f66a0
+  * This was the current commit in the wasix fork. We can probably update to the next release
 <!-- LIB_VERSIONS_END -->
 
 ### Notes

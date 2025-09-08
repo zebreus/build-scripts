@@ -1,0 +1,26 @@
+From 3097c0221b414defc44c4ab32c658094c68fbc6e Mon Sep 17 00:00:00 2001
+From: Arshia Ghafoori <arshia001@live.com>
+Date: Tue, 25 Jun 2024 14:29:23 +0400
+Subject: [PATCH 6/6] Fix the cmake scripts not detecting poll under WASIX
+
+---
+ CMake/OtherTests.cmake | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/CMake/OtherTests.cmake b/CMake/OtherTests.cmake
+index 762e6d1a5..661198d2b 100644
+--- a/CMake/OtherTests.cmake
++++ b/CMake/OtherTests.cmake
+@@ -132,4 +132,9 @@ if(NOT CMAKE_CROSSCOMPILING)
+           return 0;
+     }" HAVE_POLL_FINE)
+   endif()
++else()
++  # WASIX has a "fine" poll implementation. No need to check.
++  if(${OS} MATCHES "wasi")
++    set(HAVE_POLL_FINE "yes")
++  endif()
+ endif()
+-- 
+2.48.1
+

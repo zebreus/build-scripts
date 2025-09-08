@@ -1,0 +1,70 @@
+From d88accfe3a7ad669b9f9b04aa387c2c8a26ec565 Mon Sep 17 00:00:00 2001
+From: Arshia Ghafoori <arshia001@live.com>
+Date: Tue, 25 Jun 2024 12:52:30 +0400
+Subject: [PATCH 5/6] Make sure no unsupported flags are passed to send and
+ sendto
+
+---
+ lib/cf-socket.c           | 2 +-
+ lib/curl_setup_once.h     | 2 +-
+ lib/memdebug.c            | 3 +++
+ packages/OS400/os400sys.c | 3 +++
+ 4 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/lib/cf-socket.c b/lib/cf-socket.c
+index effe6e649..f881ce581 100644
+--- a/lib/cf-socket.c
++++ b/lib/cf-socket.c
+@@ -1302,7 +1302,7 @@ static ssize_t cf_socket_send(struct Curl_cfilter *cf, struct Curl_easy *data,
+   }
+ #endif
+ 
+-#if defined(MSG_FASTOPEN) && !defined(TCP_FASTOPEN_CONNECT) /* Linux */
++#if defined(MSG_FASTOPEN) && !defined(TCP_FASTOPEN_CONNECT) && !defined(__wasi__) /* Linux */
+   if(cf->conn->bits.tcp_fastopen) {
+     nwritten = sendto(ctx->sock, buf, len, MSG_FASTOPEN,
+                       &cf->conn->remote_addr->sa_addr,
+diff --git a/lib/curl_setup_once.h b/lib/curl_setup_once.h
+index c1ed05907..f1e4d699b 100644
+--- a/lib/curl_setup_once.h
++++ b/lib/curl_setup_once.h
+@@ -126,7 +126,7 @@ struct timeval {
+  * it as the fourth argument of function send()
+  */
+ 
+-#ifdef HAVE_MSG_NOSIGNAL
++#if defined(HAVE_MSG_NOSIGNAL) && !defined(__wasi__)
+ #define SEND_4TH_ARG MSG_NOSIGNAL
+ #else
+ #define SEND_4TH_ARG 0
+diff --git a/lib/memdebug.c b/lib/memdebug.c
+index d6952a07a..c0052f98f 100644
+--- a/lib/memdebug.c
++++ b/lib/memdebug.c
+@@ -328,6 +328,9 @@ SEND_TYPE_RETV curl_dbg_send(SEND_TYPE_ARG1 sockfd,
+                             SEND_TYPE_ARG3 len, SEND_TYPE_ARG4 flags, int line,
+                             const char *source)
+ {
++#ifdef __wasi__
++  flags = 0;
++#endif
+   SEND_TYPE_RETV rc;
+   if(countcheck("send", line, source))
+     return -1;
+diff --git a/packages/OS400/os400sys.c b/packages/OS400/os400sys.c
+index 510c1c4ec..8bb4d77d0 100644
+--- a/packages/OS400/os400sys.c
++++ b/packages/OS400/os400sys.c
+@@ -897,6 +897,9 @@ int
+ Curl_os400_sendto(int sd, char *buffer, int buflen, int flags,
+                   const struct sockaddr *dstaddr, int addrlen)
+ {
++#ifdef __wasi__
++  flags = 0;
++#endif
+   int i;
+   struct sockaddr_storage laddr;
+ 
+-- 
+2.48.1
+
