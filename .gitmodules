@@ -250,3 +250,6 @@
 [submodule "pkgs/contourpy.source"]
 	path = pkgs/contourpy.source
 	url = https://github.com/contourpy/contourpy.git
+[submodule "pkgs/curl.source"]
+	path = pkgs/curl.source
+	url = https://github.com/curl/curl.git

@@ -246,6 +246,7 @@ psycopg3-c is just the sdist of psycopg3-binary
 * icu: 77.1
 * readline: 8.2
 * ncurses: 6.4.20230225
+* curl: 180421831667192855792660
 <!-- LIB_VERSIONS_END -->
 
 ### Notes
