@@ -253,3 +253,6 @@
 [submodule "pkgs/curl.source"]
 	path = pkgs/curl.source
 	url = https://github.com/curl/curl.git
+[submodule "pkgs/pycurl.source"]
+	path = pkgs/pycurl.source
+	url = https://github.com/pycurl/pycurl.git

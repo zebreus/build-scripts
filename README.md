@@ -248,6 +248,7 @@ psycopg3-c is just the sdist of psycopg3-binary
 * ncurses: 6.4.20230225
 * curl: curl/curl ab18c04218ff316cd67b1e928c5cee579b2f66a0
   * This was the current commit in the wasix fork. We can probably update to the next release
+* pycurl: 7.45.6
 <!-- LIB_VERSIONS_END -->
 
 ### Notes
