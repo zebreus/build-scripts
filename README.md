@@ -204,6 +204,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * pyparsing: 3.2.3
 * cycler: 0.12.1
 * kiwisolver: 1.4.9
+* contourpy: 1.3.3
 <!-- WHEEL_VERSIONS_END -->
 
 psycopg3-c is just the sdist of psycopg3-binary

@@ -247,3 +247,6 @@
 [submodule "pkgs/kiwisolver.source"]
 	path = pkgs/kiwisolver.source
 	url = https://github.com/nucleic/kiwi.git
+[submodule "pkgs/contourpy.source"]
+	path = pkgs/contourpy.source
+	url = https://github.com/contourpy/contourpy.git
