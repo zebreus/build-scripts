@@ -194,6 +194,7 @@ LIBS+=arrow
 LIBS+=rapidjson
 LIBS+=icu
 LIBS+=ncurses
+LIBS+=readline
 
 # Packages that are broken can be marked as DONT_BUILD
 # Packages that work but should not be included in the default install can be marked as DONT_INSTALL
@@ -934,6 +935,13 @@ $(call lib,ncurses):
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
 	cd $(call build,$@) && cp progs/tic.old ${PWD}/$@/usr/local/bin/tic # Restore the wasm tic
+	touch $@
+
+$(call lib,readline):
+	cd $(call build,$@) && CFLAGS="$$(PKG_CONFIG_SYSROOT_DIR=${PWD}/$(call lib,ncurses) PKG_CONFIG_PATH=${PWD}/$(call lib,ncurses)/usr/local/lib/wasm32-wasi/pkgconfig pkgconf --cflags ncurses)" LDFLAGS="$$(PKG_CONFIG_SYSROOT_DIR=${PWD}/$(call lib,ncurses) PKG_CONFIG_PATH=${PWD}/$(call lib,ncurses)/usr/local/lib/wasm32-wasi/pkgconfig pkgconf --libs-only-L ncurses)" ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --enable-static --disable-shared --with-curses # Shared is working but disabled until we enable shared ncurses
+	cd $(call build,$@) && make -j8
+	$(reset_install_dir) $@
+	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
 	touch $@
 
 #####     Installing wheels and libs     #####
