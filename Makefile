@@ -689,15 +689,18 @@ $(call lib,postgresql):
 	touch $@
 
 $(call lib,brotli):
-	cd $(call build,$@) && rm -rf out
-	cd $(call build,$@) && cmake -DCMAKE_BUILD_TYPE=Release -B out -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi'
+	cd $(call build,$@) && rm -rf shared static
 # Brotli always tries to build the executable (which we dont need), which imports `chown` and `clock`, which we don't provide.
 # This workaround makes that work during linking, but it is not a proper solution.
 # CCC_OVERRIDE_OPTIONS should not be set during cmake setup, because it will erroneously detect emscripten otherwise.
 # TODO: Implement chown in wasix and unset CCC_OVERRIDE_OPTIONS
-	cd $(call build,$@) && CCC_OVERRIDE_OPTIONS='^-Wl,--unresolved-symbols=import-dynamic' make -C out
+	cd $(call build,$@) && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_RPATH=YES
+	cd $(call build,$@) && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_RPATH=YES
+	cd $(call build,$@) && CCC_OVERRIDE_OPTIONS='^-Wl,--unresolved-symbols=import-dynamic' cmake --build static -j16
+	cd $(call build,$@) && CCC_OVERRIDE_OPTIONS='^-Wl,--unresolved-symbols=import-dynamic' cmake --build shared -j16
 	$(reset_install_dir) $@
-	cd $(call build,$@) && CCC_OVERRIDE_OPTIONS='^-Wl,--unresolved-symbols=import-dynamic' make -C out install DESTDIR=${PWD}/$@
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install static
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
 	touch $@
 
 $(call lib,libjpeg-turbo):
