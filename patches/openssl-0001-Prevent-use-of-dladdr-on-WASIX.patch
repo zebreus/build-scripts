@@ -1,0 +1,25 @@
+From d050298280e7132af2570eb90b76065e80b0b779 Mon Sep 17 00:00:00 2001
+From: Zebreus <zebreus@zebre.us>
+Date: Mon, 8 Sep 2025 18:14:55 +0200
+Subject: [PATCH] Prevent use of dladdr on WASIX
+
+---
+ crypto/dso/dso_dlfcn.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/crypto/dso/dso_dlfcn.c b/crypto/dso/dso_dlfcn.c
+index b5a7b7be2c..c9965f33c3 100644
+--- a/crypto/dso/dso_dlfcn.c
++++ b/crypto/dso/dso_dlfcn.c
+@@ -30,7 +30,7 @@
+ #  if defined(__SCO_VERSION__) || defined(_SCO_ELF) || \
+      (defined(__osf__) && !defined(RTLD_NEXT))     || \
+      (defined(__OpenBSD__) && !defined(RTLD_SELF)) || \
+-     defined(__ANDROID__) || defined(__TANDEM)
++     defined(__ANDROID__) || defined(__TANDEM) || defined(__wasi__) /* TODO: Remove wasi from here as soon as we support `dladdr` */
+ #   undef HAVE_DLINFO
+ #  endif
+ # endif
+-- 
+2.48.1
+
