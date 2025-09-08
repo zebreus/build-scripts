@@ -68,6 +68,7 @@ WHEELS+=packaging
 WHEELS+=pyparsing
 WHEELS+=cycler
 WHEELS+=kiwisolver
+WHEELS+=contourpy
 # WHEELS_END
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
@@ -625,6 +626,11 @@ $(call whl,python-crc32c): $(call lib,google-crc32c)
 $(call whl,python-crc32c): BUILD_ENV_VARS = CRC32C_INSTALL_PREFIX=${PWD}/$(call lib,google-crc32c)/usr/local WASIX_FORCE_STATIC_DEPENDENCIES=true
 
 $(call whl,charset_normalizer): BUILD_ENV_VARS = CHARSET_NORMALIZER_USE_MYPYC=1
+
+$(call targz,contourpy): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
+$(call targz,contourpy): ${MESON_CROSSFILE}
+$(call whl,contourpy): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
+$(call whl,contourpy): ${MESON_CROSSFILE}
 
 #####     Building libraries     #####
 
