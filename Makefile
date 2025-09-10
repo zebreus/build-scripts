@@ -70,6 +70,7 @@ WHEELS+=pyparsing
 WHEELS+=cycler
 WHEELS+=kiwisolver
 WHEELS+=contourpy
+WHEELS+=pycurl
 # WHEELS_END
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
@@ -618,6 +619,31 @@ $(call whl,matplotlib): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythoninde
 $(call whl,matplotlib): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
 $(call whl,matplotlib): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
 $(call whl,matplotlib): ${MESON_CROSSFILE}
+
+$(call targz,pycurl): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
+$(call targz,pycurl): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
+$(call targz,pycurl): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1 PYCURL_CURL_CONFIG=${PWD}/$(call lib,curl)/usr/local/bin/curl-config PYCURL_OPENSSL_DIR=${PWD}/$(call build,pycurl)/deps-sysroot/usr/local PYCURL_LINK_ARG=$(call lib,openssl)/usr/local/lib/wasm32-wasi:$(call lib,brotli)/usr/local/lib/wasm32-wasi:$(call lib,zlib)/usr/local/lib/wasm32-wasi:$(call lib,curl)/usr/local/lib/wasm32-wasi PYCURL_CURL_DIR=${PWD}/$(call lib,curl)/usr/local
+$(call targz,pycurl): BUILD_EXTRA_FLAGS = -C--curl-config -Cslfdjkadsldfjsa -C--curl-config=dashdashslfdjkadsldfjsa -Csetup-args="--toast=8" -C--install-option="--someopt" -C--custom_option=xxx 
+$(call targz,pycurl): ${MESON_CROSSFILE}
+$(call targz,pycurl):
+	cd $(call build,pycurl) && rm -rf deps-sysroot && mkdir -p deps-sysroot
+	cd $(call build,pycurl) && cp -ru ${PWD}/$(call lib,openssl)/* deps-sysroot
+	cd $(call build,pycurl) && cp -ru ${PWD}/$(call lib,zlib)/* deps-sysroot
+	cd $(call build,pycurl) && cp -ru ${PWD}/$(call lib,brotli)/* deps-sysroot
+	cd $(call build,pycurl) && cp -ru ${PWD}/$(call lib,curl)/* deps-sysroot
+	cd $(call build,pycurl) && mv deps-sysroot/usr/local/lib/wasm32-wasi deps-sysroot/lib
+	cd $(call build,pycurl) && mv deps-sysroot/lib deps-sysroot/usr/local
+	cd $(call build,pycurl) && rm -rf shared static
+	$(build_sdist)
+$(call whl,pycurl): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
+$(call whl,pycurl): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
+$(call whl,pycurl): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1 PYCURL_CURL_CONFIG=${PWD}/$(call lib,curl)/usr/local/bin/curl-config PYCURL_OPENSSL_DIR=${PWD}/$(call build,pycurl)/deps-sysroot/usr/local PYCURL_CURL_DIR=${PWD}/$(call lib,curl)/usr/local
+$(call whl,pycurl): BUILD_EXTRA_FLAGS = -C--curl-config -Cslfdjkadsldfjsa -C--curl-config=dashdashslfdjkadsldfjsa -Csetup-args="--toast=8" -C--install-option="--someopt"
+-C--custom_option=xxx
+$(call whl,pycurl): ${MESON_CROSSFILE}
+$(call whl,pycurl):
+	$(build_wheel)
+
 # TODO: When arrow supports setting rpath for all its libs, we can enable this and start working on shared builds
 # $(call whl,pyarrow): BUILD_ENV_VARS += PYARROW_BUNDLE_ARROW_CPP=ON PYARROW_BUNDLE_CYTHON_CPP=ON
 
