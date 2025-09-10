@@ -256,3 +256,6 @@
 [submodule "pkgs/pycurl.source"]
 	path = pkgs/pycurl.source
 	url = https://github.com/pycurl/pycurl.git
+[submodule "pkgs/pyopenssl.source"]
+	path = pkgs/pyopenssl.source
+	url = https://github.com/pyca/pyopenssl.git
