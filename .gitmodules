@@ -259,3 +259,6 @@
 [submodule "pkgs/pyopenssl.source"]
 	path = pkgs/pyopenssl.source
 	url = https://github.com/pyca/pyopenssl.git
+[submodule "pkgs/sqlite.source"]
+	path = pkgs/sqlite.source
+	url = https://github.com/sqlite/sqlite.git
