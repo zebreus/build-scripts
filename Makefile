@@ -200,6 +200,7 @@ LIBS+=icu
 LIBS+=ncurses
 LIBS+=readline
 LIBS+=curl
+LIBS+=sqlite
 
 # Packages that are broken can be marked as DONT_BUILD
 # Packages that work but should not be included in the default install can be marked as DONT_INSTALL
@@ -1020,6 +1021,17 @@ $(call lib,curl): $(call lib,zlib) $(call lib,openssl) $(call lib,brotli)
 # 	$(reset_install_dir) $@
 # 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
 # 	touch $@
+
+$(call lib,sqlite):
+	# Shared build is not tested yet
+	# --with-icu-cflags is not enough, we also need to add icu headers in CFLAGS
+	cd $(call build,$@) && CFLAGS="$$(PKG_CONFIG_SYSROOT_DIR=${PWD}/$(call lib,icu) PKG_CONFIG_PATH=${PWD}/$(call lib,icu)/usr/local/lib/wasm32-wasi/pkgconfig pkg-config --static --cflags icu-i18n icu-io icu-uc)" ./configure --host=wasm32-wasi --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --enable-static --enable-shared --all --disable-readline --icu-collations \
+	  --with-icu-cflags="$$(PKG_CONFIG_SYSROOT_DIR=${PWD}/$(call lib,icu) PKG_CONFIG_PATH=${PWD}/$(call lib,icu)/usr/local/lib/wasm32-wasi/pkgconfig pkg-config --static --cflags icu-i18n icu-io icu-uc)" \
+	  --with-icu-ldflags="$$(PKG_CONFIG_SYSROOT_DIR=${PWD}/$(call lib,icu) PKG_CONFIG_PATH=${PWD}/$(call lib,icu)/usr/local/lib/wasm32-wasi/pkgconfig pkg-config --static --libs icu-i18n icu-io icu-uc)"
+	cd $(call build,$@) && make -j1
+	$(reset_install_dir) $@
+	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
+	touch $@
 
 #####     Installing wheels and libs     #####
 
