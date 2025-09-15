@@ -262,3 +262,6 @@
 [submodule "pkgs/sqlite.source"]
 	path = pkgs/sqlite.source
 	url = https://github.com/sqlite/sqlite.git
+[submodule "pkgs/wasix-libc.source"]
+	path = pkgs/wasix-libc.source
+	url = https://github.com/wasix-org/wasix-libc.git

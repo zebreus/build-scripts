@@ -251,6 +251,7 @@ psycopg3-c is just the sdist of psycopg3-binary
   * This was the current commit in the wasix fork. We can probably update to the next release
 * pycurl: 7.45.6
 * sqlite: 3.50.4
+* wasix-libc: wasix-org/wasix-libc main
 <!-- LIB_VERSIONS_END -->
 
 ### Notes
@@ -354,4 +355,3 @@ If a project depends on other project they can either be direct dependencies of 
   * Contains the merged builds of multiple other projects
   * Useful when a project is using pkg-config to find its dependencies
   * Automatically builds a sysroot from its list of prerequisites
-  
