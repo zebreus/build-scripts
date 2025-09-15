@@ -17,3 +17,4 @@ __pycache__
 /pkgs/*.lib
 /pkgs/*.build
 /pkgs/*.prepared
+/pkgs/*.sysroot

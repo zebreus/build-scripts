@@ -345,3 +345,13 @@ The remaining steps are different depending on the type of project.
 
 * The build step builds the library and installs it into a `*.lib` folder, following the correct directory structure.
 * That folder is then compressed into a final distributable *.tar.xz.
+
+#### Interdependencies
+
+If a project depends on other project they can either be direct dependencies of that project or you can define a `*.sysroot` target with the dependencies as prerequisites.
+
+* `*.sysroot`
+  * Contains the merged builds of multiple other projects
+  * Useful when a project is using pkg-config to find its dependencies
+  * Automatically builds a sysroot from its list of prerequisites
+  

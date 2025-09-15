@@ -244,6 +244,7 @@ sdist = $(call in_pkgs_with_suffix,.sdist,$(1))
 whl = $(call in_pkgs_with_suffix,.whl,$(1))
 wheel = $(call in_pkgs_with_suffix,.wheel,$(1))
 lib = $(call in_pkgs_with_suffix,.lib,$(1))
+sysroot = $(call in_pkgs_with_suffix,.sysroot,$(1))
 
 WHEEL_SUBMODULES=$(call source,$(WHEELS))
 LIB_SUBMODULES=$(call source,$(LIBS))
@@ -675,6 +676,10 @@ $(call lib,%): $(call build,%)
 	echo "Missing build script for $@" >&2 && exit 1
 $(call tarxz,%): $(call lib,%)
 	$(package_lib)
+	touch $@
+$(call sysroot,%):
+	$(reset_install_dir) $@
+	$(foreach dep,$^,make install-$(call project_name,$(dep)) LIBS_DESTDIR=${PWD}/$@ || exit 1;)
 	touch $@
 
 # TODO: Add libjpeg support
