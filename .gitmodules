@@ -268,3 +268,6 @@
 [submodule "pkgs/libcxx.source"]
 	path = pkgs/libcxx.source
 	url = https://github.com/llvm/llvm-project.git
+[submodule "pkgs/compiler-rt.source"]
+	path = pkgs/compiler-rt.source
+	url = https://github.com/llvm/llvm-project.git
