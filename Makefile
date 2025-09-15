@@ -206,6 +206,7 @@ LIBS+=ncurses
 LIBS+=readline
 LIBS+=curl
 LIBS+=sqlite
+LIBS+=wasix-libc
 
 # Packages that are broken can be marked as DONT_BUILD
 # Packages that work but should not be included in the default install can be marked as DONT_INSTALL
@@ -1041,6 +1042,13 @@ $(call lib,sqlite):
 	cd $(call build,$@) && make -j1
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
+	touch $@
+
+$(call lib,wasix-libc):
+	cd $(call build,$@) && CC=/usr/bin/clang LD=/usr/bin/ld.lld AR=/usr/bin/llvm-ar NM=/usr/bin/llvm-nm AS=/usr/bin/llvm-as TARGET_ARCH=wasm32 TARGET_OS=wasix make PIC=yes CHECK_SYMBOLS=yes -j 16 -f Makefile-eh
+	cd $(call build,$@) && rm -f sysroot/lib/wasm32-wasi/libc-printscan-long-double.a
+	$(reset_install_dir) $@
+	cd $(call build,$@) && cp -rfT sysroot ${PWD}/$(call lib,$@)
 	touch $@
 
 #####     Installing wheels and libs     #####
