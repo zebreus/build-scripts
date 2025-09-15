@@ -15,6 +15,11 @@ CMAKE_TOOLCHAIN=${PWD}/resources/wasix-toolchain.cmake
 PATCH_DIR=${PWD}/patches
 GIT:=git -c 'user.name=build-scripts' -c 'user.email=wasix@wasmer.io'
 
+# Install libs to the normal sysroot if not specified otherwise
+LIBS_DESTDIR?=${WASIX_SYSROOT}
+# Install python wheels here
+WHEELS_DESTDIR?=""
+
 # Wheels build a .whl file
 WHEELS=
 WHEELS+=numpy
@@ -261,9 +266,9 @@ BUILT_WHEELS_TO_INSTALL=$(call whl,$(BUILT_WHEELS_TO_INSTALL_NAMES))
 PWB_WHEELS_TO_INSTALL=$(addprefix ${PYTHON_WASIX_BINARIES}/wheels/,$(addsuffix .whl,$(PWB_WHEELS_TO_INSTALL_NAMES)))
 BUILT_LIBS_TO_INSTALL=$(call tarxz,$(BUILT_LIBS_TO_INSTALL_NAMES))
 # Marker files to indicate that the wheels and libs have been installed
-ALL_INSTALLED_WHEELS=$(addprefix ${INSTALL_DIR}/.,$(addsuffix .installed,$(BUILT_WHEELS_TO_INSTALL_NAMES)))
-ALL_INSTALLED_WHEELS+=$(addprefix ${INSTALL_DIR}/.pwb-,$(addsuffix .installed,$(PWB_WHEELS_TO_INSTALL_NAMES)))
-ALL_INSTALLED_LIBS=$(addprefix ${WASIX_SYSROOT}/.,$(addsuffix .installed,$(BUILT_LIBS_TO_INSTALL_NAMES)))
+ALL_INSTALLED_WHEELS=$(addprefix ${WHEELS_DESTDIR}/.,$(addsuffix .installed,$(BUILT_WHEELS_TO_INSTALL_NAMES)))
+ALL_INSTALLED_WHEELS+=$(addprefix ${WHEELS_DESTDIR}/.pwb-,$(addsuffix .installed,$(PWB_WHEELS_TO_INSTALL_NAMES)))
+ALL_INSTALLED_LIBS=$(addprefix ${LIBS_DESTDIR}/.,$(addsuffix .installed,$(BUILT_LIBS_TO_INSTALL_NAMES)))
 
 # mkdir but resets the timestamp if it didnt exist before
 define reset_install_dir
@@ -387,7 +392,7 @@ python-with-packages: python | $(call lib,postgresql) $(call lib,zbar) $(call li
 	cp -r python python-with-packages
 
 	# Install the wheels
-	INSTALL_DIR=$(PWD)/python-with-packages/artifacts/wasix-install/cpython/lib/python3.13 make install-wheels
+	WHEELS_DESTDIR=$(PWD)/python-with-packages/artifacts/wasix-install/cpython/lib/python3.13 make install-wheels
 
 	# Install the libs
 	mkdir -p python-with-packages/artifacts/wasix-install/lib
@@ -1040,28 +1045,28 @@ $(call lib,sqlite):
 # Use `install-wheels` to install all wheels
 # Use `install-libs` to install all libs
 
-${WASIX_SYSROOT}/.%.installed: $(call tarxz,%)
-	test -n "${WASIX_SYSROOT}" || (echo "You must set WASIX_SYSROOT to your wasix sysroot" && exit 1)
-	tar mxJf $< -C ${WASIX_SYSROOT}
+${LIBS_DESTDIR}/.%.installed: $(call tarxz,%)
+	test -n "${LIBS_DESTDIR}" || (echo "You must set LIBS_DESTDIR to the wasix you want to install libraries to" && exit 1)
+	tar mxJf $< -C ${LIBS_DESTDIR}
 	touch $@
 
-${INSTALL_DIR}/.%.installed: $(call whl,%)
-	test -n "${INSTALL_DIR}" || (echo "You must set INSTALL_DIR to the python library path" && exit 1)
-	unzip -oq $< -d ${INSTALL_DIR}
+${WHEELS_DESTDIR}/.%.installed: $(call whl,%)
+	test -n "${WHEELS_DESTDIR}" || (echo "You must set WHEELS_DESTDIR to the python library path" && exit 1)
+	unzip -oq $< -d ${WHEELS_DESTDIR}
 	touch $@
 
-${INSTALL_DIR}/.pwb-%.installed: ${PYTHON_WASIX_BINARIES}/wheels/%.whl
-	test -n "${INSTALL_DIR}" || (echo "You must set INSTALL_DIR to the python library path" && exit 1)
-	unzip -oq $< -d ${INSTALL_DIR}
+${WHEELS_DESTDIR}/.pwb-%.installed: ${PYTHON_WASIX_BINARIES}/wheels/%.whl
+	test -n "${WHEELS_DESTDIR}" || (echo "You must set WHEELS_DESTDIR to the python library path" && exit 1)
+	unzip -oq $< -d ${WHEELS_DESTDIR}
 	touch $@
 
 INSTALL_WHEELS_TARGETS=$(addprefix install-,$(WHEELS))
 INSTALL_LIBS_TARGETS=$(addprefix install-,$(LIBS))
-$(INSTALL_WHEELS_TARGETS): install-%: ${INSTALL_DIR}/.%.installed
-$(INSTALL_LIBS_TARGETS): install-%: ${WASIX_SYSROOT}/.%.installed
+$(INSTALL_WHEELS_TARGETS): install-%: ${WHEELS_DESTDIR}/.%.installed
+$(INSTALL_LIBS_TARGETS): install-%: ${LIBS_DESTDIR}/.%.installed
 # Install a wheel from python-wasix-binaries
 INSTALL_PYTHON_WASIX_BINARIES_WHEELS_TARGETS=$(addprefix install-pwb-,$(PYTHON_WASIX_BINARIES_WHEELS))
-$(INSTALL_PYTHON_WASIX_BINARIES_WHEELS_TARGETS): install-pwb-%: ${INSTALL_DIR}/.pwb-%.installed
+$(INSTALL_PYTHON_WASIX_BINARIES_WHEELS_TARGETS): install-pwb-%: ${WHEELS_DESTDIR}/.pwb-%.installed
 
 init: $(addsuffix /.git,$(SUBMODULES))
 
