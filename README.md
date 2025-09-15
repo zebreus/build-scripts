@@ -252,6 +252,8 @@ psycopg3-c is just the sdist of psycopg3-binary
 * pycurl: 7.45.6
 * sqlite: 3.50.4
 * wasix-libc: wasix-org/wasix-libc main
+* libcxx: wasix-org/llvm-project 6bb93a243f6d15855f485f5aec3810d9e2de150d
+  * This is the commit that is currently used by wasix-libc
 <!-- LIB_VERSIONS_END -->
 
 ### Notes

@@ -265,3 +265,6 @@
 [submodule "pkgs/wasix-libc.source"]
 	path = pkgs/wasix-libc.source
 	url = https://github.com/wasix-org/wasix-libc.git
+[submodule "pkgs/libcxx.source"]
+	path = pkgs/libcxx.source
+	url = https://github.com/llvm/llvm-project.git
