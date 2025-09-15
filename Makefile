@@ -1042,6 +1042,7 @@ $(call lib,sqlite):
 	cd $(call build,$@) && make -j1
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
+	cd $(call lib,$@) && sed -Ei 's|-L${PWD}([^ ()]+)||g' usr/local/lib/wasm32-wasi/pkgconfig/sqlite3.pc
 	touch $@
 
 $(call lib,wasix-libc):
