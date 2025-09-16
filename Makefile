@@ -207,6 +207,8 @@ LIBS+=readline
 LIBS+=curl
 LIBS+=sqlite
 LIBS+=wasix-libc
+LIBS+=libcxx
+LIBS+=compiler-rt
 
 # Packages that are broken can be marked as DONT_BUILD
 # Packages that work but should not be included in the default install can be marked as DONT_INSTALL
@@ -1050,6 +1052,102 @@ $(call lib,wasix-libc):
 	cd $(call build,$@) && rm -f sysroot/lib/wasm32-wasi/libc-printscan-long-double.a
 	$(reset_install_dir) $@
 	cd $(call build,$@) && cp -rfT sysroot ${PWD}/$(call lib,$@)
+	touch $@
+
+$(call sysroot,libcxx): $(call tarxz,wasix-libc) $(call tarxz,compiler-rt)
+
+$(call lib,libcxx): $(call sysroot,libcxx) ${CMAKE_TOOLCHAIN}
+	mkdir -p build
+	cd $(call build,$@) && TARGET_ARCH=wasm32 TARGET_OS=wasix WASIX_SYSROOT=${PWD}/$(call sysroot,libcxx) cmake -B build \
+	    -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+	    -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN} -DCMAKE_INSTALL_PREFIX=/ \
+	    -DCMAKE_SYSROOT=${PWD}/$(call sysroot,libcxx) \
+	    -DCXX_SUPPORTS_CXX23=ON \
+	    -DLIBCXX_ENABLE_THREADS:BOOL=ON \
+	    -DLIBCXX_HAS_PTHREAD_API:BOOL=ON \
+	    -DLIBCXX_HAS_EXTERNAL_THREAD_API:BOOL=OFF \
+	    -DLIBCXX_BUILD_EXTERNAL_THREAD_LIBRARY:BOOL=OFF \
+	    -DLIBCXX_HAS_WIN32_THREAD_API:BOOL=OFF \
+	    -DCMAKE_BUILD_TYPE=RelWithDebugInfo \
+	    -DLIBCXX_ENABLE_SHARED:BOOL=OFF \
+	    -DLIBCXX_ENABLE_EXPERIMENTAL_LIBRARY:BOOL=OFF \
+	    -DLIBCXX_ENABLE_EXCEPTIONS:BOOL=ON \
+	    -DLIBCXX_ENABLE_FILESYSTEM:BOOL=ON \
+	    -DLIBCXX_CXX_ABI=libcxxabi \
+	    -DLIBCXX_HAS_MUSL_LIBC:BOOL=ON \
+	    -DLIBCXX_ABI_VERSION=2 \
+	    -DLIBCXX_USE_COMPILER_RT=ON \
+	    -DLIBCXXABI_ENABLE_EXCEPTIONS:BOOL=ON \
+	    -DLIBCXXABI_ENABLE_SHARED:BOOL=OFF \
+	    -DLIBCXXABI_SILENT_TERMINATE:BOOL=ON \
+	    -DLIBCXXABI_ENABLE_THREADS:BOOL=ON \
+	    -DLIBCXXABI_HAS_PTHREAD_API:BOOL=ON \
+	    -DLIBCXXABI_HAS_EXTERNAL_THREAD_API:BOOL=OFF \
+	    -DLIBCXXABI_BUILD_EXTERNAL_THREAD_LIBRARY:BOOL=OFF \
+	    -DLIBCXXABI_HAS_WIN32_THREAD_API:BOOL=OFF \
+	    -DLIBCXXABI_ENABLE_PIC:BOOL=ON \
+	    -DLIBCXXABI_USE_LLVM_UNWINDER:BOOL=ON \
+	    -DLIBUNWIND_ENABLE_SHARED:BOOL=OFF \
+	    -DLIBUNWIND_ENABLE_STATIC:BOOL=ON \
+	    -DLIBUNWIND_USE_COMPILER_RT:BOOL=ON \
+	    -DLIBUNWIND_ENABLE_THREADS:BOOL=ON \
+	    -DLIBUNWIND_HAS_PTHREAD_LIB:BOOL=ON \
+	    -DLIBUNWIND_INSTALL_LIBRARY:BOOL=ON \
+	    -DCMAKE_C_COMPILER_WORKS=ON \
+	    -DCMAKE_CXX_COMPILER_WORKS=ON \
+	    -DLLVM_COMPILER_CHECKED=ON \
+	    -DUNIX:BOOL=ON \
+	    -DLIBCXX_LIBDIR_SUFFIX=/wasm32-wasi \
+	    -DLIBCXXABI_LIBDIR_SUFFIX=/wasm32-wasi \
+	    -DLLVM_LIBDIR_SUFFIX=/wasm32-wasi \
+	    -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" \
+	    ./runtimes
+	cd $(call build,$@) && WASIX_SYSROOT=${PWD}/$(call sysroot,libcxx) cmake --build build -j16 -v
+	$(reset_install_dir) $@
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install build
+	touch $@
+
+$(call lib,compiler-rt): $(call lib,wasix-libc) ${CMAKE_TOOLCHAIN}
+	mkdir -p build
+	cd $(call build,$@) && TARGET_ARCH=wasm32 TARGET_OS=wasix WASIX_SYSROOT=${PWD}/$(call lib,wasix-libc) cmake -B build \
+	    -DCMAKE_SYSTEM_NAME=WASI \
+	    -DCMAKE_SYSTEM_VERSION=1 \
+	    -DCMAKE_SYSTEM_PROCESSOR=wasm32 \
+	    -DCMAKE_BUILD_TYPE=RelWithDebugInfo \
+	    -DCMAKE_C_COMPILER_WORKS=ON \
+	    -DCMAKE_CXX_COMPILER_WORKS=ON \
+	    -DCMAKE_C_LINKER_DEPFILE_SUPPORTED=OFF \
+	    -DCMAKE_CXX_LINKER_DEPFILE_SUPPORTED=OFF \
+	    -DCOMPILER_RT_BAREMETAL_BUILD=ON \
+	    -DCOMPILER_RT_BUILD_XRAY=OFF \
+	    -DCOMPILER_RT_INCLUDE_TESTS=OFF \
+	    -DCOMPILER_RT_HAS_FPIC_FLAG=ON \
+	    -DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON \
+	    -DCOMPILER_RT_BUILD_SANITIZERS=OFF \
+	    -DCOMPILER_RT_BUILD_XRAY=OFF \
+	    -DCOMPILER_RT_BUILD_LIBFUZZER=OFF \
+	    -DCOMPILER_RT_BUILD_PROFILE=ON \
+	    -DCOMPILER_RT_BUILD_CTX_PROFILE=OFF \
+	    -DCOMPILER_RT_BUILD_MEMPROF=OFF \
+	    -DCOMPILER_RT_BUILD_ORC=OFF \
+	    -DCOMPILER_RT_BUILD_GWP_ASAN=OFF \
+	    -DCOMPILER_RT_USE_LLVM_UNWINDER=OFF \
+	    -DCOMPILER_RT_BUILTINS_ENABLE_PIC=ON \
+	    -DSANITIZER_USE_STATIC_LLVM_UNWINDER=OFF \
+	    -DCOMPILER_RT_ENABLE_STATIC_UNWINDER=OFF \
+	    -DHAVE_UNWIND_H=OFF \
+	    -DCOMPILER_RT_HAS_FUNWIND_TABLES_FLAG=OFF \
+	    -DCMAKE_C_COMPILER_TARGET=wasm32-wasi \
+	    -DCOMPILER_RT_OS_DIR=wasm32-wasi \
+	    -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN}\
+	    -DCMAKE_SYSTEM_NAME=WASI \
+	    -DCMAKE_SYSROOT=${PWD}/$(call lib,wasix-libc) \
+	    -DCMAKE_INSTALL_PREFIX=/ \
+	    -DUNIX:BOOL=ON \
+	    compiler-rt
+	cd $(call build,$@) && WASIX_SYSROOT=${PWD}/$(call lib,wasix-libc) cmake --build build -j16 -v
+	$(reset_install_dir) $@
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install build
 	touch $@
 
 #####     Installing wheels and libs     #####
