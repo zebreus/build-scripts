@@ -682,6 +682,7 @@ $(call tarxz,%): $(call lib,%)
 	touch $@
 $(call sysroot,%):
 	$(reset_install_dir) $@
+	$(foreach dep,$^,if test "$(dep)" != "$(call tarxz,$(dep))" ; then echo "The dependencies of a sysroot must be .tar.xz artifacts (got $(dep))." 1>&2 ; exit 1 ; fi ;)
 	$(foreach dep,$^,make install-$(call project_name,$(dep)) LIBS_DESTDIR=${PWD}/$@ || exit 1;)
 	touch $@
 
@@ -1149,6 +1150,8 @@ $(call lib,compiler-rt): $(call lib,wasix-libc) ${CMAKE_TOOLCHAIN}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install build
 	touch $@
+
+$(call sysroot,python): $(call tarxz,wasix-libc) $(call tarxz,compiler-rt) $(call tarxz,libcxx) $(call tarxz,readline) $(call tarxz,ncurses) $(call tarxz,openssl) $(call tarxz,zlib) $(call tarxz,icu) $(call tarxz,sqlite) $(call tarxz,util-linux) $(call tarxz,libffi) $(call tarxz,xz)
 
 #####     Installing wheels and libs     #####
 
