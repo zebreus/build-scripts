@@ -77,6 +77,7 @@ WHEELS+=kiwisolver
 WHEELS+=contourpy
 WHEELS+=pycurl
 WHEELS+=pyopenssl
+WHEELS+=aspw
 # WHEELS_END
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
@@ -670,6 +671,12 @@ $(call targz,contourpy): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_
 $(call targz,contourpy): ${MESON_CROSSFILE}
 $(call whl,contourpy): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
 $(call whl,contourpy): ${MESON_CROSSFILE}
+
+# Untested until python build is fixed
+$(call sysroot,aspw): $(call tarxz,wasix-libc) $(call tarxz,compiler-rt) $(call tarxz,libcxx) $(call tarxz,zlib) $(call tarxz,libffi) $(call tarxz,sqlite)
+
+$(call whl,aspw): $(call sysroot,aspw)
+$(call whl,aspw): BUILD_ENV_VARS = WASIX_SYSROOT=${PWD}/$(call sysroot,aspw)
 
 #####     Building libraries     #####
 
