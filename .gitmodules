@@ -271,3 +271,6 @@
 [submodule "pkgs/compiler-rt.source"]
 	path = pkgs/compiler-rt.source
 	url = https://github.com/llvm/llvm-project.git
+[submodule "pkgs/aspw.source"]
+	path = pkgs/aspw.source
+	url = https://github.com/rogerbinns/apsw.git
