@@ -38,7 +38,8 @@ wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'watchfile
 
 # These packages will be excluded from the index
 excluded_prefixes = (
-    'artifacts/psycopg',  # For now we use psycopg builds from python-wasix-binaries
+    'artifacts/psycopg',  # For now we use psycopg builds from python-wasix-binaries,
+    'artifacts/packaging', # It's a non-native package, and having it in our index makes uv to fail when installing other `packaging` versions
 )
 wheel_files = [f for f in wheel_files if not f.startswith(excluded_prefixes)]
 
