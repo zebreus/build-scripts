@@ -1132,12 +1132,13 @@ $(call lib,sqlite): $(call sysroot,sqlite)
 $(call lib,sqlite):
 	# Shared build is not tested yet
 	# --with-icu-cflags is not enough, we also need to add icu headers in CFLAGS
-	cd $(call build,$@) && CFLAGS="$$($(call set_sysroot,sqlite) pkg-config --static --cflags icu-i18n icu-io icu-uc)" ./configure --host=wasm32-wasi --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --enable-static --enable-shared --all --disable-readline --icu-collations \
+	# Set path to /usr/bin to find a gcc as which accepts a --gdwarf-5 flag
+	cd $(call build,$@) && PATH="/usr/bin:$$PATH" CFLAGS="$$($(call set_sysroot,sqlite) pkg-config --static --cflags icu-i18n icu-io icu-uc)" ./configure --host=wasm32-wasi --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --enable-static --enable-shared --all --disable-readline --icu-collations \
 	  --with-icu-cflags="$$($(call set_sysroot,sqlite) pkg-config --static --cflags icu-i18n icu-io icu-uc)" \
 	  --with-icu-ldflags="$$($(call set_sysroot,sqlite) pkg-config --static --libs icu-i18n icu-io icu-uc)"
-	cd $(call build,$@) && $(call set_sysroot,sqlite) make -j8
+	cd $(call build,$@) && PATH="/usr/bin:$$PATH" $(call set_sysroot,sqlite) make -j8
 	$(reset_install_dir) $@
-	cd $(call build,$@) && $(call set_sysroot,sqlite) make install DESTDIR=${PWD}/$@
+	cd $(call build,$@) && PATH="/usr/bin:$$PATH" $(call set_sysroot,sqlite) make install DESTDIR=${PWD}/$@
 	cd $(call lib,$@) && sed -Ei 's|-L${PWD}([^ ()]+)||g' usr/local/lib/wasm32-wasi/pkgconfig/sqlite3.pc
 	touch $@
 
