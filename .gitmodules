@@ -268,9 +268,11 @@
 [submodule "pkgs/libcxx.source"]
 	path = pkgs/libcxx.source
 	url = https://github.com/llvm/llvm-project.git
+	shallow = true
 [submodule "pkgs/compiler-rt.source"]
 	path = pkgs/compiler-rt.source
 	url = https://github.com/llvm/llvm-project.git
+	shallow = true
 [submodule "pkgs/aspw.source"]
 	path = pkgs/aspw.source
 	url = https://github.com/rogerbinns/apsw.git
