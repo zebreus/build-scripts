@@ -99,7 +99,7 @@ Example for building a numpy wheel from scratch:
 
 ```bash
 # Install common dependencies
-sudo apt install -y git git-lfs build-essential make cmake python3.13 python3.13-venv autopoint libtool pkg-config autoconf dejagnu meson ninja-build bison flex perl patchelf po4a yq
+sudo apt install -y clang llvm git git-lfs build-essential make cmake python3.13 python3.13-venv autopoint libtool pkg-config autoconf dejagnu meson ninja-build bison flex perl patchelf po4a yq
 # Install wasix-clang
 curl -sSf https://raw.githubusercontent.com/wasix-org/wasix-clang/refs/heads/main/setup.sh | bash
 
