@@ -1326,5 +1326,6 @@ clean-artifacts:
 	rm -rf $(call targz,*)
 	rm -rf $(call whl,*)
 
+.NOTPARALLEL: $(SUBMODULES)
 .SECONDARY: $(BUILT_SDISTS) $(BUILT_LIBS) $(BUILT_WHEELS) $(SUBMODULES) $(UNPACKED_LIBS)
 .PHONY: all wheels libs external-wheels test install install-wheels install-libs clean clean-build-artifacts init $(INSTALL_WHEELS_TARGETS) $(INSTALL_LIBS_TARGETS)
