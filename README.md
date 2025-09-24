@@ -100,17 +100,21 @@ Example for building a numpy wheel from scratch:
 ```bash
 # Install common dependencies
 sudo apt install -y git git-lfs build-essential make cmake python3.13 python3.13-venv autopoint libtool pkg-config autoconf dejagnu meson ninja-build bison flex perl patchelf po4a yq
-# Some packages need some more exotic or big dependencies. More details in the spoiler below
-
 # Install wasix-clang
 curl -sSf https://raw.githubusercontent.com/wasix-org/wasix-clang/refs/heads/main/setup.sh | bash
-source ~/wasix-clang/activate
+
+# Some packages need some more exotic or big dependencies. The following three are mostly optional 
+sudo apt install -y xmlto imagemagick # giflib docs require these but they are quite big
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sudo sh -s -- install $(! test -f /.dockerenv || echo "linux --init none") --no-confirm ; source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh # pandoc requires a haskell toolchain for wasm32 which we build with nix
+wget https://github.com/bazelbuild/bazelisk/releases/download/v1.27.0/bazelisk-linux-amd64 ; sudo install -m755 bazelisk-linux-amd64 /usr/bin/bazel ; rm bazelisk-linux-amd64 # grpc and protobuf require bazel. I found bazelisk the easiest way to install bazel
 
 # Fetch this repo
 git clone https://github.com/wasix-org/build-scripts.git
 cd build-scripts
 
-# Build numpy
+# Activate wasix-clang
+source ~/.wasix-clang/activate
+# Build numpyz
 make pkgs/numpy.whl
 ```
 
@@ -120,25 +124,6 @@ The above example was tested in a freshly installed ubuntu VM created with:
 multipass launch 25.04 -n wasix-test --disk 50G --cpus 4 --memory 16G
 multipass shell wasix-test
 ```
-
-<details>
-  <summary>More dependencies</summary>
-  
-  ```bash
-  # giflib docs require these but they are quite big
-  sudo apt install -y xmlto imagemagick
-  
-  # pandoc requires a haskell toolchain for wasm32 which we build with nix
-  curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sudo sh -s -- install $(! test -f /.dockerenv || echo "linux --init none") --no-confirm
-  source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
-  
-  # grpc and protobuf require bazel. I found bazelisk the easiest way to install bazel
-  wget https://github.com/bazelbuild/bazelisk/releases/download/v1.27.0/bazelisk-linux-amd64
-  sudo install -m755 bazelisk-linux-amd64 /usr/bin/bazel
-  rm bazelisk-linux-amd64
-  ```
-
-</details>
 
 ### Patches
 
