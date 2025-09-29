@@ -291,3 +291,6 @@
 [submodule "pkgs/jq.source"]
 	path = pkgs/jq.source
 	url = https://github.com/jqlang/jq.git
+[submodule "pkgs/onigurama.source"]
+	path = pkgs/onigurama.source
+	url = https://github.com/kkos/oniguruma.git
