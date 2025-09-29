@@ -459,7 +459,7 @@ cross-venv: native-venv python
 	rm -rf ./cross-venv
 	source ./native-venv/bin/activate && python3 -m crossenv python/pkgs/cpython.lib/usr/local/bin/python3.wasm ./cross-venv --cc wasix-clang --cxx wasix-clang++
 	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple build-pip install cffi
-	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple pip install build six
+	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple pip install build six cython
 
 #####     Preparing submodules     #####
 
@@ -1326,6 +1326,6 @@ clean-artifacts:
 	rm -rf $(call targz,*)
 	rm -rf $(call whl,*)
 
-.NOTPARALLEL: $(SUBMODULES)
+.NOTPARALLEL: $(SUBMODULES) $(addsuffix /.git,$(SUBMODULES))
 .SECONDARY: $(BUILT_SDISTS) $(BUILT_LIBS) $(BUILT_WHEELS) $(SUBMODULES) $(UNPACKED_LIBS)
 .PHONY: all wheels libs external-wheels test install install-wheels install-libs clean clean-build-artifacts init $(INSTALL_WHEELS_TARGETS) $(INSTALL_LIBS_TARGETS)
