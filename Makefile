@@ -207,6 +207,7 @@ LIBS+=compiler-rt
 LIBS+=cpython
 LIBS+=libb2
 LIBS+=zstd
+LIBS+=onigurama
 
 # Packages that are broken can be marked as DONT_BUILD
 # Packages that work but should not be included in the default install can be marked as DONT_INSTALL
@@ -1269,6 +1270,14 @@ $(call lib,zstd):
 	cd $(call build,$@) && make -j16
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@ LIBDIR=/usr/local/lib/wasm32-wasi
+	touch $@
+
+$(call lib,onigurama):
+	cd $(call build,$@) && autoreconf -vfi
+	cd $(call build,$@) && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' 
+	cd $(call build,$@) && make -j1
+	$(reset_install_dir) $@
+	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
 	touch $@
 
 #####     Installing wheels and libs     #####
