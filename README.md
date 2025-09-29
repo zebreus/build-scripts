@@ -248,6 +248,7 @@ psycopg3-c is just the sdist of psycopg3-binary
 * cpython: wasix-org/cpython feat/dl
 * libb2: 0.98.1
 * zstd: 1.5.7
+* jq: 1.8.1
 <!-- LIB_VERSIONS_END -->
 
 ### Notes

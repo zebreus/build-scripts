@@ -288,3 +288,6 @@
 [submodule "pkgs/zstandard.source"]
 	path = pkgs/zstandard.source
 	url = https://github.com/indygreg/python-zstandard.git
+[submodule "pkgs/jq.source"]
+	path = pkgs/jq.source
+	url = https://github.com/jqlang/jq.git
