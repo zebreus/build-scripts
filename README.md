@@ -195,6 +195,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * zstandard: 0.25.0
   * Temporary at 103f151ca9639de8f0756c7381633973e347541a to get a small fix. PR is opened
 * caio: 0.9.17
+* jqpy: 1.10.0
 <!-- WHEEL_VERSIONS_END -->
 
 psycopg3-c is just the sdist of psycopg3-binary

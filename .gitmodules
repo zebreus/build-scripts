@@ -297,3 +297,6 @@
 [submodule "pkgs/caio.source"]
 	path = pkgs/caio.source
 	url = https://github.com/mosquito/caio.git
+[submodule "pkgs/jqpy.source"]
+	path = pkgs/jqpy.source
+	url = https://github.com/mwilliamson/jq.py.git
