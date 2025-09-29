@@ -207,6 +207,7 @@ LIBS+=compiler-rt
 LIBS+=cpython
 LIBS+=libb2
 LIBS+=zstd
+LIBS+=jq
 LIBS+=onigurama
 
 # Packages that are broken can be marked as DONT_BUILD
@@ -1270,6 +1271,17 @@ $(call lib,zstd):
 	cd $(call build,$@) && make -j16
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@ LIBDIR=/usr/local/lib/wasm32-wasi
+	touch $@
+
+$(call sysroot,jq): $(call sysroot,default) $(call tarxz,onigurama)
+# TODO: The generated jq.pc file is missing a Libs.private: -lonig I think. Add that if that causes issues
+$(call lib,jq): $(call sysroot,jq)
+	cd $(call build,$@) && autoreconf -vfi
+	cd $(call build,$@) && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
+	cd $(call build,$@) && $(call set_sysroot,jq) ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' 
+	cd $(call build,$@) && $(call set_sysroot,jq) make -j4
+	$(reset_install_dir) $@
+	cd $(call build,$@) && $(call set_sysroot,jq) make install DESTDIR=${PWD}/$@
 	touch $@
 
 $(call lib,onigurama):
