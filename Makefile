@@ -688,7 +688,7 @@ $(call whl,pyarrow): $(call sysroot,pyarrow)
 $(call whl,pyarrow): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
 $(call whl,pyarrow): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
 $(call whl,pyarrow): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
-$(call whl,pyarrow): BUILD_ENV_VARS += $(call set_sysroot,pyarrow) CFLAGS="--wasm-opt=false"
+$(call whl,pyarrow): BUILD_ENV_VARS += $(call set_sysroot,pyarrow)
 $(call whl,pyarrow): $(call lib,arrow)
 
 $(call targz,matplotlib): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
