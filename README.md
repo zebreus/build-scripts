@@ -252,6 +252,7 @@ psycopg3-c is just the sdist of psycopg3-binary
 * zstd: 1.5.7
 * jq: 1.8.1
 * onigurama: 6.9.10
+* xxhash: 0.8.3
 <!-- LIB_VERSIONS_END -->
 
 ### Notes

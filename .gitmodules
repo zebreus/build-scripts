@@ -300,3 +300,6 @@
 [submodule "pkgs/jqpy.source"]
 	path = pkgs/jqpy.source
 	url = https://github.com/mwilliamson/jq.py.git
+[submodule "pkgs/xxhash.source"]
+	path = pkgs/xxhash.source
+	url = https://github.com/Cyan4973/xxHash.git
