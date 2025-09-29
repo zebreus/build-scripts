@@ -294,3 +294,6 @@
 [submodule "pkgs/onigurama.source"]
 	path = pkgs/onigurama.source
 	url = https://github.com/kkos/oniguruma.git
+[submodule "pkgs/caio.source"]
+	path = pkgs/caio.source
+	url = https://github.com/mosquito/caio.git
