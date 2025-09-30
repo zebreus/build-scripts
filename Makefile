@@ -73,6 +73,7 @@ WHEELS+=pyopenssl
 WHEELS+=aspw
 WHEELS+=zstandard
 WHEELS+=caio
+WHEELS+=jqpy
 # WHEELS_END
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
@@ -357,6 +358,11 @@ endef
 define remove_shared_libs_except =
 $(call ensure_sysroot)
 for file in $@/usr/local/lib/wasm32-wasi/*.so* ; do if ! $(call bash_pattern_match,$$(basename "$$file"),$(1),$(2),$(3),$(4),$(5),$(6),$(7),$(8)) ; then rm -f $$file ; fi ; done
+endef
+# Remove all shared libs from a sysroot matching one of the supplied patterns
+define remove_shared_libs_only =
+$(call ensure_sysroot)
+for file in $@/usr/local/lib/wasm32-wasi/*.so* ; do if $(call bash_pattern_match,$$(basename "$$file"),$(1),$(2),$(3),$(4),$(5),$(6),$(7),$(8)) ; then rm -f $$file ; fi ; done
 endef
 # Remove all files from a sysroot that are not libs or headers
 define clean_sysroot =
@@ -748,6 +754,12 @@ $(call whl,contourpy): ${MESON_CROSSFILE}
 $(call sysroot,aspw): $(call sysroot,cpython) $(call tarxz,sqlite)
 $(call whl,aspw): $(call sysroot,aspw)
 $(call whl,aspw): BUILD_ENV_VARS = $(call set_sysroot,aspw)
+
+$(call sysroot,jqpy): $(call sysroot,cpython) $(call tarxz,jq) $(call tarxz,onigurama)
+	$(assemble_sysroot)
+	$(call remove_shared_libs_only,libonig*,libjq*)
+$(call whl,jqpy): $(call sysroot,jqpy)
+$(call whl,jqpy): BUILD_ENV_VARS = $(call set_sysroot,jqpy) JQPY_USE_SYSTEM_LIBS=1
 
 #####     Building libraries     #####
 $(UNPACKED_LIBS): $(call lib,%): $(call build,%)
