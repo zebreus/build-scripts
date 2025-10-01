@@ -123,9 +123,8 @@ PYTHON_WASIX_BINARIES_WHEELS+=jiter-0.10.0-cp313-cp313-wasix_wasm32
 PYTHON_WASIX_BINARIES_WHEELS+=orjson-3.11.0-cp313-cp313-wasix_wasm32
 # Not included: Source build in build-scripts
 #PYTHON_WASIX_BINARIES_WHEELS+=pandas-cp313-cp313-wasix_wasm32
-# Included: Not moved to build-scripts yet
-# TODO: Move to build-scripts
-PYTHON_WASIX_BINARIES_WHEELS+=peewee-3.18.2-cp313-cp313-wasix_wasm32
+# Not included: Source build in build-scripts
+#PYTHON_WASIX_BINARIES_WHEELS+=peewee-3.18.2-cp313-cp313-wasix_wasm32
 # Not included: Source build in build-scripts
 #PYTHON_WASIX_BINARIES_WHEELS+=psycopg-3.2.9-py3-none-any
 # Not included: Source build in build-scripts
