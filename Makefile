@@ -211,6 +211,7 @@ LIBS+=libb2
 LIBS+=zstd
 LIBS+=jq
 LIBS+=onigurama
+LIBS+=bzip2
 
 # Packages that are broken can be marked as DONT_BUILD
 # Packages that work but should not be included in the default install can be marked as DONT_INSTALL
@@ -1303,6 +1304,23 @@ $(call lib,onigurama):
 	cd $(call build,$@) && make -j1
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
+	touch $@
+
+$(call lib,bzip2):
+	cd $(call build,$@) && make clean
+	cd $(call build,$@) && make 
+	cd $(call build,$@) && make -f Makefile-libbz2_so clean
+	cd $(call build,$@) && make -f Makefile-libbz2_so
+	$(reset_install_dir) $@
+	cd $(call build,$@) && make install PREFIX=${PWD}/$@/usr/local
+	mkdir -p ${PWD}/$@/usr/local/lib/wasm32-wasi
+	mv ${PWD}/$@/usr/local/lib/libbz2.a ${PWD}/$@/usr/local/lib/wasm32-wasi/libbz2.a
+
+	mkdir -p ${PWD}/$@/usr/local/lib/wasm32-wasi/pkgconfig/bzip2.pc
+	install -Dm644 ${PWD}/resources/bzip2.pc ${PWD}/$@/usr/local/lib/wasm32-wasi/pkgconfig/bzip2.pc
+
+	cd $(call build,$@) && cp libbz2.so* ${PWD}/$@/usr/local/lib/wasm32-wasi
+	cd $(call build,$@) && cp bzip2-shared ${PWD}/$@/usr/local/bin
 	touch $@
 
 #####     Installing wheels and libs     #####
