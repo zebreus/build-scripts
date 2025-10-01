@@ -76,6 +76,7 @@ WHEELS+=caio
 WHEELS+=jqpy
 WHEELS+=python-xxhash
 WHEELS+=peewee
+WHEELS+=clickhouse-connect
 # WHEELS_END
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
