@@ -197,6 +197,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * caio: 0.9.17
 * jqpy: 1.10.0
 * python-xxhash: 3.5.0
+* peewee: 3.18.1
 <!-- WHEEL_VERSIONS_END -->
 
 psycopg3-c is just the sdist of psycopg3-binary
