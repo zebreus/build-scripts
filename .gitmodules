@@ -303,3 +303,6 @@
 [submodule "pkgs/xxhash.source"]
 	path = pkgs/xxhash.source
 	url = https://github.com/Cyan4973/xxHash.git
+[submodule "pkgs/python-xxhash.source"]
+	path = pkgs/python-xxhash.source
+	url = https://github.com/ifduyue/python-xxhash.git
