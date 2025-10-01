@@ -77,6 +77,7 @@ WHEELS+=jqpy
 WHEELS+=python-xxhash
 WHEELS+=peewee
 WHEELS+=clickhouse-connect
+WHEELS+=pandas2-2-3
 # WHEELS_END
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
@@ -232,6 +233,8 @@ DONT_INSTALL+=pypandoc
 DONT_INSTALL+=numpy1
 DONT_INSTALL+=numpy2-0-2
 DONT_INSTALL+=numpy2-3-2
+# Dont install pandas 2.2.3, because we have a newer version
+DONT_INSTALL+=pandas2-2-3
 # Dont install cryptography 43, because we already have 45
 DONT_INSTALL+=cryptography-43.0.3-cp313-abi3-wasix_wasm32
 # Dont install old pyarrow, because we already have the new one
@@ -666,6 +669,19 @@ $(call whl,pandas): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wa
 $(call whl,pandas): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
 $(call whl,pandas): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
 $(call whl,pandas): ${MESON_CROSSFILE}
+
+# Use numpy dev build from our registry. Our patches have been merged upstream, so for the next numpy release we can remove this.
+$(call targz,pandas2-2-3): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
+$(call targz,pandas2-2-3): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
+# $(call targz,pandas2-2-3): BUILD_ENV_VARS += PIP_NO_CACHE_DIR=1
+$(call targz,pandas2-2-3): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
+$(call targz,pandas2-2-3): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
+$(call targz,pandas2-2-3): ${MESON_CROSSFILE}
+$(call whl,pandas2-2-3): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
+$(call whl,pandas2-2-3): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
+$(call whl,pandas2-2-3): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
+$(call whl,pandas2-2-3): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
+$(call whl,pandas2-2-3): ${MESON_CROSSFILE}
 
 $(call targz,protobuf):
 	mkdir -p pkgs
