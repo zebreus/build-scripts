@@ -315,3 +315,6 @@
 [submodule "pkgs/pandas2.2.3.source"]
 	path = pkgs/pandas2-2-3.source
 	url = https://github.com/pandas-dev/pandas.git
+[submodule "pkgs/lz4.source"]
+	path = pkgs/lz4.source
+	url = https://github.com/lz4/lz4.git
