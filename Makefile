@@ -212,6 +212,7 @@ LIBS+=zstd
 LIBS+=jq
 LIBS+=onigurama
 LIBS+=bzip2
+LIBS+=xxhash
 
 # Packages that are broken can be marked as DONT_BUILD
 # Packages that work but should not be included in the default install can be marked as DONT_INSTALL
@@ -1320,6 +1321,12 @@ $(call lib,bzip2):
 
 	cd $(call build,$@) && cp libbz2.so* ${PWD}/$@/usr/local/lib/wasm32-wasi
 	cd $(call build,$@) && cp bzip2-shared ${PWD}/$@/usr/local/bin
+	touch $@
+
+$(call lib,xxhash):
+	cd $(call build,$@) && make -j16
+	$(reset_install_dir) $@
+	cd $(call build,$@) && make install DESTDIR=${PWD}/$@ PREFIX=/usr/local LIBDIR=/usr/local/lib/wasm32-wasi
 	touch $@
 
 #####     Installing wheels and libs     #####
