@@ -75,6 +75,7 @@ WHEELS+=zstandard
 WHEELS+=caio
 WHEELS+=jqpy
 WHEELS+=python-xxhash
+WHEELS+=peewee
 # WHEELS_END
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
@@ -471,7 +472,7 @@ cross-venv: native-venv python
 	rm -rf ./cross-venv
 	source ./native-venv/bin/activate && python3 -m crossenv python/pkgs/cpython.lib/usr/local/bin/python3.wasm ./cross-venv --cc wasix-clang --cxx wasix-clang++
 	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple build-pip install cffi
-	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple pip install build six cython
+	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple pip install build six cython setuptools wheel
 
 #####     Preparing submodules     #####
 
@@ -763,6 +764,9 @@ $(call sysroot,jqpy): $(call sysroot,cpython) $(call tarxz,jq) $(call tarxz,onig
 	$(call remove_shared_libs_only,libonig*,libjq*)
 $(call whl,jqpy): $(call sysroot,jqpy)
 $(call whl,jqpy): BUILD_ENV_VARS = $(call set_sysroot,jqpy) JQPY_USE_SYSTEM_LIBS=1
+
+# Needs cython from the venv during preparation
+$(call targz,peewee): BUILD_EXTRA_FLAGS = --no-isolation
 
 #####     Building libraries     #####
 $(UNPACKED_LIBS): $(call lib,%): $(call build,%)
