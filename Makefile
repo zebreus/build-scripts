@@ -216,6 +216,7 @@ LIBS+=jq
 LIBS+=onigurama
 LIBS+=bzip2
 LIBS+=xxhash
+LIBS+=lz4
 
 # Packages that are broken can be marked as DONT_BUILD
 # Packages that work but should not be included in the default install can be marked as DONT_INSTALL
@@ -1345,6 +1346,12 @@ $(call lib,bzip2):
 	touch $@
 
 $(call lib,xxhash):
+	cd $(call build,$@) && make -j16
+	$(reset_install_dir) $@
+	cd $(call build,$@) && make install DESTDIR=${PWD}/$@ PREFIX=/usr/local LIBDIR=/usr/local/lib/wasm32-wasi
+	touch $@
+
+$(call lib,lz4):
 	cd $(call build,$@) && make -j16
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@ PREFIX=/usr/local LIBDIR=/usr/local/lib/wasm32-wasi
