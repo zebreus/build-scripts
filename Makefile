@@ -1261,7 +1261,7 @@ $(call lib,compiler-rt): $(call sysroot,compiler-rt) ${CMAKE_TOOLCHAIN}
 	cd $(call build,$@) && $(call set_sysroot,compiler-rt) DESTDIR=${PWD}/$@ cmake --install build
 	touch $@
 
-$(call sysroot,cpython): $(call sysroot,default) $(call tarxz,readline) $(call tarxz,ncurses) $(call tarxz,openssl) $(call tarxz,icu) $(call tarxz,sqlite) $(call tarxz,util-linux) $(call tarxz,xz)
+$(call sysroot,cpython): $(call sysroot,default) $(call tarxz,readline) $(call tarxz,ncurses) $(call tarxz,openssl) $(call tarxz,icu) $(call tarxz,sqlite) $(call tarxz,util-linux) $(call tarxz,xz) $(call tarxz,bzip2)
 	$(assemble_sysroot)
 	$(call remove_shared_libs_except,libcrypto*,libssl*,libsqlite*)
 $(call lib,cpython): $(call sysroot,cpython)
@@ -1316,7 +1316,6 @@ $(call lib,bzip2):
 	mkdir -p ${PWD}/$@/usr/local/lib/wasm32-wasi
 	mv ${PWD}/$@/usr/local/lib/libbz2.a ${PWD}/$@/usr/local/lib/wasm32-wasi/libbz2.a
 
-	mkdir -p ${PWD}/$@/usr/local/lib/wasm32-wasi/pkgconfig/bzip2.pc
 	install -Dm644 ${PWD}/resources/bzip2.pc ${PWD}/$@/usr/local/lib/wasm32-wasi/pkgconfig/bzip2.pc
 
 	cd $(call build,$@) && cp libbz2.so* ${PWD}/$@/usr/local/lib/wasm32-wasi
