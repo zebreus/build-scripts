@@ -312,3 +312,6 @@
 [submodule "pkgs/clickhouse-connect.source"]
 	path = pkgs/clickhouse-connect.source
 	url = https://github.com/ClickHouse/clickhouse-connect.git
+[submodule "pkgs/pandas2.2.3.source"]
+	path = pkgs/pandas2-2-3.source
+	url = https://github.com/pandas-dev/pandas.git

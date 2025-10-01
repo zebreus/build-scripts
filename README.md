@@ -199,6 +199,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * python-xxhash: 3.5.0
 * peewee: 3.18.2
 * clickhouse-connect: 0.9.2
+* pandas2.2.3: 2.2.3
 <!-- WHEEL_VERSIONS_END -->
 
 psycopg3-c is just the sdist of psycopg3-binary
