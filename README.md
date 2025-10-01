@@ -198,6 +198,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * jqpy: 1.10.0
 * python-xxhash: 3.5.0
 * peewee: 3.18.1
+* clickhouse-connect: 0.9.2
 <!-- WHEEL_VERSIONS_END -->
 
 psycopg3-c is just the sdist of psycopg3-binary

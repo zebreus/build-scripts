@@ -309,3 +309,6 @@
 [submodule "pkgs/peewee.source"]
 	path = pkgs/peewee.source
 	url = https://github.com/coleifer/peewee.git
+[submodule "pkgs/clickhouse-connect.source"]
+	path = pkgs/clickhouse-connect.source
+	url = https://github.com/ClickHouse/clickhouse-connect.git
