@@ -74,6 +74,7 @@ WHEELS+=aspw
 WHEELS+=zstandard
 WHEELS+=caio
 WHEELS+=jqpy
+WHEELS+=python-xxhash
 # WHEELS_END
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
