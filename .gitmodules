@@ -318,3 +318,6 @@
 [submodule "pkgs/lz4.source"]
 	path = pkgs/lz4.source
 	url = https://github.com/lz4/lz4.git
+[submodule "pkgs/python-lz4.source"]
+	path = pkgs/python-lz4.source
+	url = https://github.com/python-lz4/python-lz4.git
