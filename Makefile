@@ -78,6 +78,7 @@ WHEELS+=python-xxhash
 WHEELS+=peewee
 WHEELS+=clickhouse-connect
 WHEELS+=pandas2-2-3
+WHEELS+=python-lz4
 # WHEELS_END
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
@@ -784,6 +785,12 @@ $(call whl,jqpy): BUILD_ENV_VARS = $(call set_sysroot,jqpy) JQPY_USE_SYSTEM_LIBS
 
 # Needs cython from the venv during preparation
 $(call targz,peewee): BUILD_EXTRA_FLAGS = --no-isolation
+
+$(call sysroot,python-lz4): $(call sysroot,cpython) $(call tarxz,lz4)
+	$(assemble_sysroot)
+	$(call remove_shared_libs_only,liblz4*)
+$(call whl,python-lz4): $(call sysroot,python-lz4)
+$(call whl,python-lz4): BUILD_ENV_VARS = $(call set_sysroot,python-lz4) PYLZ4_EXPERIMENTAL=1
 
 #####     Building libraries     #####
 $(UNPACKED_LIBS): $(call lib,%): $(call build,%)
