@@ -4,7 +4,14 @@ set -xe
 
 test -n "$BASH_VERSION" || { echo "This script requires bash"; exit 1; }
 test -f "generate-index.py" || { echo "This script must be run from the root of the build-scripts directory"; exit 1; }
-test -z "$(git status --porcelain)" || { echo "There are uncommitted changes in the repository. Please commit or stash them before running this script."; exit 1; }
+
+if [[ "$1" == "ilikedanger" ]] ; then
+    echo "☠️ Danger mode enabled. Skipping check for dirty worktree."
+    shift
+else
+    # Ensure there are no uncommitted changes
+    test -z "$(git status --porcelain)" || { echo "There are uncommitted changes in the repository. Please commit or stash them before running this script."; exit 1; }
+fi
 
 # lib = C library
 # wheel = python wheel with complex build steps
