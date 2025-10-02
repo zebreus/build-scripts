@@ -327,3 +327,6 @@
 [submodule "pkgs/snappy.source"]
 	path = pkgs/snappy.source
 	url = https://github.com/google/snappy.git
+[submodule "pkgs/lzo.source"]
+	path = pkgs/lzo.source
+	url = https://github.com/nemequ/lzo.git

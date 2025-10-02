@@ -261,6 +261,7 @@ psycopg3-c is just the sdist of psycopg3-binary
 * xxhash: 0.8.3
 * lz4: 1.10.0
 * snappy: 1.2.2
+* lzo: 2.10
 <!-- LIB_VERSIONS_END -->
 
 ### Notes
