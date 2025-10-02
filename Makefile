@@ -79,6 +79,7 @@ WHEELS+=peewee
 WHEELS+=clickhouse-connect
 WHEELS+=pandas2-2-3
 WHEELS+=python-lz4
+WHEELS+=fastavro
 # WHEELS_END
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
