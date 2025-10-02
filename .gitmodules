@@ -324,3 +324,6 @@
 [submodule "pkgs/fastavro.source"]
 	path = pkgs/fastavro.source
 	url = https://github.com/fastavro/fastavro.git
+[submodule "pkgs/snappy.source"]
+	path = pkgs/snappy.source
+	url = https://github.com/google/snappy.git
