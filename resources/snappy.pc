@@ -1,0 +1,10 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib/wasm32-wasi
+includedir=${prefix}/include
+
+Name: snappy
+Description: Fast compressor/decompressor library.
+Version: 1.2.2
+Libs: -L${libdir} -lsnappy
+Cflags: -I${includedir}

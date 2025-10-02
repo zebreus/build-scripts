@@ -219,6 +219,7 @@ LIBS+=onigurama
 LIBS+=bzip2
 LIBS+=xxhash
 LIBS+=lz4
+LIBS+=snappy
 LIBS+=lzo
 
 # Packages that are broken can be marked as DONT_BUILD
@@ -1375,6 +1376,20 @@ $(call lib,lzo):
 	$(reset_install_dir) $@
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install static
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
+	touch $@
+
+$(call sysroot,snappy): $(call sysroot,default) # $(call tarxz,lzo) $(call tarxz,lz4) # Only used for benchmarking
+$(call lib,snappy): $(call sysroot,snappy)
+	cd $(call build,$@) && rm -rf shared static
+	cd $(call build,$@) && $(call set_sysroot,$@) cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=OFF -DSNAPPY_BUILD_BENCHMARKS=OFF -DSNAPPY_BUILD_TESTS=OFF
+	cd $(call build,$@) && $(call set_sysroot,$@) cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=ON -DSNAPPY_BUILD_BENCHMARKS=OFF -DSNAPPY_BUILD_TESTS=OFF
+	cd $(call build,$@) && $(call set_sysroot,$@) cmake --build static -j16
+	cd $(call build,$@) && $(call set_sysroot,$@) cmake --build shared -j16
+	$(reset_install_dir) $@
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ $(call set_sysroot,$@) cmake --install static
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ $(call set_sysroot,$@) cmake --install shared
+
+	install -Dm644 ${PWD}/resources/snappy.pc ${PWD}/$@/usr/local/lib/wasm32-wasi/pkgconfig/snappy.pc
 	touch $@
 
 #####     Installing wheels and libs     #####
