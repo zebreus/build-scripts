@@ -219,6 +219,7 @@ LIBS+=onigurama
 LIBS+=bzip2
 LIBS+=xxhash
 LIBS+=lz4
+LIBS+=lzo
 
 # Packages that are broken can be marked as DONT_BUILD
 # Packages that work but should not be included in the default install can be marked as DONT_INSTALL
@@ -1363,6 +1364,17 @@ $(call lib,lz4):
 	cd $(call build,$@) && make -j16
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@ PREFIX=/usr/local LIBDIR=/usr/local/lib/wasm32-wasi
+	touch $@
+
+$(call lib,lzo):
+	cd $(call build,$@) && rm -rf shared static
+	cd $(call build,$@) && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_STATIC_LIBS=ON -DBUILD_SHARED_LIBS=OFF -DENABLE_STATIC=ON -DENABLE_SHARED=OFF
+	cd $(call build,$@) && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_STATIC_LIBS=OFF -DBUILD_SHARED_LIBS=ON -DENABLE_STATIC=OFF -DENABLE_SHARED=ON
+	cd $(call build,$@) && cmake --build static -j16
+	cd $(call build,$@) && cmake --build shared -j16
+	$(reset_install_dir) $@
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install static
+	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
 	touch $@
 
 #####     Installing wheels and libs     #####
