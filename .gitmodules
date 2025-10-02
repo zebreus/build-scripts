@@ -321,3 +321,6 @@
 [submodule "pkgs/python-lz4.source"]
 	path = pkgs/python-lz4.source
 	url = https://github.com/python-lz4/python-lz4.git
+[submodule "pkgs/fastavro.source"]
+	path = pkgs/fastavro.source
+	url = https://github.com/fastavro/fastavro.git

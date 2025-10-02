@@ -201,6 +201,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * clickhouse-connect: 0.9.2
 * pandas2.2.3: 2.2.3
 * python-lz4: 4.4.4
+* fastavro: 1.12.0
 <!-- WHEEL_VERSIONS_END -->
 
 psycopg3-c is just the sdist of psycopg3-binary
