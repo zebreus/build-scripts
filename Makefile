@@ -1339,6 +1339,7 @@ $(call lib,jq): $(call sysroot,jq)
 
 $(call lib,onigurama):
 	cd $(call build,$@) && autoreconf -vfi
+	cd $(call build,$@) && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
 	cd $(call build,$@) && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' 
 	cd $(call build,$@) && make -j1
 	$(reset_install_dir) $@
