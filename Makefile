@@ -384,6 +384,7 @@ cd $@ ; rm -rf ./share ./usr/share ./usr/local/share
 cd $@ ; rm -rf ./bin ./usr/bin ./usr/local/bin
 cd $@ ; rm -rf ./sbin ./usr/sbin ./usr/local/sbin
 cd $@ ; rm -rf ./etc ./usr/etc ./usr/local/etc
+cd $@ ; rm -rf ./man ./usr/man ./usr/local/man
 endef
 
 # Set some environment variables based on the build sysroot
