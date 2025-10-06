@@ -1202,8 +1202,12 @@ $(call lib,libcxx): $(call sysroot,libcxx) ${CMAKE_TOOLCHAIN}
 	cd $(call build,$@) && mkdir -p build
 	cd $(call build,$@) && $(call set_sysroot,libcxx) TARGET_ARCH=wasm32 TARGET_OS=wasix cmake -B build \
 	    -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
-	    -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN} -DCMAKE_INSTALL_PREFIX=/ \
+	    -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN} \
 	    -DCMAKE_SYSROOT=${PWD}/$(call sysroot,libcxx) \
+	    -DCMAKE_INSTALL_PREFIX=/usr/local \
+	    -DLIBCXX_LIBDIR_SUFFIX=/wasm32-wasi \
+	    -DLIBCXXABI_LIBDIR_SUFFIX=/wasm32-wasi \
+	    -DLLVM_LIBDIR_SUFFIX=/wasm32-wasi \
 	    -DCXX_SUPPORTS_CXX23=ON \
 	    -DLIBCXX_ENABLE_THREADS:BOOL=ON \
 	    -DLIBCXX_HAS_PTHREAD_API:BOOL=ON \
@@ -1239,9 +1243,6 @@ $(call lib,libcxx): $(call sysroot,libcxx) ${CMAKE_TOOLCHAIN}
 	    -DCMAKE_CXX_COMPILER_WORKS=ON \
 	    -DLLVM_COMPILER_CHECKED=ON \
 	    -DUNIX:BOOL=ON \
-	    -DLIBCXX_LIBDIR_SUFFIX=/wasm32-wasi \
-	    -DLIBCXXABI_LIBDIR_SUFFIX=/wasm32-wasi \
-	    -DLLVM_LIBDIR_SUFFIX=/wasm32-wasi \
 	    -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" \
 	    ./runtimes
 	cd $(call build,$@) && $(call set_sysroot,libcxx) cmake --build build -j16 -v
@@ -1285,7 +1286,7 @@ $(call lib,compiler-rt): $(call sysroot,compiler-rt) ${CMAKE_TOOLCHAIN}
 	    -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN}\
 	    -DCMAKE_SYSTEM_NAME=WASI \
 	    -DCMAKE_SYSROOT=${PWD}/$(call sysroot,compiler-rt) \
-	    -DCMAKE_INSTALL_PREFIX=/ \
+	    -DCMAKE_INSTALL_PREFIX=/usr/local \
 	    -DUNIX:BOOL=ON \
 	    compiler-rt
 	cd $(call build,$@) && $(call set_sysroot,compiler-rt) cmake --build build -j16 -v
