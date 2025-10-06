@@ -1192,10 +1192,9 @@ $(call lib,sqlite):
 	touch $@
 
 $(call lib,wasix-libc):
-	cd $(call build,$@) && CC=/usr/bin/clang LD=/usr/bin/ld.lld AR=/usr/bin/llvm-ar NM=/usr/bin/llvm-nm AS=/usr/bin/llvm-as TARGET_ARCH=wasm32 TARGET_OS=wasix make PIC=yes CHECK_SYMBOLS=yes -j 16 -f Makefile-eh
-	cd $(call build,$@) && rm -f sysroot/lib/wasm32-wasi/libc-printscan-long-double.a
 	$(reset_install_dir) $@
-	cd $(call build,$@) && cp -rfT sysroot ${PWD}/$(call lib,$@)
+	# The compiler needs to be able to target both native and wasm32-wasi, so we cannot use wasix-clang here
+	cd $(call build,$@) && CC=/usr/bin/clang LD=/usr/bin/ld.lld AR=/usr/bin/llvm-ar NM=/usr/bin/llvm-nm AS=/usr/bin/llvm-as TARGET_ARCH=wasm32 TARGET_OS=wasix make -f Makefile-eh PIC=yes CHECK_SYMBOLS=yes -j 16 install DESTDIR=${PWD}/$@ PREFIX=/ LIBDIR=/lib/wasm32-wasi
 	touch $@
 
 $(call sysroot,libcxx): $(call tarxz,wasix-libc) $(call tarxz,compiler-rt)
