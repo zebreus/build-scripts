@@ -221,6 +221,7 @@ LIBS+=xxhash
 LIBS+=lz4
 LIBS+=snappy
 LIBS+=lzo
+LIBS+=ca-certificates
 
 # Packages that are broken can be marked as DONT_BUILD
 # Packages that work but should not be included in the default install can be marked as DONT_INSTALL
@@ -416,6 +417,10 @@ test: python-with-packages
 	bash run-tests.sh
 	docker kill wasix-tests-mysql || true
 	docker kill wasix-tests-postgres || true
+
+# Make sure that python-wasix-binaries is initialized
+python-wasix-binaries/.git:
+	git submodule update --init --recursive python-wasix-binaries
 
 #####     Downloading and uploading the python webc     #####
 
@@ -1390,6 +1395,15 @@ $(call lib,snappy): $(call sysroot,snappy)
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ $(call set_sysroot,$@) cmake --install shared
 
 	install -Dm644 ${PWD}/resources/snappy.pc ${PWD}/$@/usr/local/lib/wasm32-wasi/pkgconfig/snappy.pc
+	touch $@
+
+# ca-certificates is currently not build from source, but copied over in the build step from python-wasix-binaries
+# The only reason for not building from source is that I don't know where the source is
+# TODO: Build ca-certificates from source
+$(call lib,ca-certificates): | python-wasix-binaries/.git
+	$(reset_install_dir) $@
+	mkdir -p ${PWD}/$@/usr/local/ssl
+	cd $(call build,$@) && cp -rT ./ssl-certs ${PWD}/$@/usr/local/ssl
 	touch $@
 
 #####     Installing wheels and libs     #####

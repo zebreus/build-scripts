@@ -336,3 +336,6 @@
 [submodule "pkgs/gmp.source"]
 	path = pkgs/gmp.source
 	url = https://github.com/gmp-mirror/gmp-6.3.git
+[submodule "pkgs/ssl-certs.source"]
+	path = pkgs/ca-certificates.source
+	url = https://github.com/wasix-org/python-wasix-binaries
