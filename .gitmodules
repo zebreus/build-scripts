@@ -330,3 +330,6 @@
 [submodule "pkgs/lzo.source"]
 	path = pkgs/lzo.source
 	url = https://github.com/nemequ/lzo.git
+[submodule "pkgs/scipy.source"]
+	path = pkgs/scipy.source
+	url = https://github.com/scipy/scipy.git

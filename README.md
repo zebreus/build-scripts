@@ -202,6 +202,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * pandas2.2.3: 2.2.3
 * python-lz4: 4.4.4
 * fastavro: 1.12.0
+* scipy: 1.16.2
 <!-- WHEEL_VERSIONS_END -->
 
 psycopg3-c is just the sdist of psycopg3-binary
