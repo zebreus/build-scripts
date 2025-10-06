@@ -999,7 +999,7 @@ $(call lib,mariadb-connector-c): $(call sysroot,mariadb-connector-c)
 $(call lib,openssl):
 	# Options adapted from https://github.com/wasix-org/openssl/commit/52cc90976bea2e4f224250ef72cfa992c42bf410
 	# Add no-pic to disable PIC
-	cd $(call build,$@) && ./Configure no-asm no-tests no-apps no-afalgeng no-dgram no-secure-memory --prefix /usr/local --libdir=lib/wasm32-wasi
+	cd $(call build,$@) && ./Configure no-asm no-tests no-apps no-afalgeng no-dgram no-secure-memory -d --prefix /usr/local --libdir=lib/wasm32-wasi
 	cd $(call build,$@) && make -j8
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install_sw DESTDIR=${PWD}/$@
