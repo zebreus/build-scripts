@@ -333,3 +333,6 @@
 [submodule "pkgs/scipy.source"]
 	path = pkgs/scipy.source
 	url = https://github.com/scipy/scipy.git
+[submodule "pkgs/gmp.source"]
+	path = pkgs/gmp.source
+	url = https://github.com/gmp-mirror/gmp-6.3.git

@@ -264,6 +264,8 @@ psycopg3-c is just the sdist of psycopg3-binary
 * snappy: 1.2.2
 * lzo: 2.10
   * Unofficial github mirror, because upstream only provides tarballs. Last release in 2017.
+* gmp: 6.3
+  * Unofficial github mirror, because upstream uses mercurial
 <!-- LIB_VERSIONS_END -->
 
 ### Notes
