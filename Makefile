@@ -1339,6 +1339,7 @@ $(call lib,compiler-rt): $(call sysroot,compiler-rt) ${CMAKE_TOOLCHAIN}
 $(call sysroot,cpython): $(call sysroot,default) $(call tarxz,readline) $(call tarxz,ncurses) $(call tarxz,openssl) $(call tarxz,icu) $(call tarxz,sqlite) $(call tarxz,util-linux) $(call tarxz,xz) $(call tarxz,bzip2)
 	$(assemble_sysroot)
 	$(call remove_shared_libs_except,libcrypto*,libssl*,libsqlite*)
+	$(clean_sysroot)
 $(call lib,cpython): $(call sysroot,cpython)
 	mkdir -p build
 	cd $(call build,$@) && WASIX_SYSROOT=${PWD}/$(call sysroot,cpython) CC=/usr/bin/clang CXX=/usr/bin/clang++ bash wasix-full.sh
