@@ -1146,11 +1146,11 @@ $(call lib,arrow):
 
 $(call lib,rapidjson):
 	cd $(call build,$@) && rm -rf header_only
-	cd $(call build,$@) && cmake -B header_only -DCMAKE_BUILD_TYPE=Release -DRAPIDJSON_BUILD_TESTS=OFF -DRAPIDJSON_BUILD_EXAMPLES=OFF
+	cd $(call build,$@) && cmake -B header_only -DCMAKE_BUILD_TYPE=Release -DRAPIDJSON_BUILD_TESTS=OFF -DRAPIDJSON_BUILD_EXAMPLES=OFF -DLIB_INSTALL_DIR=/usr/local/lib/wasm32-wasi
 	cd $(call build,$@) && cmake --build header_only -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install header_only
-	sed -i 's|/usr/local/include|$${CMAKE_CURRENT_LIST_DIR}/../../../include|' ${PWD}/$@/usr/local/lib/cmake/RapidJSON/RapidJSONConfig.cmake
+	sed -i 's|/usr/local/include|$${CMAKE_CURRENT_LIST_DIR}/../../../include|' ${PWD}/$@/usr/local/lib/wasm32-wasi/cmake/RapidJSON/RapidJSONConfig.cmake
 	touch $@
 
 $(call lib,icu):
