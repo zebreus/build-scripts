@@ -801,6 +801,10 @@ $(call sysroot,python-lz4): $(call sysroot,cpython) $(call tarxz,lz4)
 $(call whl,python-lz4): $(call sysroot,python-lz4)
 $(call whl,python-lz4): BUILD_ENV_VARS = $(call set_sysroot,python-lz4) PYLZ4_EXPERIMENTAL=1
 
+$(call sysroot,pyzbar): $(call sysroot,cpython) $(call tarxz,zbar)
+$(call whl,pyzbar): $(call sysroot,pyzbar)
+$(call whl,pyzbar): BUILD_ENV_VARS = $(call set_sysroot,pyzbar)
+
 #####     Building libraries     #####
 $(UNPACKED_LIBS): $(call lib,%): $(call build,%)
 $(BUILT_LIBS): $(call tarxz,%): $(call lib,%)
