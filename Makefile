@@ -9,6 +9,9 @@ PATCH_DIR=${PWD}/patches
 GIT:=git -c 'user.name=build-scripts' -c 'user.email=wasix@wasmer.io' -c 'init.defaultBranch=main'
 WASMER ?= wasmer
 
+# You should only run this Makefile with -j1, because git does not like parallel submodule operations
+JOBS=12
+
 # Install libs to the normal sysroot if not specified otherwise
 LIBS_DESTDIR?=${WASIX_SYSROOT}
 # Install python wheels here
@@ -859,7 +862,7 @@ $(call lib,zbar):
 	# Force configure to build shared libraries. This is a hack, but it works.
 	cd $(call build,$@) && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
 	cd $(call build,$@) && $(call set_sysroot) ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --enable-static --enable-shared --disable-video --disable-rpath --without-imagemagick --without-java --without-qt --without-gtk --without-xv --without-xshm --without-python
-	cd $(call build,$@) && $(call set_sysroot) make
+	cd $(call build,$@) && $(call set_sysroot) make -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
 	touch $@
@@ -868,7 +871,7 @@ $(call sysroot,libffi): $(call tarxz,wasix-libc) $(call tarxz,compiler-rt) $(cal
 $(call lib,libffi): $(call sysroot,libffi)
 	cd $(call build,$@) && autoreconf -vfi
 	cd $(call build,$@) && $(call set_sysroot,libffi) ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --host="wasm32-wasi" --enable-static --disable-shared --disable-dependency-tracking --disable-builddir --disable-multi-os-directory --disable-raw-api --disable-docs
-	cd $(call build,$@) && $(call set_sysroot,libffi) make
+	cd $(call build,$@) && $(call set_sysroot,libffi) make -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
 	touch $@
@@ -877,7 +880,7 @@ $(call sysroot,zlib): $(call tarxz,wasix-libc) $(call tarxz,compiler-rt) $(call 
 $(call lib,zlib): $(call sysroot,zlib)
 	cd $(call build,$@) && rm -rf combined
 	cd $(call build,$@) && $(call set_sysroot,zlib) cmake -B combined -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DZLIB_BUILD_MINIZIP=OFF
-	cd $(call build,$@) && $(call set_sysroot,zlib) cmake --build combined -j16
+	cd $(call build,$@) && $(call set_sysroot,zlib) cmake --build combined -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install combined
 	touch $@
@@ -894,8 +897,8 @@ $(call lib,pandoc):
 
 $(call lib,postgresql):
 	cd $(call build,$@) && $(call set_sysroot) ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --without-icu --without-zlib --without-readline
-	cd $(call build,$@) && $(call set_sysroot) make MAKELEVEL=0 -C src/interfaces
-	cd $(call build,$@) && $(call set_sysroot) make MAKELEVEL=0 -C src/include
+	cd $(call build,$@) && $(call set_sysroot) make MAKELEVEL=0 -C src/interfaces -j${JOBS}
+	cd $(call build,$@) && $(call set_sysroot) make MAKELEVEL=0 -C src/include -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make MAKELEVEL=0 -C src/interfaces install DESTDIR=${PWD}/$@
 	cd $(call build,$@) && make MAKELEVEL=0 -C src/include install DESTDIR=${PWD}/$@
@@ -909,8 +912,8 @@ $(call lib,brotli):
 # TODO: Implement chown in wasix and unset CCC_OVERRIDE_OPTIONS
 	cd $(call build,$@) && $(call set_sysroot) cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_RPATH=YES
 	cd $(call build,$@) && $(call set_sysroot) cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_RPATH=YES
-	cd $(call build,$@) && $(call set_sysroot) CCC_OVERRIDE_OPTIONS='^-Wl,--unresolved-symbols=import-dynamic' cmake --build static -j16
-	cd $(call build,$@) && $(call set_sysroot) CCC_OVERRIDE_OPTIONS='^-Wl,--unresolved-symbols=import-dynamic' cmake --build shared -j16
+	cd $(call build,$@) && $(call set_sysroot) CCC_OVERRIDE_OPTIONS='^-Wl,--unresolved-symbols=import-dynamic' cmake --build static -j${JOBS}
+	cd $(call build,$@) && $(call set_sysroot) CCC_OVERRIDE_OPTIONS='^-Wl,--unresolved-symbols=import-dynamic' cmake --build shared -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install static
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
@@ -921,7 +924,7 @@ $(call lib,libjpeg-turbo):
 	# They use a custom version of GNUInstallDirs.cmake does not support libdir starting with prefix.
 	# TODO: Add a sed command to fix that
 	cd $(call build,$@) && $(call set_sysroot) cmake -DCMAKE_BUILD_TYPE=Release -B out -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi'
-	cd $(call build,$@) && $(call set_sysroot) make -C out
+	cd $(call build,$@) && $(call set_sysroot) make -C out -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make -C out install DESTDIR=${PWD}/$@
 	touch $@
@@ -930,8 +933,8 @@ $(call lib,xz):
 	cd $(call build,$@) && rm -rf static shared
 	cd $(call build,$@) && $(call set_sysroot) cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_INSTALL_RPATH=YES -DCMAKE_SKIP_RPATH=YES
 	cd $(call build,$@) && $(call set_sysroot) cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_INSTALL_RPATH=YES -DCMAKE_SKIP_RPATH=YES
-	cd $(call build,$@) && $(call set_sysroot) cmake --build shared -j16
-	cd $(call build,$@) && $(call set_sysroot) cmake --build static -j16
+	cd $(call build,$@) && $(call set_sysroot) cmake --build shared -j${JOBS}
+	cd $(call build,$@) && $(call set_sysroot) cmake --build static -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install static
@@ -942,7 +945,7 @@ $(call lib,libtiff):
 	# Force configure to build shared libraries. This is a hack, but it works.
 	cd $(call build,$@) && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
 	cd $(call build,$@) && $(call set_sysroot) ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi'
-	cd $(call build,$@) && $(call set_sysroot) make -j4
+	cd $(call build,$@) && $(call set_sysroot) make -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && $(call set_sysroot) make install DESTDIR=${PWD}/$@
 	touch $@
@@ -954,13 +957,13 @@ $(call lib,libwebp):
 	# Force configure to build shared libraries. This is a hack, but it works.
 	cd $(call build,$@) && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
 	cd $(call build,$@) && $(call set_sysroot,libwebp) ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi'
-	cd $(call build,$@) && $(call set_sysroot,libwebp) make
+	cd $(call build,$@) && $(call set_sysroot,libwebp) make -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && $(call set_sysroot,libwebp) make install DESTDIR=${PWD}/$@
 	touch $@
 
 $(call lib,giflib): resources/giflib.pc
-	cd $(call build,$@) && $(call set_sysroot) make
+	cd $(call build,$@) && $(call set_sysroot) make -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && $(call set_sysroot) make install PREFIX=/usr/local LIBDIR=/usr/local/lib/wasm32-wasi DESTDIR=${PWD}/$@
 	# $(call build,$@) does not include a pkg-config file, so we need to install it manually. We need to bump the version in that file as well, when we update the version
@@ -971,21 +974,21 @@ $(call lib,libpng):
 	# Force configure to build shared libraries. This is a hack, but it works.
 	cd $(call build,$@) && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
 	cd $(call build,$@) && $(call set_sysroot) ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi'
-	cd $(call build,$@) && $(call set_sysroot) make
+	cd $(call build,$@) && $(call set_sysroot) make -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && $(call set_sysroot) make install DESTDIR=${PWD}/$@
 	touch $@
 
 $(call lib,SDL3):
 	cd $(call build,$@) && $(call set_sysroot) cmake . -DSDL_UNIX_CONSOLE_BUILD=ON -DSDL_RENDER_GPU=OFF -DSDL_VIDEO=OFF -DSDL_AUDIO=OFF -DSDL_JOYSTICK=OFF -DSDL_HAPTIC=OFF -DSDL_HIDAPI=OFF -DSDL_SENSOR=OFF -DSDL_POWER=OFF -DSDL_DIALOG=OFF -DSDL_STATIC=ON -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi'
-	cd $(call build,$@) && $(call set_sysroot) make
+	cd $(call build,$@) && $(call set_sysroot) make -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && $(call set_sysroot) make install DESTDIR=${PWD}/$@
 	touch $@
 
 $(call lib,openjpeg):
 	cd $(call build,$@) && $(call set_sysroot) cmake . -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi'
-	cd $(call build,$@) && $(call set_sysroot) make
+	cd $(call build,$@) && $(call set_sysroot) make -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && $(call set_sysroot) make install DESTDIR=${PWD}/$@
 	touch $@
@@ -993,7 +996,7 @@ $(call lib,openjpeg):
 $(call lib,libuv):
 	cd $(call build,$@) && rm -rf out
 	cd $(call build,$@) && cmake -B out -DLIBUV_BUILD_TESTS=OFF -DCMAKE_SYSTEM_NAME=WASI -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi'
-	cd $(call build,$@) && make -C out
+	cd $(call build,$@) && make -C out -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make -C out install DESTDIR=${PWD}/$@
 	touch $@
@@ -1026,9 +1029,9 @@ $(call lib,mariadb-connector-c): $(call sysroot,mariadb-connector-c)
 	 -DBUILD_SHARED_LIBS=OFF \
 	 -DBUILD_STATIC_LIBS=ON \
 	 -DINSTALL_PCDIR='lib/wasm32-wasi/pkgconfig'
-	cd $(call build,$@) && $(call set_sysroot,mariadb-connector-c) make -j16 -C out
+	cd $(call build,$@) && $(call set_sysroot,mariadb-connector-c) make -j${JOBS} -C out
 	$(reset_install_dir) $@
-	cd $(call build,$@) && $(call set_sysroot,mariadb-connector-c) make -j16 -C out install DESTDIR=${PWD}/$@
+	cd $(call build,$@) && $(call set_sysroot,mariadb-connector-c) make -j${JOBS} -C out install DESTDIR=${PWD}/$@
 	cd ${PWD}/$@/usr/local/lib/wasm32-wasi/pkgconfig && sed -i "s|${PWD}/$(call sysroot,mariadb-connector-c)/usr/local/lib/wasm32-wasi|\$${libdir}|g" libmariadb.pc
 	cd ${PWD}/$@/usr/local/lib/wasm32-wasi/pkgconfig && sed "s|libmariadb|libmysql|g" libmariadb.pc > libmysql.pc
 	cd ${PWD}/$@/usr/local/lib/wasm32-wasi && ln -s libmariadbclient.a ./libmysqlclient.a
@@ -1039,7 +1042,7 @@ $(call lib,openssl):
 	# Options adapted from https://github.com/wasix-org/openssl/commit/52cc90976bea2e4f224250ef72cfa992c42bf410
 	# Add no-pic to disable PIC
 	cd $(call build,$@) && ./Configure no-asm no-tests no-apps no-afalgeng no-dgram no-secure-memory -d --prefix /usr/local --libdir=lib/wasm32-wasi
-	cd $(call build,$@) && make -j8
+	cd $(call build,$@) && make -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install_sw DESTDIR=${PWD}/$@
 	touch $@
@@ -1048,7 +1051,7 @@ $(call lib,openssl):
 $(call lib,util-linux):
 	cd $(call build,$@) && bash autogen.sh
 	cd $(call build,$@) && ./configure --disable-all-programs --enable-libuuid --host=wasm32-wasi --enable-static --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi'
-	cd $(call build,$@) && make
+	cd $(call build,$@) && make -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
 	touch $@
@@ -1057,7 +1060,7 @@ $(call lib,util-linux):
 $(call lib,dropbear):
 	cd $(call build,$@) && autoreconf -vfi
 	cd $(call build,$@) && $(call sysroot) ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --enable-bundled-libtom --without-pam --enable-static --disable-utmp --disable-utmpx --disable-wtmp --disable-wtmpx --disable-lastlog --disable-loginfunc
-	cd $(call build,$@) && $(call sysroot) make -j8
+	cd $(call build,$@) && $(call sysroot) make -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && $(call sysroot) make install DESTDIR=${PWD}/$@
 	touch $@
@@ -1066,8 +1069,8 @@ $(call lib,tinyxml2):
 	cd $(call build,$@) && rm -rf shared static
 	cd $(call build,$@) && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=OFF
 	cd $(call build,$@) && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=ON
-	cd $(call build,$@) && cmake --build static -j16
-	cd $(call build,$@) && cmake --build shared -j16
+	cd $(call build,$@) && cmake --build static -j${JOBS}
+	cd $(call build,$@) && cmake --build shared -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install static
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
@@ -1077,8 +1080,8 @@ $(call lib,geos):
 	cd $(call build,$@) && rm -rf static shared
 	cd $(call build,$@) && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_GEOSOP=OFF -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_INSTALL_RPATH=YES -DCMAKE_SKIP_RPATH=YES
 	cd $(call build,$@) && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_GEOSOP=OFF -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_INSTALL_RPATH=YES -DCMAKE_SKIP_RPATH=YES
-	cd $(call build,$@) && cmake --build static -j16
-	cd $(call build,$@) && cmake --build shared -j16
+	cd $(call build,$@) && cmake --build static -j${JOBS}
+	cd $(call build,$@) && cmake --build shared -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install static
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
@@ -1088,8 +1091,8 @@ $(call lib,libxslt): $(call lib,xz) $(call lib,libxml2) $(call lib,zlib)
 	cd $(call build,$@) && rm -rf static shared
 	cd $(call build,$@) && CMAKE_PREFIX_PATH=${PWD}/$(call lib,xz)/usr/local/lib/wasm32-wasi/cmake:${PWD}/$(call lib,libxml2)/usr/local/lib/wasm32-wasi/cmake:${PWD}/$(call lib,zlib)/usr/local/lib/wasm32-wasi/cmake cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_RPATH=YES -DLIBXSLT_WITH_PYTHON=OFF
 	cd $(call build,$@) && CMAKE_PREFIX_PATH=${PWD}/$(call lib,xz)/usr/local/lib/wasm32-wasi/cmake:${PWD}/$(call lib,libxml2)/usr/local/lib/wasm32-wasi/cmake:${PWD}/$(call lib,zlib)/usr/local/lib/wasm32-wasi/cmake cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_RPATH=YES -DLIBXSLT_WITH_PYTHON=OFF
-	cd $(call build,$@) && cmake --build static -j16
-	cd $(call build,$@) && cmake --build shared -j16
+	cd $(call build,$@) && cmake --build static -j${JOBS}
+	cd $(call build,$@) && cmake --build shared -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install static
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
@@ -1099,8 +1102,8 @@ $(call lib,libxml2):
 	cd $(call build,$@) && rm -rf shared static
 	cd $(call build,$@) && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=OFF -DLIBXML2_WITH_PYTHON=OFF
 	cd $(call build,$@) && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=ON -DLIBXML2_WITH_PYTHON=OFF
-	cd $(call build,$@) && cmake --build static -j16
-	cd $(call build,$@) && cmake --build shared -j16
+	cd $(call build,$@) && cmake --build static -j${JOBS}
+	cd $(call build,$@) && cmake --build shared -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install static
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
@@ -1110,8 +1113,8 @@ $(call lib,google-crc32c):
 	cd $(call build,$@) && rm -rf shared static
 	cd $(call build,$@) && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=OFF -DCRC32C_BUILD_TESTS=OFF -DCRC32C_USE_GLOG=OFF -DCRC32C_BUILD_BENCHMARKS=OFF 
 	cd $(call build,$@) && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=ON -DCRC32C_BUILD_TESTS=OFF -DCRC32C_USE_GLOG=OFF -DCRC32C_BUILD_BENCHMARKS=OFF
-	cd $(call build,$@) && cmake --build static -j16
-	cd $(call build,$@) && cmake --build shared -j16
+	cd $(call build,$@) && cmake --build static -j${JOBS}
+	cd $(call build,$@) && cmake --build shared -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install static
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
@@ -1128,14 +1131,14 @@ $(call lib,google-crc32c):
 $(call lib,arrow19-0-1):
 	cd $(call build,$@)/cpp && rm -rf static
 	cd $(call build,$@)/cpp && cmake -B static -DRapidJSON_SOURCE=BUNDLED -DCMAKE_SYSTEM_PROCESSOR="wasm32" -DCMAKE_SYSTEM_NAME="WASI" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR=lib/wasm32-wasi -DARROW_BUILD_SHARED=OFF -DARROW_BUILD_STATIC=ON --preset ninja-release-python-minimal -DARROW_IPC=ON
-	cd $(call build,$@)/cpp && cmake --build static -j16 -v
+	cd $(call build,$@)/cpp && cmake --build static -j${JOBS} -v
 	$(reset_install_dir) $@
 	cd $(call build,$@)/cpp && DESTDIR=${PWD}/$@ cmake --install static
 	touch $@
 $(call lib,arrow):
 	cd $(call build,$@)/cpp && rm -rf static
 	cd $(call build,$@)/cpp && cmake -B static -DRapidJSON_SOURCE=BUNDLED -DCMAKE_SYSTEM_PROCESSOR="wasm32" -DCMAKE_SYSTEM_NAME="WASI" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR=lib/wasm32-wasi -DARROW_BUILD_SHARED=OFF -DARROW_BUILD_STATIC=ON --preset ninja-release-python-minimal -DARROW_IPC=ON
-	cd $(call build,$@)/cpp && cmake --build static -j16 -v
+	cd $(call build,$@)/cpp && cmake --build static -j${JOBS} -v
 	$(reset_install_dir) $@
 	cd $(call build,$@)/cpp && DESTDIR=${PWD}/$@ cmake --install static
 	touch $@
@@ -1143,7 +1146,7 @@ $(call lib,arrow):
 $(call lib,rapidjson):
 	cd $(call build,$@) && rm -rf header_only
 	cd $(call build,$@) && cmake -B header_only -DCMAKE_BUILD_TYPE=Release -DRAPIDJSON_BUILD_TESTS=OFF -DRAPIDJSON_BUILD_EXAMPLES=OFF
-	cd $(call build,$@) && cmake --build header_only -j16
+	cd $(call build,$@) && cmake --build header_only -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install header_only
 	sed -i 's|/usr/local/include|$${CMAKE_CURRENT_LIST_DIR}/../../../include|' ${PWD}/$@/usr/local/lib/cmake/RapidJSON/RapidJSONConfig.cmake
@@ -1152,14 +1155,14 @@ $(call lib,rapidjson):
 $(call lib,icu):
 	cd $(call build,$@)/icu4c && rm -rf target && mkdir -p target
 	cd $(call build,$@)/icu4c && cd target && ../source/runConfigureICU Linux --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --disable-tools  --disable-tests  --disable-samples --disable-extras --enable-shared --enable-static
-	cd $(call build,$@)/icu4c && cd target && make -j8
+	cd $(call build,$@)/icu4c && cd target && make -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@)/icu4c && cd target && make install DESTDIR=${PWD}/$@
 	touch $@
 
 $(call lib,ncurses):
 	cd $(call build,$@) && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --with-normal --with-debug --without-tests --disable-home-terminfo  --enable-pc-files --enable-ext-colors --enable-const --enable-symlinks --with-pkg-config-libdir=/usr/local/lib/wasm32-wasi/pkgconfig # Shared is working but disabled for now --with-shared
-	cd $(call build,$@) && make -j8
+	cd $(call build,$@) && make -j${JOBS}
 	cd $(call build,$@) && mv progs/tic progs/tic.old && cp /usr/bin/tic progs/tic # Use host tic for building
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
@@ -1169,7 +1172,7 @@ $(call lib,ncurses):
 $(call sysroot,readline): $(call sysroot,default) $(call tarxz,ncurses)
 $(call lib,readline): $(call sysroot,readline)
 	cd $(call build,$@) && CFLAGS="$$($(call set_sysroot,readline) pkgconf --cflags ncurses)" LDFLAGS="$$($(call set_sysroot,readline) pkgconf --libs-only-L ncurses)" ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --enable-static --disable-shared --with-curses # Shared is working but disabled until we enable shared ncurses
-	cd $(call build,$@) && make -j8
+	cd $(call build,$@) && make -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
 	touch $@
@@ -1186,8 +1189,8 @@ $(call lib,curl): $(call lib,zlib) $(call lib,openssl) $(call lib,brotli)
 	cd $(call build,$@) && rm -rf shared static
 	cd $(call build,$@) && PKG_CONFIG_SYSROOT_DIR=${PWD}/$(call build,$@)/deps-sysroot PKG_CONFIG_PATH=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/pkgconfig cmake -B static --toolchain ${CMAKE_TOOLCHAIN} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=NO -DCURL_ZLIB=ON -DCURL_BROTLI=ON -DBUILD_STATIC_CURL=ON -DOPENSSL_USE_STATIC_LIBS=ON -DZLIB_INCLUDE_DIR=${PWD}/$(call build,$@)/deps-sysroot/usr/local/include -DZLIB_LIBRARY=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/libz.a -DBROTLI_INCLUDE_DIR=${PWD}/$(call build,$@)/deps-sysroot/usr/local/include -DBROTLICOMMON_LIBRARY=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/libbrotlicommon.a -DBROTLIDEC_LIBRARY=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/libbrotlidec.a
 	# cd $(call build,$@) && PKG_CONFIG_SYSROOT_DIR=${PWD}/$(call build,$@)/deps-sysroot PKG_CONFIG_PATH=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/pkgconfig cmake -B shared --toolchain ${CMAKE_TOOLCHAIN} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=NO -DCURL_ZLIB=ON -DCURL_BROTLI=ON -DBUILD_CURL_EXE=OFF -DZLIB_INCLUDE_DIR=${PWD}/$(call build,$@)/deps-sysroot/usr/local/include -DZLIB_LIBRARY=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/libz.so -DBROTLI_INCLUDE_DIR=${PWD}/$(call build,$@)/deps-sysroot/usr/local/include -DBROTLICOMMON_LIBRARY=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/libbrotlicommon.so -DBROTLIDEC_LIBRARY=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/libbrotlidec.so
-	cd $(call build,$@) && cmake --build static -j16
-	# cd $(call build,$@) && cmake --build shared -j16
+	cd $(call build,$@) && cmake --build static -j${JOBS}
+	# cd $(call build,$@) && cmake --build shared -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install static
 	# cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
@@ -1224,7 +1227,7 @@ $(call lib,sqlite):
 	cd $(call build,$@) && PATH="/usr/bin:$$PATH" CFLAGS="$$($(call set_sysroot,sqlite) pkg-config --static --cflags icu-i18n icu-io icu-uc)" ./configure --host=wasm32-wasi --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --enable-static --enable-shared --all --disable-readline --icu-collations \
 	  --with-icu-cflags="$$($(call set_sysroot,sqlite) pkg-config --static --cflags icu-i18n icu-io icu-uc)" \
 	  --with-icu-ldflags="$$($(call set_sysroot,sqlite) pkg-config --static --libs icu-i18n icu-io icu-uc)"
-	cd $(call build,$@) && PATH="/usr/bin:$$PATH" $(call set_sysroot,sqlite) make -j8
+	cd $(call build,$@) && PATH="/usr/bin:$$PATH" $(call set_sysroot,sqlite) make -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && PATH="/usr/bin:$$PATH" $(call set_sysroot,sqlite) make install DESTDIR=${PWD}/$@
 	cd $(call lib,$@) && sed -Ei 's|-L${PWD}([^ ()]+)||g' usr/local/lib/wasm32-wasi/pkgconfig/sqlite3.pc
@@ -1233,7 +1236,7 @@ $(call lib,sqlite):
 $(call lib,wasix-libc):
 	$(reset_install_dir) $@
 	# The compiler needs to be able to target both native and wasm32-wasi, so we cannot use wasix-clang here
-	cd $(call build,$@) && CC=/usr/bin/clang LD=/usr/bin/ld.lld AR=/usr/bin/llvm-ar NM=/usr/bin/llvm-nm AS=/usr/bin/llvm-as TARGET_ARCH=wasm32 TARGET_OS=wasix make -f Makefile-eh PIC=yes CHECK_SYMBOLS=yes -j 16 install DESTDIR=${PWD}/$@ PREFIX=/ LIBDIR=/lib/wasm32-wasi
+	cd $(call build,$@) && CC=/usr/bin/clang LD=/usr/bin/ld.lld AR=/usr/bin/llvm-ar NM=/usr/bin/llvm-nm AS=/usr/bin/llvm-as TARGET_ARCH=wasm32 TARGET_OS=wasix make -f Makefile-eh PIC=yes CHECK_SYMBOLS=yes -j${JOBS} install DESTDIR=${PWD}/$@ PREFIX=/ LIBDIR=/lib/wasm32-wasi
 	touch $@
 
 $(call sysroot,libcxx): $(call tarxz,wasix-libc) $(call tarxz,compiler-rt)
@@ -1284,7 +1287,7 @@ $(call lib,libcxx): $(call sysroot,libcxx) ${CMAKE_TOOLCHAIN}
 	    -DUNIX:BOOL=ON \
 	    -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" \
 	    ./runtimes
-	cd $(call build,$@) && $(call set_sysroot,libcxx) cmake --build build -j16 -v
+	cd $(call build,$@) && $(call set_sysroot,libcxx) cmake --build build -j${JOBS} -v
 	$(reset_install_dir) $@
 	cd $(call build,$@) && $(call set_sysroot,libcxx) DESTDIR=${PWD}/$@ cmake --install build
 	touch $@
@@ -1328,7 +1331,7 @@ $(call lib,compiler-rt): $(call sysroot,compiler-rt) ${CMAKE_TOOLCHAIN}
 	    -DCMAKE_INSTALL_PREFIX=/usr/local \
 	    -DUNIX:BOOL=ON \
 	    compiler-rt
-	cd $(call build,$@) && $(call set_sysroot,compiler-rt) cmake --build build -j16 -v
+	cd $(call build,$@) && $(call set_sysroot,compiler-rt) cmake --build build -j${JOBS} -v
 	$(reset_install_dir) $@
 	cd $(call build,$@) && $(call set_sysroot,compiler-rt) DESTDIR=${PWD}/$@ cmake --install build
 	touch $@
@@ -1340,7 +1343,7 @@ $(call lib,cpython): $(call sysroot,cpython)
 	mkdir -p build
 	cd $(call build,$@) && WASIX_SYSROOT=${PWD}/$(call sysroot,cpython) CC=/usr/bin/clang CXX=/usr/bin/clang++ bash wasix-full.sh
 	$(reset_install_dir) $@
-	cd $(call build,$@) && WASIX_SYSROOT=${PWD}/$(call sysroot,cpython) make -C builddir/wasix install DESTDIR="${PWD}/$@"
+	cd $(call build,$@) && WASIX_SYSROOT=${PWD}/$(call sysroot,cpython) make -j${JOBS} -C builddir/wasix install DESTDIR="${PWD}/$@"
 	touch $@
 
 $(call lib,libb2):
@@ -1348,13 +1351,13 @@ $(call lib,libb2):
 	cd $(call build,$@) && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
 	# set ax_cv_gcc_x86_cpuid_0x00000001=0:0:0:0 to fool autotools that we are a valid x86 cpu. Otherwise we don't get shared libs
 	cd $(call build,$@) && ax_cv_gcc_x86_cpuid_0x00000001=0:0:0:0 ./configure --enable-pic=yes --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' 
-	cd $(call build,$@) && make
+	cd $(call build,$@) && make -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
 	touch $@
 
 $(call lib,zstd):
-	cd $(call build,$@) && make -j16
+	cd $(call build,$@) && make -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@ LIBDIR=/usr/local/lib/wasm32-wasi
 	touch $@
@@ -1365,7 +1368,7 @@ $(call lib,jq): $(call sysroot,jq)
 	cd $(call build,$@) && autoreconf -vfi
 	cd $(call build,$@) && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
 	cd $(call build,$@) && $(call set_sysroot,jq) ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' 
-	cd $(call build,$@) && $(call set_sysroot,jq) make -j4
+	cd $(call build,$@) && $(call set_sysroot,jq) make -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && $(call set_sysroot,jq) make install DESTDIR=${PWD}/$@
 	touch $@
@@ -1374,16 +1377,16 @@ $(call lib,onigurama):
 	cd $(call build,$@) && autoreconf -vfi
 	cd $(call build,$@) && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
 	cd $(call build,$@) && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' 
-	cd $(call build,$@) && make -j1
+	cd $(call build,$@) && make -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
 	touch $@
 
 $(call lib,bzip2):
 	cd $(call build,$@) && make clean
-	cd $(call build,$@) && make 
+	cd $(call build,$@) && make -j${JOBS}
 	cd $(call build,$@) && make -f Makefile-libbz2_so clean
-	cd $(call build,$@) && make -f Makefile-libbz2_so
+	cd $(call build,$@) && make -f Makefile-libbz2_so -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install PREFIX=${PWD}/$@/usr/local
 	mkdir -p ${PWD}/$@/usr/local/lib/wasm32-wasi
@@ -1396,13 +1399,13 @@ $(call lib,bzip2):
 	touch $@
 
 $(call lib,xxhash):
-	cd $(call build,$@) && make -j16
+	cd $(call build,$@) && make -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@ PREFIX=/usr/local LIBDIR=/usr/local/lib/wasm32-wasi
 	touch $@
 
 $(call lib,lz4):
-	cd $(call build,$@) && make -j16
+	cd $(call build,$@) && make -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@ PREFIX=/usr/local LIBDIR=/usr/local/lib/wasm32-wasi
 	touch $@
@@ -1411,8 +1414,8 @@ $(call lib,lzo):
 	cd $(call build,$@) && rm -rf shared static
 	cd $(call build,$@) && cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_STATIC_LIBS=ON -DBUILD_SHARED_LIBS=OFF -DENABLE_STATIC=ON -DENABLE_SHARED=OFF
 	cd $(call build,$@) && cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_STATIC_LIBS=OFF -DBUILD_SHARED_LIBS=ON -DENABLE_STATIC=OFF -DENABLE_SHARED=ON
-	cd $(call build,$@) && cmake --build static -j16
-	cd $(call build,$@) && cmake --build shared -j16
+	cd $(call build,$@) && cmake --build static -j${JOBS}
+	cd $(call build,$@) && cmake --build shared -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install static
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
@@ -1423,8 +1426,8 @@ $(call lib,snappy): $(call sysroot,snappy)
 	cd $(call build,$@) && rm -rf shared static
 	cd $(call build,$@) && $(call set_sysroot,$@) cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=OFF -DSNAPPY_BUILD_BENCHMARKS=OFF -DSNAPPY_BUILD_TESTS=OFF
 	cd $(call build,$@) && $(call set_sysroot,$@) cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=ON -DSNAPPY_BUILD_BENCHMARKS=OFF -DSNAPPY_BUILD_TESTS=OFF
-	cd $(call build,$@) && $(call set_sysroot,$@) cmake --build static -j16
-	cd $(call build,$@) && $(call set_sysroot,$@) cmake --build shared -j16
+	cd $(call build,$@) && $(call set_sysroot,$@) cmake --build static -j${JOBS}
+	cd $(call build,$@) && $(call set_sysroot,$@) cmake --build shared -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ $(call set_sysroot,$@) cmake --install static
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ $(call set_sysroot,$@) cmake --install shared
