@@ -7,6 +7,7 @@ BAZEL_TOOLCHAIN=${PWD}/resources/bazel-toolchain
 CMAKE_TOOLCHAIN=${PWD}/resources/wasix-toolchain.cmake
 PATCH_DIR=${PWD}/patches
 GIT:=git -c 'user.name=build-scripts' -c 'user.email=wasix@wasmer.io' -c 'init.defaultBranch=main'
+WASMER ?= wasmer
 
 # Install libs to the normal sysroot if not specified otherwise
 LIBS_DESTDIR?=${WASIX_SYSROOT}
@@ -354,6 +355,17 @@ $(foreach dep,$(filter %.tar.xz,$^),make install-$(call project_name,$(dep)) LIB
 touch $@
 endef
 
+# Build a webc from a directory containing a wasmer.toml file
+define build_webc =
+mkdir -p artifacts
+test -f $<$|/wasmer.toml
+rm -f artifacts/$(notdir $(basename $@))2.webc
+${WASMER} package build $<$| --out artifacts/$(notdir $(basename $@))2.webc
+mv artifacts/$(notdir $(basename $@))2.webc artifacts/$(notdir $(basename $@)).webc
+ln -sf $(shell realpath -s --relative-to="${PWD}/$(dir $@)" "${PWD}/artifacts/$(notdir $@)") $@
+touch $@
+endef
+
 # Ensure that we are in a sysroot
 define ensure_sysroot =
 if ! test -d $@/usr/local/lib/wasm32-wasi ; then echo "Cannot remove shared libs from $@/usr/local/lib/wasm32-wasi, directory does not exist." 1>&2 ; exit 1 ; fi
@@ -423,59 +435,24 @@ test: python-with-packages
 python-wasix-binaries/.git:
 	git submodule update --init --recursive python-wasix-binaries
 
-#####     Downloading and uploading the python webc     #####
+#####     Extracted webcs for testing     #####
 
-PYTHON_WEBC=wasmer/python-native
-PYTHON_WITH_PACKAGES_WEBC=wasmer/python-with-packages
-PYTHON_WITH_LIBS_WEBC=wasmer/python-with-libs
+PYTHON_WEBC=python/python
+PYTHON_WITH_PACKAGES_WEBC=python/python-with-packages
+PYTHON_WITH_LIBS_WEBC=python/python-with-libs
 
-pkgs/cpython.webc: resources/python-webc/wasmer.toml $(call sysroot,cpython) $(call lib,cpython)
-	rm -f artifacts/cpython2.webc
-	wasmer package build resources/python-webc --out artifacts/cpython2.webc
-	mv artifacts/cpython2.webc artifacts/cpython.webc
-	ln -sf ../artifacts/cpython.webc $@
+python: pkgs/python.webc
+	${WASMER} package unpack $<$| --out-dir $@
+	cp $@/modules/python $@/root/usr/local/bin/python3.wasm
 	touch $@
-python: pkgs/cpython.webc
-	wasmer package unpack $< --out-dir $@
-	cp $@/modules/python $@/pkgs/cpython.lib/usr/local/bin/python3.wasm
+python-with-libs: pkgs/python-with-libs.webc
+	${WASMER} package unpack $<$| --out-dir $@
+	cp $@/modules/python $@/root/usr/local/bin/python3.wasm
 	touch $@
-python-with-libs: python $(call lib,postgresql) $(call lib,zbar) $(call lib,libjpeg-turbo) $(call lib,geos)
-	### Prepare a python release with all the deps
-	# Copy the base python package
-	rm -rf python-with-libs
-	cp -r python python-with-libs
-
-	# Install the libs
-	mkdir -p python-with-libs/extra-libs
-	cp -L $(PWD)/$(call lib,postgresql)/usr/local/lib/wasm32-wasi/*.so* python-with-libs/extra-libs
-	cp -L $(PWD)/$(call lib,zbar)/usr/local/lib/wasm32-wasi/libzbar.so* python-with-libs/extra-libs
-	cp -L $(PWD)/$(call lib,libjpeg-turbo)/usr/local/lib/wasm32-wasi/libjpeg.so* python-with-libs/extra-libs
-	# TODO: Build shapely without a shared geos dep
-	cp -L $(PWD)/$(call lib,geos)/usr/local/lib/wasm32-wasi/libgeos*.so* python-with-libs/extra-libs
-
-	# Copy the python-wasix-binaries wheels (tomlq is provided in the yq package (but only in the python implementation))
-	tomlq -i '.package.name = "$(PYTHON_WITH_LIBS_WEBC)"' python-with-libs/wasmer.toml --output-format toml
-	tomlq -i '.fs."/lib" = "./extra-libs"' python-with-libs/wasmer.toml --output-format toml
-	tomlq -i '.module[0]."source" = "./pkgs/cpython.lib/usr/local/bin/python3.wasm"' python-with-libs/wasmer.toml --output-format toml
-
-	echo 'Build python-with-libs'
-	echo 'To test it run: `bash run-tests.sh`'
-	echo 'To publish it run: `wasmer package publish --registry wasmer.io python-with-libs`' 
-python-with-packages: python-with-libs $(BUILT_WHEELS_TO_INSTALL) $(PWB_WHEELS_TO_INSTALL)
-	### Prepare a python release with all the deps
-	# Copy the base python package
-	rm -rf python-with-packages
-	cp -r python-with-libs python-with-packages
-
-	# Install the wheels
-	WHEELS_DESTDIR=$(PWD)/python-with-packages/pkgs/cpython.lib/usr/local/lib/python3.13 make install-wheels
-
-	# Copy the python-wasix-binaries wheels (tomlq is provided in the yq package (but only in the python implementation))
-	tomlq -i '.package.name = "$(PYTHON_WITH_PACKAGES_WEBC)"' python-with-packages/wasmer.toml --output-format toml
-
-	echo 'Build python-with-packages'
-	echo 'To test it run: `bash run-tests.sh`'
-	echo 'To publish it run: `wasmer package publish --registry wasmer.io python-with-packages`' 
+python-with-packages: pkgs/python-with-packages.webc
+	${WASMER} package unpack $<$| --out-dir $@
+	cp $@/modules/python $@/root/usr/local/bin/python3.wasm
+	touch $@
 
 #####     Preparing a wasm crossenv     #####
 
@@ -546,6 +523,58 @@ $(call prepared,matplotlib):
 	$(prepare_submodule)
 	# Tag so we get a clean name after applying the patches
 	cd $@ && $(GIT) tag -fam "" v3.10.6
+
+#####     Building webcs      #####
+
+$(call lib,python-webc): $(call tarxz,cpython) $(call sysroot,cpython) $(call tarxz,ca-certificates) resources/python-webc/wasmer.toml $(call lib,ncurses)
+	mkdir -p $@/root
+	make install-cpython LIBS_DESTDIR=${PWD}/$@/root
+	make install-ca-certificates LIBS_DESTDIR=${PWD}/$@/root
+
+	# Install to /lib because wasmer currently does not look in wasm32-wasi for shared libs
+	mkdir -p $@/root/lib
+	cp -L $(call sysroot,cpython)/usr/local/lib/wasm32-wasi/libcrypto.so $@/root/lib
+	cp -L $(call sysroot,cpython)/usr/local/lib/wasm32-wasi/libssl.so $@/root/lib
+	cp -L $(call sysroot,cpython)/usr/local/lib/wasm32-wasi/libsqlite3.so $@/root/lib
+
+	# Install terminfo database from ncurses
+	mkdir -p $@/root/usr/local/share/terminfo
+	cp -rT $(call lib,ncurses)/usr/local/share/terminfo $@/root/usr/local/share/terminfo
+
+	cp resources/python-webc/wasmer.toml $@/wasmer.toml
+
+	touch $@
+
+$(call lib,python-with-libs-webc): $(call lib,python-webc) $(call lib,postgresql) $(call lib,zbar) $(call lib,libjpeg-turbo) $(call lib,geos)
+	rm -rf $@
+	cp -r $(call lib,python-webc) $@
+	
+	# Install extra libs
+	cp -L $(PWD)/$(call lib,postgresql)/usr/local/lib/wasm32-wasi/*.so* python-with-libs/root/lib
+	cp -L $(PWD)/$(call lib,libjpeg-turbo)/usr/local/lib/wasm32-wasi/libjpeg.so* python-with-libs/root/lib
+
+	# Update the name in the wasmer.toml
+	tomlq -i '.package.name = "$(PYTHON_WITH_LIBS_WEBC)"' $(call lib,python-with-libs-webc)/wasmer.toml --output-format toml
+	touch $@
+
+$(call lib,python-with-packages-webc): $(call lib,python-with-libs-webc) | $(BUILT_WHEELS_TO_INSTALL) $(PWB_WHEELS_TO_INSTALL)
+	rm -rf $@
+	cp -r $(call lib,python-with-libs-webc) $@
+	
+	# TODO: Install wheels
+	WHEELS_DESTDIR=${PWD}/$(call lib,python-with-packages-webc)/root/usr/local/lib/python3.13 make install-wheels
+
+	# Update the name in the wasmer.toml
+	tomlq -i '.package.name = "$(PYTHON_WITH_PACKAGES_WEBC)"' $(call lib,python-with-packages-webc)/wasmer.toml --output-format toml
+	touch $@
+
+pkgs/python.webc: | $(call lib,python-webc)
+	$(build_webc)
+pkgs/python-with-libs.webc: $(call lib,python-with-libs-webc)
+	$(build_webc)
+pkgs/python-with-packages.webc: $(call lib,python-with-packages-webc)
+	$(build_webc)
+
 #####     Building wheels     #####
 
 # A target to build a wheel from a python submodule
