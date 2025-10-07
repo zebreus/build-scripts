@@ -509,8 +509,9 @@ $(call prepared,grpc):
 
 $(call prepared,rapidjson):
 	$(prepare_submodule)
-	cd $@ && $(GIT) cherry-pick c6a6c7be4d927b57ca4c40cbcfadaf6dfc5212cb
-	cd $@ && $(GIT) cherry-pick 20de638fece2706eff6e372a6bcacd322a423240
+	# Cherrypick the commits from https://github.com/Tencent/rapidjson/pull/719 onto the latest release
+	cd $@ && $(GIT) cherry-pick 3b2441b87f99ab65f37b141a7b548ebadb607b96
+	cd $@ && $(GIT) cherry-pick 862c39be371278a45a88d4d1d75164be57bb7e2d
 
 $(call prepared,pyarrow):
 	$(prepare_submodule)
