@@ -464,7 +464,7 @@ native-venv:
 	source ./native-venv/bin/activate && pip install crossenv
 cross-venv: native-venv python
 	rm -rf ./cross-venv
-	source ./native-venv/bin/activate && python3 -m crossenv python/pkgs/cpython.lib/usr/local/bin/python3.wasm ./cross-venv --cc wasix-clang --cxx wasix-clang++
+	source ./native-venv/bin/activate && python3 -m crossenv python/root/usr/local/bin/python3.wasm ./cross-venv --cc wasix-clang --cxx wasix-clang++
 	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple build-pip install cffi
 	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple pip install build six cython setuptools wheel
 
