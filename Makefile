@@ -55,7 +55,8 @@ WHEELS+=lxml
 WHEELS+=protobuf
 # TODO: Currently requires libcares2 to be installed natively. This is not ideal, but I don't have the time to debug this right now.
 # Maybe it's also python3-cares or python3-grpcio
-WHEELS+=grpc
+# Ok it does not seem to be any of those. I disable this for now as it only build on my laptop
+# WHEELS+=grpc
 WHEELS+=numpy1
 WHEELS+=numpy2-0-2
 WHEELS+=numpy2-3-2
