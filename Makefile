@@ -53,7 +53,8 @@ WHEELS+=shapely
 WHEELS+=regex
 WHEELS+=lxml
 WHEELS+=protobuf
-# WHEELS+=grpc # TODO: cares
+# TODO: Currently requires libcares2 to be installed natively. This is not ideal, but I don't have the time to debug this right now.
+WHEELS+=grpc
 WHEELS+=numpy1
 WHEELS+=numpy2-0-2
 WHEELS+=numpy2-3-2
