@@ -2,8 +2,8 @@
 /native-venv
 /python.webc
 /python
+/python-base
 /python-with-packages
-/python-with-libs
 /*.build
 /*.prepared
 __pycache__

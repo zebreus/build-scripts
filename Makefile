@@ -444,14 +444,14 @@ python-wasix-binaries/.git:
 #####     Extracted webcs for testing     #####
 
 PYTHON_WEBC=python/python
+PYTHON_BASE_WEBC=python/python-base
 PYTHON_WITH_PACKAGES_WEBC=python/python-with-packages
-PYTHON_WITH_LIBS_WEBC=python/python-with-libs
 
-python: pkgs/python.webc
+python-base: pkgs/python.webc
 	${WASMER} package unpack $<$| --out-dir $@
 	cp $@/modules/python $@/root/usr/local/bin/python3.wasm
 	touch $@
-python-with-libs: pkgs/python-with-libs.webc
+python: pkgs/python.webc
 	${WASMER} package unpack $<$| --out-dir $@
 	cp $@/modules/python $@/root/usr/local/bin/python3.wasm
 	touch $@
@@ -465,9 +465,9 @@ python-with-packages: pkgs/python-with-packages.webc
 native-venv:
 	python3 -m venv ./native-venv
 	source ./native-venv/bin/activate && pip install crossenv
-cross-venv: native-venv python
+cross-venv: native-venv | python-base
 	rm -rf ./cross-venv
-	source ./native-venv/bin/activate && python3 -m crossenv python/root/usr/local/bin/python3.wasm ./cross-venv --cc wasix-clang --cxx wasix-clang++
+	source ./native-venv/bin/activate && python3 -m crossenv python-base/root/usr/local/bin/python3.wasm ./cross-venv --cc wasix-clang --cxx wasix-clang++
 	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple build-pip install cffi
 	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple pip install build six cython setuptools wheel
 
@@ -538,10 +538,11 @@ $(call prepared,shapely):
 
 #####     Building webcs      #####
 
-$(call lib,python-webc): $(call tarxz,cpython) $(call sysroot,cpython) $(call tarxz,ca-certificates) resources/python-webc/wasmer.toml $(call lib,ncurses)
+$(call lib,python-base-webc): $(call tarxz,cpython) $(call sysroot,cpython) $(call tarxz,ca-certificates) resources/python-webc/wasmer.toml $(call lib,ncurses)
 	mkdir -p $@/root
 	make install-cpython LIBS_DESTDIR=${PWD}/$@/root
 	make install-ca-certificates LIBS_DESTDIR=${PWD}/$@/root
+	rm -rf ${PWD}/$@/root/.install*
 
 	# Install to /lib because wasmer currently does not look in wasm32-wasi for shared libs
 	mkdir -p $@/root/lib
@@ -554,35 +555,62 @@ $(call lib,python-webc): $(call tarxz,cpython) $(call sysroot,cpython) $(call ta
 	cp -rT $(call lib,ncurses)/usr/local/share/terminfo $@/root/usr/local/share/terminfo
 
 	cp resources/python-webc/wasmer.toml $@/wasmer.toml
+	tomlq -i '.package.name = "$(PYTHON_BASE_WEBC)"' $@/wasmer.toml --output-format toml
 
 	touch $@
 
-$(call lib,python-with-libs-webc): $(call lib,python-webc) $(call lib,postgresql) $(call lib,zbar) $(call lib,libjpeg-turbo) $(call lib,geos)
+$(call lib,python-webc): $(call lib,python-base-webc)
 	rm -rf $@
-	cp -r $(call lib,python-webc) $@
-	
-	# Install extra libs
-	cp -L $(PWD)/$(call lib,postgresql)/usr/local/lib/wasm32-wasi/*.so* python-with-libs/root/lib
-	cp -L $(PWD)/$(call lib,libjpeg-turbo)/usr/local/lib/wasm32-wasi/libjpeg.so* python-with-libs/root/lib
+	cp -r $(call lib,python-base-webc) $@
+
+	# Remove selftests
+	rm -rf $@/root/usr/local/lib/python3.13/test
+	# Remove static libpython in config
+	rm -rf $@/root/usr/local/lib/python3.13/config-3.13-wasm32-wasi/libpython3.13.a
+	# Remove pycache
+	find $@/root -name '__pycache__' | xargs rm -r
+	# Remove static libpython
+	rm -rf $@/root/usr/local/lib/libpython3.13.a
+	# Remove python3.13.wasm
+	rm $@/root/usr/local/bin/python3.wasm
+	mv $@/root/usr/local/bin/python3.13.wasm $@/root/usr/local/bin/python3.wasm
+	# Remove all terminfo files except dumb
+	mv $@/root/usr/local/share/terminfo/d/dumb $@/root/usr/local/share
+	rm -rf $@/root/usr/local/share/terminfo
+	mkdir -p $@/root/usr/local/share/terminfo/d
+	mv $@/root/usr/local/share/dumb $@/root/usr/local/share/terminfo/d/dumb
+	# Remove other files that are not strictly neccessary
+	find $@/root -name '*.exe' | xargs rm -r # 500K of random exe files
+	rm -rf $@/root/usr/local/share/man # 20k of manpages
+	rm -rf $@/root/usr/local/include # 2.4MB of headers
+	rm -rf $@/root/usr/local/lib/python3.13/site-packages/pip* # 6.8MB of pip
+	rm -rf $@/root/usr/local/lib/python3.13/ensurepip # 1.7MB of bundled pip
+
+	# Strip debug symbols and optimize binaries again
+	wasm-opt --emit-exnref -O3 --strip-debug $@/root/usr/local/bin/python3.wasm -o $@/root/usr/local/bin/python3.wasm
+	wasm-opt --emit-exnref -O3 --strip-debug $@/root/lib/libsqlite3.so -o $@/root/lib/libsqlite3.so
+	wasm-opt --emit-exnref -O3 --strip-debug $@/root/lib/libssl.so -o $@/root/lib/libssl.so
+	wasm-opt --emit-exnref -O3 --strip-debug $@/root/lib/libcrypto.so -o $@/root/lib/libcrypto.so
 
 	# Update the name in the wasmer.toml
-	tomlq -i '.package.name = "$(PYTHON_WITH_LIBS_WEBC)"' $(call lib,python-with-libs-webc)/wasmer.toml --output-format toml
+	tomlq -i '.package.name = "$(PYTHON_WEBC)"' $@/wasmer.toml --output-format toml
+
 	touch $@
 
-$(call lib,python-with-packages-webc): $(call lib,python-with-libs-webc) | $(BUILT_WHEELS_TO_INSTALL) $(PWB_WHEELS_TO_INSTALL)
+$(call lib,python-with-packages-webc): $(call lib,python-base-webc) | $(BUILT_WHEELS_TO_INSTALL) $(PWB_WHEELS_TO_INSTALL)
 	rm -rf $@
-	cp -r $(call lib,python-with-libs-webc) $@
+	cp -r $(call lib,python-base-webc) $@
 	
 	# TODO: Install wheels
 	WHEELS_DESTDIR=${PWD}/$(call lib,python-with-packages-webc)/root/usr/local/lib/python3.13 make install-wheels
 
 	# Update the name in the wasmer.toml
-	tomlq -i '.package.name = "$(PYTHON_WITH_PACKAGES_WEBC)"' $(call lib,python-with-packages-webc)/wasmer.toml --output-format toml
+	tomlq -i '.package.name = "$(PYTHON_WITH_PACKAGES_WEBC)"' $@/wasmer.toml --output-format toml
 	touch $@
 
-pkgs/python.webc: | $(call lib,python-webc)
+pkgs/python.webc: $(call lib,python-webc)
 	$(build_webc)
-pkgs/python-with-libs.webc: $(call lib,python-with-libs-webc)
+pkgs/python-base.webc: | $(call lib,python-base-webc)
 	$(build_webc)
 pkgs/python-with-packages.webc: $(call lib,python-with-packages-webc)
 	$(build_webc)
@@ -1491,8 +1519,9 @@ clean: init clean-build-artifacts
 	rm -rf $(call prepared,*)
 
 clean-build-artifacts:
-	rm -rf python python.webc
 	rm -rf cross-venv native-venv
+	rm -rf python
+	rm -rf python-base
 	rm -rf python-with-packages
 	# Remove active build directories
 	rm -rf $(call build,*)
