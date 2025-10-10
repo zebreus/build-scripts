@@ -304,6 +304,7 @@ $(GIT) restore $(realpath $(dir $@))
 $(GIT) submodule update --init --recursive $(realpath $(dir $@))
 cd $(realpath $(dir $@)) && $(GIT) clean -dxf >/dev/null 2>&1 || true
 cd $(realpath $(dir $@)) && make clean >/dev/null 2>&1 || true
+cd $(realpath $(dir $@)) && rm -f clean 2>&1 || true
 cd $(realpath $(dir $@)) && $(GIT) am --abort >/dev/null 2>&1 || true
 endef
 
