@@ -535,7 +535,8 @@ $(call prepared,matplotlib):
 $(call prepared,shapely):
 	$(prepare_submodule)
 	# Tag so we get a clean name after applying the patches
-	cd $@ && $(GIT) tag -fam "" $$(${GIT} -C ${PWD}/$(call source,$@) describe HEAD)
+	# cd $@ && $(GIT) tag -fam "" $$(${GIT} -C ${PWD}/$(call source,$@) describe HEAD)
+	cd $@ && $(GIT) tag -fam "" 2.1.1
 
 #####     Building webcs      #####
 
