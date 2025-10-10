@@ -586,6 +586,7 @@ $(call lib,python-webc): $(call lib,python-base-webc)
 	rm -rf $@/root/usr/local/share/man # 20k of manpages
 	rm -rf $@/root/usr/local/include # 2.4MB of headers
 	rm -rf $@/root/usr/local/lib/python3.13/site-packages/pip* # 6.8MB of pip
+	rm -rf $@/root/usr/local/lib/pkgconfig # 12KB of pkgconfig files
 	rm -rf $@/root/usr/local/lib/python3.13/ensurepip # 1.7MB of bundled pip
 
 	# Strip debug symbols and optimize binaries again
