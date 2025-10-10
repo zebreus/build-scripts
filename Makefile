@@ -528,6 +528,11 @@ $(call prepared,matplotlib):
 	# Tag so we get a clean name after applying the patches
 	cd $@ && $(GIT) tag -fam "" v3.10.6
 
+$(call prepared,shapely):
+	$(prepare_submodule)
+	# Tag so we get a clean name after applying the patches
+	cd $@ && $(GIT) tag -fam "" $$(${GIT} -C ${PWD}/$(call source,$@) describe HEAD)
+
 #####     Building webcs      #####
 
 $(call lib,python-webc): $(call tarxz,cpython) $(call sysroot,cpython) $(call tarxz,ca-certificates) resources/python-webc/wasmer.toml $(call lib,ncurses)
