@@ -99,7 +99,7 @@ Example for building a numpy wheel from scratch:
 
 ```bash
 # Install common dependencies
-sudo apt install -y clang llvm zlib1g-dev git git-lfs build-essential make cmake python3.13 python3.13-venv autopoint libtool pkg-config autoconf dejagnu meson ninja-build bison flex perl patchelf po4a yq libcares2 python3-cares python3-grpcio
+sudo apt install -y clang llvm zlib1g-dev git git-lfs build-essential make cmake python3.13 python3.13-venv autopoint libtool pkg-config autoconf dejagnu meson ninja-build bison flex perl patchelf po4a yq moreutils cargo rustc
 # Install wasix-clang
 curl -sSf https://raw.githubusercontent.com/wasix-org/wasix-clang/refs/heads/main/setup.sh | bash
 
@@ -107,6 +107,7 @@ curl -sSf https://raw.githubusercontent.com/wasix-org/wasix-clang/refs/heads/mai
 sudo apt install -y xmlto imagemagick # giflib docs require these but they are quite big
 curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sudo sh -s -- install $(! test -f /.dockerenv || echo "linux --init none") --no-confirm ; source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh # pandoc requires a haskell toolchain for wasm32 which we build with nix
 wget https://github.com/bazelbuild/bazelisk/releases/download/v1.27.0/bazelisk-linux-amd64 ; sudo install -m755 bazelisk-linux-amd64 /usr/bin/bazel ; rm bazelisk-linux-amd64 # grpc and protobuf require bazel. I found bazelisk the easiest way to install bazel
+cargo install --locked wasm-tools && echo PATH='"$HOME/.cargo/bin:$PATH"' >> ~/.profile && export PATH="$HOME/.cargo/bin:$PATH" # wasm-tools is required for shapely
 
 # Fetch this repo
 git clone https://github.com/wasix-org/build-scripts.git
