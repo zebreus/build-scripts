@@ -1,5 +1,5 @@
 import unittest
-from datetime import datetime
+from datetime import datetime, UTC
 
 from sqlalchemy import (
     Column,
@@ -38,7 +38,7 @@ class User(Base):
     username = Column(String(50), unique=True, nullable=False)
     fullname = Column(String(100))
     is_active = Column(Boolean, default=True, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=datetime.now(UTC), nullable=False)
 
     addresses = relationship("Address", back_populates="user", cascade="all, delete-orphan")
     orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
@@ -78,7 +78,7 @@ class Order(Base):
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=datetime.now(UTC), nullable=False)
 
     user = relationship("User", back_populates="orders")
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
