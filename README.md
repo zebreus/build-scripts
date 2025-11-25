@@ -205,6 +205,8 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * fastavro: 1.12.0
 * scipy: 1.16.2
 * greenlet: wasix-org/greenlet main
+* gevent: 25.9.1
+* sqlalchemy: 2.0.44
 <!-- WHEEL_VERSIONS_END -->
 
 psycopg3-c is just the sdist of psycopg3-binary

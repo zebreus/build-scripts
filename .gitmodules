@@ -346,3 +346,9 @@
 [submodule "pkgs/greenlet.source"]
 	path = pkgs/greenlet.source
 	url = https://github.com/wasix-org/greenlet
+[submodule "pkgs/gevent.source"]
+	path = pkgs/gevent.source
+	url = https://github.com/gevent/gevent.git
+[submodule "pkgs/sqlalchemy.source"]
+	path = pkgs/sqlalchemy.source
+	url = https://github.com/sqlalchemy/sqlalchemy.git
