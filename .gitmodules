@@ -352,3 +352,6 @@
 [submodule "pkgs/sqlalchemy.source"]
 	path = pkgs/sqlalchemy.source
 	url = https://github.com/sqlalchemy/sqlalchemy.git
+[submodule "pkgs/eventlet.source"]
+	path = pkgs/eventlet.source
+	url = https://github.com/eventlet/eventlet.git
