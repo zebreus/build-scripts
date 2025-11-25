@@ -88,10 +88,12 @@ WHEELS+=pandas2-2-3
 WHEELS+=python-lz4
 WHEELS+=fastavro
 WHEELS+=greenlet
+WHEELS+=gevent
 WHEELS+=sqlalchemy
 WHEELS+=eventlet
 WHEELS+=greenback
 WHEELS+=outcome
+WHEELS+=attrs
 # WHEELS_END
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
@@ -234,6 +236,7 @@ LIBS+=lz4
 LIBS+=snappy
 LIBS+=lzo
 LIBS+=ca-certificates
+LIBS+=sed
 
 # Packages that are broken can be marked as DONT_BUILD
 # Packages that work but should not be included in the default install can be marked as DONT_INSTALL
@@ -494,6 +497,10 @@ $(call build,%): $(call prepared,%)
 	mkdir -p pkgs
 	rm -rf $@
 	cp -rf $< $@
+
+$(call source,sed)/.git: GIT += -c 'submodule.gnulib.url=https://github.com/mirror/gnulib.git'
+$(call source,sed): GIT += -c 'submodule.gnulib.url=https://github.com/mirror/gnulib.git'
+$(call prepared,sed): GIT += -c 'submodule.gnulib.url=https://github.com/mirror/gnulib.git'
 
 $(call prepared,pycryptodomex):
 	$(prepare_submodule)
@@ -838,6 +845,15 @@ $(call whl,pycurl): BUILD_ENV_VARS += PYCURL_CURL_CONFIG=${PWD}/$(call sysroot,p
 $(call whl,pycurl): BUILD_EXTRA_FLAGS = -C--curl-config
 $(call whl,pycurl): ${MESON_CROSSFILE}
 $(call whl,pycurl):
+	$(build_wheel)
+
+$(call targz,gevent): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo greenlet==3.2.5.dev0 > $$F ; echo $$F)
+$(call targz,gevent): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=http://localhost:6931/simple
+$(call targz,gevent):
+	$(build_sdist)
+$(call whl,gevent): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo greenlet==3.2.5.dev0 > $$F ; echo $$F)
+$(call whl,gevent): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=http://localhost:6931/simple
+$(call whl,gevent):
 	$(build_wheel)
 
 # TODO: When arrow supports setting rpath for all its libs, we can enable this and start working on shared builds
@@ -1281,7 +1297,7 @@ $(call lib,sqlite):
 $(call lib,wasix-libc):
 	$(reset_install_dir) $@
 	# The compiler needs to be able to target both native and wasm32-wasi, so we cannot use wasix-clang here
-	cd $(call build,$@) && CC=/usr/bin/clang LD=/usr/bin/ld.lld AR=/usr/bin/llvm-ar NM=/usr/bin/llvm-nm AS=/usr/bin/llvm-as TARGET_ARCH=wasm32 TARGET_OS=wasix make -f Makefile-eh PIC=yes CHECK_SYMBOLS=yes -j${JOBS} install DESTDIR=${PWD}/$@ PREFIX=/ LIBDIR=/lib/wasm32-wasi
+	cd $(call build,$@) && CC=/usr/bin/clang LD=/usr/bin/ld.lld AR=/usr/bin/llvm-ar NM=/usr/bin/llvm-nm AS=/usr/bin/llvm-as TARGET_ARCH=wasm32 TARGET_OS=wasix make -f Makefile-eh PIC=yes CHECK_SYMBOLS=no -j${JOBS} install DESTDIR=${PWD}/$@ PREFIX=/ LIBDIR=/lib/wasm32-wasi
 	touch $@
 
 $(call sysroot,libcxx): $(call tarxz,wasix-libc) $(call tarxz,compiler-rt)
@@ -1488,6 +1504,15 @@ $(call lib,ca-certificates): | python-wasix-binaries/.git
 	$(reset_install_dir) $@
 	mkdir -p ${PWD}/$@/usr/local/ssl
 	cd $(call build,$@) && cp -rT ./ssl-certs ${PWD}/$@/usr/local/ssl
+	touch $@
+
+$(call lib,sed):
+	cd $(call build,$@) && ./bootstrap
+	cd $(call build,$@) && sed -i 's/^  archive_cmds=$$/  archive_cmds='\''$$CC -shared $$pic_flag $$libobjs $$deplibs $$compiler_flags $$wl-soname $$wl$$soname -o $$lib'\''/' configure
+	cd $(call build,$@) && ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' 
+	cd $(call build,$@) && make -j${JOBS}
+	$(reset_install_dir) $@
+	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
 	touch $@
 
 #####     Installing wheels and libs     #####
