@@ -89,6 +89,7 @@ WHEELS+=python-lz4
 WHEELS+=fastavro
 WHEELS+=greenlet
 WHEELS+=sqlalchemy
+WHEELS+=eventlet
 # WHEELS_END
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
