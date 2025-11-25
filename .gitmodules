@@ -361,3 +361,6 @@
 [submodule "pkgs/outcome.source"]
 	path = pkgs/outcome.source
 	url = https://github.com/python-trio/outcome.git
+[submodule "pkgs/attrs.source"]
+	path = pkgs/attrs.source
+	url = https://github.com/python-attrs/attrs.git

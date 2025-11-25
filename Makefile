@@ -91,6 +91,7 @@ WHEELS+=greenlet
 WHEELS+=sqlalchemy
 WHEELS+=eventlet
 WHEELS+=greenback
+WHEELS+=outcome
 # WHEELS_END
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####

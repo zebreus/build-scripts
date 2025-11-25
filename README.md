@@ -210,6 +210,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * eventlet: 0.40.3
 * greenback: 1.2.1
 * outcome: 1.3.0
+* attrs: 25.4.0
 <!-- WHEEL_VERSIONS_END -->
 
 psycopg3-c is just the sdist of psycopg3-binary
@@ -379,3 +380,8 @@ If a project depends on other project they can either be direct dependencies of 
   * Contains the merged builds of multiple other projects
   * Useful when a project is using pkg-config to find its dependencies
   * Automatically builds a sysroot from its list of prerequisites
+
+#### Testing a new python release
+
+We publish to `python/python@3.12.10-beta.XXX` on wasmer.wtf and `zebreus/python@3.12.10-beta.XXX` on prod.
+
