@@ -302,13 +302,13 @@ bash -c 'rm -rf $$1 ; mkdir $$1 && touch -t 201001010001.00 $$1 || true' .
 endef
 
 define reset_submodule =
-rm -rf $(realpath $(dir $@))
-$(GIT) restore $(realpath $(dir $@))
-$(GIT) submodule update --init --recursive $(realpath $(dir $@))
-cd $(realpath $(dir $@)) && $(GIT) clean -dxf >/dev/null 2>&1 || true
-cd $(realpath $(dir $@)) && make clean >/dev/null 2>&1 || true
-cd $(realpath $(dir $@)) && rm -f clean 2>&1 || true
-cd $(realpath $(dir $@)) && $(GIT) am --abort >/dev/null 2>&1 || true
+rm -rf $(abspath $(dir $@))
+$(GIT) restore $(dir $@)
+$(GIT) submodule update --init --recursive $(dir $@)
+cd $(dir $@) && $(GIT) clean -dxf >/dev/null 2>&1 || true
+cd $(dir $@) && make clean >/dev/null 2>&1 || true
+cd $(dir $@) && rm -f clean 2>&1 || true
+cd $(dir $@) && $(GIT) am --abort >/dev/null 2>&1 || true
 endef
 
 define prepare_submodule =
