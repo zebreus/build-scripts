@@ -358,3 +358,6 @@
 [submodule "pkgs/greenback.source"]
 	path = pkgs/greenback.source
 	url = https://github.com/oremanj/greenback.git
+[submodule "pkgs/outcome.source"]
+	path = pkgs/outcome.source
+	url = https://github.com/python-trio/outcome.git
