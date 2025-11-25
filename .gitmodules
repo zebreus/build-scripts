@@ -364,3 +364,6 @@
 [submodule "pkgs/attrs.source"]
 	path = pkgs/attrs.source
 	url = https://github.com/python-attrs/attrs.git
+[submodule "pkgs/sniffio.source"]
+	path = pkgs/sniffio.source
+	url = https://github.com/python-trio/sniffio.git
