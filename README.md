@@ -208,6 +208,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * gevent: 25.9.1
 * sqlalchemy: 2.0.44
 * eventlet: 0.40.3
+* greenback: 1.2.1
 <!-- WHEEL_VERSIONS_END -->
 
 psycopg3-c is just the sdist of psycopg3-binary
