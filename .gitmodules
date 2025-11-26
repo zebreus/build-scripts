@@ -370,3 +370,6 @@
 [submodule "pkgs/zope_interface.source"]
 	path = pkgs/zope_interface.source
 	url = git@github.com:zopefoundation/zope.interface.git
+[submodule "pkgs/zope_event.source"]
+	path = pkgs/zope_event.source
+	url = https://github.com/zopefoundation/zope.event.git
