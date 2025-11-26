@@ -94,6 +94,7 @@ WHEELS+=greenback
 WHEELS+=outcome
 WHEELS+=attrs
 WHEELS+=sniffio
+WHEELS+=zope_event
 # WHEELS_END
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
