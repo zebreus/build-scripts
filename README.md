@@ -212,6 +212,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * outcome: 1.3.0
 * attrs: 25.4.0
 * sniffio: 1.3.1
+* zope.interface: 8.1.1
 <!-- WHEEL_VERSIONS_END -->
 
 psycopg3-c is just the sdist of psycopg3-binary

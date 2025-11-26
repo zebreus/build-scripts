@@ -367,3 +367,6 @@
 [submodule "pkgs/sniffio.source"]
 	path = pkgs/sniffio.source
 	url = https://github.com/python-trio/sniffio.git
+[submodule "pkgs/zope_interface.source"]
+	path = pkgs/zope_interface.source
+	url = git@github.com:zopefoundation/zope.interface.git
