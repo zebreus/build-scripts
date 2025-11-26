@@ -94,6 +94,7 @@ WHEELS+=greenback
 WHEELS+=outcome
 WHEELS+=attrs
 WHEELS+=sniffio
+WHEELS+=zope_interface
 WHEELS+=zope_event
 # WHEELS_END
 
