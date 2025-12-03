@@ -21,7 +21,8 @@ class GreenletModuleTest(unittest.TestCase):
             self._orig_trace = None
 
     def tearDown(self):
-        if HAS_TRACE and self._orig_trace is not None:
+        # Always restore original trace (even if None)
+        if HAS_TRACE and HAS_GETTRACE:
             greenlet.settrace(self._orig_trace)
 
     # --- Basic API: getcurrent, main greenlet, simple switching -------------
@@ -181,6 +182,23 @@ class GreenletModuleTest(unittest.TestCase):
         self.assertEqual(g.history, ["started"])
         self.assertTrue(g.dead)
 
+    def test_greenlet_subclass_with_explicit_function(self):
+        """Subclass that uses an explicit run function instead of overriding run()."""
+
+        def body(x):
+            cur = greenlet.getcurrent()
+            cur.seen = x
+            return x * 2
+
+        class MyGreenlet(greenlet.greenlet):
+            pass
+
+        g = MyGreenlet(body)
+        result = g.switch(21)
+        self.assertEqual(result, 42)
+        self.assertEqual(getattr(g, "seen", None), 21)
+        self.assertTrue(g.dead)
+
     # --- parent attribute ----------------------------------------------------
 
     def test_parent_assignment_and_default(self):
@@ -199,11 +217,41 @@ class GreenletModuleTest(unittest.TestCase):
         g1.parent = g2
         self.assertIs(g1.parent, g2)
 
+    def test_parent_cycle_assignment_raises(self):
+        def dummy():
+            return None
+
+        g1 = greenlet.greenlet(dummy)
+        g2 = greenlet.greenlet(dummy)
+
+        # Create one side of the cycle
+        g1.parent = g2
+
+        # Setting parent that would create a cycle should raise
+        exc_types = (ValueError,)
+        if hasattr(greenlet, "error"):
+            exc_types = (ValueError, greenlet.error)
+
+        with self.assertRaises(exc_types):
+            g2.parent = g1
+
+    def test_parent_must_be_greenlet(self):
+        def dummy():
+            return None
+
+        g = greenlet.greenlet(dummy)
+
+        with self.assertRaises(TypeError):
+            g.parent = 42  # not a greenlet
+
+        with self.assertRaises(TypeError):
+            g.parent = "not-a-greenlet"
+
     # --- gr_frame ------------------------------------------------------------
 
     def test_gr_frame_lifecycle(self):
         """gr_frame should be None before start, non-None when suspended, None when dead."""
-        frames_supported = True
+
         def check_attr(obj):
             try:
                 _ = obj.gr_frame
@@ -291,6 +339,12 @@ class GreenletModuleTest(unittest.TestCase):
         switch_events = [e for e in events if e[0] == "switch"]
         self.assertGreaterEqual(len(switch_events), 1)
 
+        # Each switch event should have (origin, target) greenlets
+        for _, args in switch_events:
+            origin, target = args
+            self.assertIsInstance(origin, greenlet.greenlet)
+            self.assertIsInstance(target, greenlet.greenlet)
+
     @unittest.skipUnless(HAS_TRACE and HAS_GETTRACE, "greenlet tracing API not available")
     def test_trace_throw_event(self):
         events = []
@@ -321,6 +375,307 @@ class GreenletModuleTest(unittest.TestCase):
             origin, target = args
             self.assertIsInstance(origin, greenlet.greenlet)
             self.assertIsInstance(target, greenlet.greenlet)
+
+    @unittest.skipUnless(HAS_TRACE and HAS_GETTRACE, "greenlet tracing API not available")
+    def test_settrace_none_disables_tracing(self):
+        events = []
+
+        def tracer(event, args):
+            events.append((event, args))
+
+        greenlet.settrace(tracer)
+
+        def child():
+            return "ok"
+
+        g = greenlet.greenlet(child)
+        g.switch()
+
+        # There should be some events
+        self.assertTrue(events)
+
+        # Disable tracing
+        greenlet.settrace(None)
+        events.clear()
+
+        h = greenlet.greenlet(child)
+        h.switch()
+
+        # No new events recorded
+        self.assertEqual(events, [])
+
+        # gettrace should now be None
+        self.assertIsNone(greenlet.gettrace())
+
+    # --- More complex scenarios and edge cases ------------------------------
+
+    def test_nested_greenlets_with_explicit_reparenting(self):
+        main = greenlet.getcurrent()
+
+        def inner(middle_obj):
+            cur = greenlet.getcurrent()
+            # After reparenting, inner's parent should be the middle greenlet
+            self.assertIs(cur.parent, middle_obj)
+            # main should still be at the top
+            self.assertIs(cur.parent.parent.parent, main)
+            return "inner-done"
+
+        def middle(inner_g, outer_obj):
+            cur = greenlet.getcurrent()
+            # Middle's parent is the outer greenlet
+            self.assertIs(cur.parent, outer_obj)
+            # Reparent inner to middle before switching into it
+            inner_g.parent = cur
+            res = inner_g.switch(cur)
+            self.assertEqual(res, "inner-done")
+            return "middle-done"
+
+        def outer():
+            cur = greenlet.getcurrent()
+            # Set middle's parent to outer explicitly
+            middle_g.parent = cur
+            self.assertIs(cur.parent, main)
+            res = middle_g.switch(inner_g, cur)
+            self.assertEqual(res, "middle-done")
+            return "outer-done"
+
+        inner_g = greenlet.greenlet(inner)
+        middle_g = greenlet.greenlet(middle)
+        outer_g = greenlet.greenlet(outer)
+
+        result = outer_g.switch()
+        self.assertEqual(result, "outer-done")
+
+        self.assertTrue(inner_g.dead)
+        self.assertTrue(middle_g.dead)
+        self.assertTrue(outer_g.dead)
+
+    def test_sibling_greenlets_ping_pong_via_parent(self):
+        main = greenlet.getcurrent()
+
+        def pong():
+            current = greenlet.getcurrent()
+            # pong's parent will be ping, not main
+            self.assertIsNot(current.parent, main)
+            parent = current.parent
+            received = None
+            # Infinite loop, but we only drive it a finite number of times
+            while True:
+                # Return an acknowledgement to the parent (ping) and
+                # then wait for the next value from ping.
+                received = parent.switch("ack-%s" % received)
+
+        def ping(pong_g, n):
+            self.assertIs(greenlet.getcurrent().parent, main)
+            acks = []
+
+            # Start the pong greenlet (no initial arg)
+            ack = pong_g.switch()
+            acks.append(ack)
+
+            for i in range(1, n):
+                ack = pong_g.switch(i)
+                acks.append(ack)
+
+            return acks
+
+        ping_g = greenlet.greenlet(ping)
+        pong_g = greenlet.greenlet(pong)
+
+        # Make pong a child of ping so they can communicate without main
+        pong_g.parent = ping_g
+
+        acks = ping_g.switch(pong_g, 3)
+
+        # Expected pattern based on the actual "remember last value" behavior:
+        self.assertEqual(acks, ["ack-None", "ack-1", "ack-2"])
+
+        # ping is finished after returning the list
+        self.assertTrue(ping_g.dead)
+
+        # pong is left suspended; at least it must not be dead yet
+        self.assertFalse(pong_g.dead)
+
+    def test_throw_greenletexit_without_arguments(self):
+        def child():
+            # Yield once and then wait to be killed via throw()
+            greenlet.getcurrent().parent.switch("ready")
+
+        g = greenlet.greenlet(child)
+        self.assertEqual(g.switch(), "ready")
+
+        # Throwing GreenletExit without args should still terminate the greenlet
+        ret = g.throw(greenlet.GreenletExit())
+        self.assertIsInstance(ret, greenlet.GreenletExit)
+        self.assertEqual(ret.args, ())
+        self.assertTrue(g.dead)
+
+    def test_multiple_exits_and_reuse_of_result(self):
+        """Check that repeated switch() on a finished greenlet is safe."""
+
+        def child():
+            return "result-once"
+
+        g = greenlet.greenlet(child)
+
+        first = g.switch()
+        self.assertEqual(first, "result-once")
+        self.assertTrue(g.dead)
+
+        # Switching to a finished greenlet should not crash.
+        # We do not assert a specific return value, since that is
+        # implementation-defined; we only assert it stays dead.
+        _ = g.switch()
+        self.assertTrue(g.dead)
+        _ = g.switch()
+        self.assertTrue(g.dead)
+
+    def test_long_sequence_of_switches_and_accumulation(self):
+        """Stress-test many round-trips between greenlet and parent."""
+
+        def child():
+            total = 0
+            while True:
+                # Send current total, receive next increment
+                inc = greenlet.getcurrent().parent.switch(total)
+                if inc is None:
+                    return total
+                total += inc
+
+        g = greenlet.greenlet(child)
+
+        total = g.switch()  # start, total = 0
+        self.assertEqual(total, 0)
+
+        # Add 1 fifty times
+        for _ in range(50):
+            total = g.switch(1)
+
+        # Finish and get final total
+        result = g.switch(None)
+        self.assertEqual(result, 50)
+        self.assertTrue(g.dead)
+
+    def test_throw_into_dead_greenlet_is_error_or_noop(self):
+        """Throwing into a dead greenlet should not resume execution."""
+
+        def child():
+            return "done"
+
+        g = greenlet.greenlet(child)
+        self.assertEqual(g.switch(), "done")
+        self.assertTrue(g.dead)
+
+        # Implementation-dependent, but it should not create a new execution path.
+        # Either it raises, or returns some "terminal" value like the stored
+        # result or a GreenletExit instance.
+        try:
+            result = g.throw(greenlet.GreenletExit("ignored"))
+        except Exception:
+            # Any exception is acceptable here.
+            return
+        else:
+            # If no exception, result should be some terminal marker.
+            # Allow None, original result, or GreenletExit.
+            self.assertTrue(
+                result is None
+                or result == "done"
+                or isinstance(result, greenlet.GreenletExit)
+            )
+            self.assertTrue(g.dead)
+
+    def test_instantiation_with_non_callable_run_raises(self):
+        """Non-callable 'run' should fail when the greenlet is switched into."""
+        g1 = greenlet.greenlet(42)
+        with self.assertRaises(TypeError):
+            g1.switch()
+
+        g2 = greenlet.greenlet("not-callable")
+        with self.assertRaises(TypeError):
+            g2.switch()
+
+    def test_recursive_nesting_chain_of_greenlets(self):
+        """Create a chain of greenlets where each one calls the next."""
+
+        def make_level(level, max_level, acc):
+            def run():
+                acc.append(level)
+                if level < max_level:
+                    g_next = greenlet.greenlet(make_level(level + 1, max_level, acc))
+                    res = g_next.switch()
+                    acc.append(("ret", res))
+                    return res + 1
+                return 1
+
+            return run
+
+        acc = []
+        g0 = greenlet.greenlet(make_level(0, 3, acc))
+        result = g0.switch()
+        # Levels 0,1,2,3 should all have run
+        self.assertEqual(acc[0:4], [0, 1, 2, 3])
+        # Final result should be 4 (1 + 1 + 1 + 1 as it bubbles back)
+        self.assertEqual(result, 4)
+        self.assertTrue(g0.dead)
+
+    def test_greenlet_repr_contains_state_info(self):
+        """repr() should be stable enough to contain at least the class name."""
+
+        def child():
+            return 1
+
+        g = greenlet.greenlet(child)
+        r = repr(g)
+        self.assertIn("greenlet", r.lower())
+
+        g.switch()
+        r2 = repr(g)
+        self.assertIn("greenlet", r2.lower())
+
+    def test_greenlet_current_inside_subclass(self):
+        """Ensure getcurrent() returns instance of subclass when running."""
+
+        class MyGreenlet(greenlet.greenlet):
+            def run(self):
+                cur = greenlet.getcurrent()
+                self.is_me = (cur is self)
+                return "ok"
+
+        g = MyGreenlet()
+        res = g.switch()
+        self.assertEqual(res, "ok")
+        self.assertTrue(getattr(g, "is_me", False))
+
+    def test_greenlet_chain_with_values_bubbling_up(self):
+        """Values bubble up correctly through nested greenlets (actual semantics)."""
+
+        def inner():
+            parent = greenlet.getcurrent().parent
+            return parent.switch("inner-value") * 2
+
+        def middle():
+            v = inner_g.switch()
+            return v + 3
+
+        def outer():
+            v = middle_g.switch()
+            return v * 5
+
+        inner_g = greenlet.greenlet(inner)
+        middle_g = greenlet.greenlet(middle)
+        outer_g = greenlet.greenlet(outer)
+
+        # Start outer; it will eventually suspend back to main with "inner-value"
+        val = outer_g.switch()
+        self.assertEqual(val, "inner-value")
+
+        # Feed 7 back into the chain; the observed result in practice is 35.
+        res = outer_g.switch(7)
+        self.assertEqual(res, 35)
+
+        # Only assert that the outer greenlet finished; the exact lifetime of the
+        # inner/middle greenlets is implementation-defined.
+        self.assertTrue(outer_g.dead)
 
 
 if __name__ == "__main__":
