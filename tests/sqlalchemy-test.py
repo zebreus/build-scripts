@@ -1,5 +1,5 @@
 import unittest
-from datetime import datetime, UTC
+from datetime import datetime
 
 from sqlalchemy import (
     Column,
@@ -26,6 +26,25 @@ from sqlalchemy.orm import (
     scoped_session,
 )
 
+# Try to import greenlet integration pieces
+HAS_GREENLET = False
+greenlet_spawn = None
+try:
+    import greenlet  # noqa: F401
+    from sqlalchemy.util.concurrency import greenlet_spawn as _greenlet_spawn
+
+    greenlet_spawn = _greenlet_spawn
+    HAS_GREENLET = True
+except Exception:
+    HAS_GREENLET = False
+    greenlet_spawn = None
+
+# Try to import IsolatedAsyncioTestCase for async tests
+try:
+    from unittest import IsolatedAsyncioTestCase as _IsolatedAsyncioTestCase
+except ImportError:  # Python < 3.8
+    _IsolatedAsyncioTestCase = None
+
 # --- SQLAlchemy ORM setup -----------------------------------------------------
 
 Base = declarative_base()
@@ -38,7 +57,7 @@ class User(Base):
     username = Column(String(50), unique=True, nullable=False)
     fullname = Column(String(100))
     is_active = Column(Boolean, default=True, nullable=False)
-    created_at = Column(DateTime, default=datetime.now(UTC), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     addresses = relationship("Address", back_populates="user", cascade="all, delete-orphan")
     orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
@@ -78,7 +97,7 @@ class Order(Base):
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime, default=datetime.now(UTC), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     user = relationship("User", back_populates="orders")
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
@@ -102,7 +121,7 @@ class OrderItem(Base):
         return f"OrderItem(id={self.id!r}, quantity={self.quantity!r})"
 
 
-# --- Test suite --------------------------------------------------------------
+# --- Main SQLAlchemy test suite ----------------------------------------------
 
 
 class SQLAlchemyModuleTest(unittest.TestCase):
@@ -371,6 +390,84 @@ class SQLAlchemyModuleTest(unittest.TestCase):
         # rows are tuples (User, Address)
         for user, addr in rows:
             self.assertEqual(user.id, addr.user_id)
+
+
+# --- Greenlet / internal concurrency tests -----------------------------------
+class SQLAlchemyGreenletTest(_IsolatedAsyncioTestCase):
+    """
+    Tests that exercise SQLAlchemy's internal greenlet-based concurrency
+    via sqlalchemy.util.concurrency.greenlet_spawn.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        # Separate in-memory DB for greenlet tests
+        cls.engine = create_engine("sqlite:///:memory:", echo=False, future=True)
+        Base.metadata.create_all(cls.engine)
+
+        cls._session_factory = sessionmaker(bind=cls.engine, autoflush=False, future=True)
+        cls.Session = scoped_session(cls._session_factory)
+
+        # Seed a simple user to query in the greenlet tests
+        session = cls.Session()
+        try:
+            u = User(username="greenlet_user", fullname="Greenlet User")
+            session.add(u)
+            session.commit()
+        finally:
+            session.close()
+
+    @classmethod
+    def tearDownClass(cls):
+        Base.metadata.drop_all(cls.engine)
+        cls.engine.dispose()
+        cls.Session.remove()
+
+    async def asyncSetUp(self):
+        self.session = self.Session()
+
+    async def asyncTearDown(self):
+        self.session.rollback()
+        self.session.close()
+
+    async def test_greenlet_spawn_runs_sync_db_logic(self):
+        """
+        Run a synchronous ORM query inside greenlet_spawn and ensure it
+        returns the expected result. This goes through SQLAlchemy's
+        internal greenlet-based concurrency helpers.
+        """
+
+        def sync_task():
+            # This runs in a greenlet spawned by SQLAlchemy
+            s = self.Session()
+            try:
+                user = s.query(User).filter_by(username="greenlet_user").one()
+                return (user.id, user.username)
+            finally:
+                s.close()
+
+        result = await greenlet_spawn(sync_task)
+        self.assertIsInstance(result, tuple)
+        user_id, username = result
+        self.assertGreater(user_id, 0)
+        self.assertEqual(username, "greenlet_user")
+
+    async def test_greenlet_spawn_propagates_exceptions(self):
+        """
+        Ensure that exceptions raised in the synchronous function running
+        under greenlet_spawn propagate back to the async caller.
+        """
+
+        class CustomError(RuntimeError):
+            pass
+
+        def sync_task():
+            # This will execute inside the greenlet; the error should bubble up.
+            raise CustomError("boom in greenlet path")
+
+        with self.assertRaises(CustomError):
+            await greenlet_spawn(sync_task)
+
 
 
 if __name__ == "__main__":
