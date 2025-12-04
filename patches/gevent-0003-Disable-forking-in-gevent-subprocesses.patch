@@ -1,4 +1,4 @@
-From b143a6acd1701208913b2f485c9fd4baa0822123 Mon Sep 17 00:00:00 2001
+From df99b45fefbd3e1ac6b325f7cab0dd8c29f8f716 Mon Sep 17 00:00:00 2001
 From: Zebreus <zebreus@zebre.us>
 Date: Wed, 26 Nov 2025 17:22:09 +0100
 Subject: [PATCH 3/3] Disable forking in gevent subprocesses
@@ -8,7 +8,7 @@ Subject: [PATCH 3/3] Disable forking in gevent subprocesses
  1 file changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/src/gevent/subprocess.py b/src/gevent/subprocess.py
-index 0a0ef378..4c8086af 100644
+index 0a0ef378..54cfda32 100644
 --- a/src/gevent/subprocess.py
 +++ b/src/gevent/subprocess.py
 @@ -299,8 +299,9 @@ else:
@@ -27,7 +27,7 @@ index 0a0ef378..4c8086af 100644
                      # write to stderr -> hang.  http://bugs.python.org/issue1336
                      gc.disable()
                      try:
-+                        raise RuntimeError("fork_and_watch not available in WASIX")
++                        raise RuntimeError("fork_and_watch not available in WASIX. We can most likely implement this using posix_spawn. If you need this functionality, please open an issue on github.com/wasix-org/build-scripts")
                          self.pid = fork_and_watch(self._on_child, self._loop, True, fork)
                      except:
                          if gc_was_enabled:
