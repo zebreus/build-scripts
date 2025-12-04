@@ -473,6 +473,9 @@ python-with-packages: pkgs/python-with-packages.webc
 
 #####     Preparing a wasm crossenv     #####
 
+build-index-venv:
+	python3 -m venv ./build-index-venv
+	source ./build-index-venv/bin/activate && pip install dumb_pypi
 native-venv:
 	python3 -m venv ./native-venv
 	source ./native-venv/bin/activate && pip install crossenv
@@ -822,6 +825,23 @@ $(call whl,matplotlib): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythoninde
 $(call whl,matplotlib): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
 $(call whl,matplotlib): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
 $(call whl,matplotlib): ${MESON_CROSSFILE}
+
+$(call targz,gevent): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo greenlet==3.2.5.dev0 > $$F ; echo $$F)
+$(call targz,gevent): BUILD_ENV_VARS += PIP_TRUSTED_HOST=0.0.0.0 PIP_EXTRA_INDEX_URL=http://0.0.0.0:6931/simple
+$(call targz,gevent): BUILD_ENV_VARS += GEVENTSETUP_USE_LIBUV=0
+$(call targz,gevent): $(call build,gevent) $(call sysroot,default) $(call whl,greenlet) build-index-venv
+	source ./build-index-venv/bin/activate && python3 generate-index.py
+	# This is dumb, because the server is never stopped...
+	python3 -m http.server 6931 --directory $(PWD)/dist || true &
+	$(build_sdist)
+$(call whl,gevent): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo greenlet==3.2.5.dev0 > $$F ; echo $$F)
+$(call whl,gevent): BUILD_ENV_VARS += PIP_TRUSTED_HOST=0.0.0.0 PIP_EXTRA_INDEX_URL=http://0.0.0.0:6931/simple
+$(call whl,gevent): BUILD_ENV_VARS += GEVENTSETUP_USE_LIBUV=0
+$(call whl,gevent): $(call sdist,gevent) $(call sysroot,default) $(call whl,greenlet) build-index-venv
+	source ./build-index-venv/bin/activate && python3 generate-index.py
+	# This is dumb, because the server is never stopped...
+	python3 -m http.server 6931 --directory $(PWD)/dist || true &
+	$(build_wheel)
 
 $(call sysroot,pycurl): $(call sysroot,cpython) $(call tarxz,brotli) $(call tarxz,curl)
 	$(assemble_sysroot)

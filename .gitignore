@@ -1,5 +1,6 @@
 /cross-venv
 /native-venv
+/build-index-venv
 /python.webc
 /python
 /python-base
@@ -18,3 +19,4 @@ __pycache__
 /pkgs/*.build
 /pkgs/*.prepared
 /pkgs/*.sysroot
+/native-python-extracted
