@@ -373,3 +373,6 @@
 [submodule "pkgs/zope_event.source"]
 	path = pkgs/zope_event.source
 	url = https://github.com/zopefoundation/zope.event.git
+[submodule "pkgs/dnspython.source"]
+	path = pkgs/dnspython.source
+	url = https://github.com/rthalley/dnspython.git

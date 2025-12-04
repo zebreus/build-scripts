@@ -214,6 +214,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * sniffio: 1.3.1
 * zope.interface: 8.1.1
 * zope.event: 6.1
+* dnspython: 2.8.0
 <!-- WHEEL_VERSIONS_END -->
 
 psycopg3-c is just the sdist of psycopg3-binary
