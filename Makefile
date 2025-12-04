@@ -551,6 +551,11 @@ $(call prepared,shapely):
 	# cd $@ && $(GIT) tag -fam "" $$(${GIT} -C ${PWD}/$(call source,$@) describe HEAD)
 	cd $@ && $(GIT) tag -fam "" 2.1.1
 
+$(call prepared,greenlet):
+	$(prepare_submodule)
+	# Fix the version number so that it matches the wheel we build
+	cd $@ && sed -i 's/3.2.5.dev0/3.2.4/' src/greenlet/__init__.py
+
 #####     Building webcs      #####
 
 $(call lib,python-base-webc): $(call tarxz,cpython) $(call sysroot,cpython) $(call tarxz,ca-certificates) resources/python-webc/wasmer.toml $(call lib,ncurses)
@@ -826,7 +831,7 @@ $(call whl,matplotlib): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
 $(call whl,matplotlib): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
 $(call whl,matplotlib): ${MESON_CROSSFILE}
 
-$(call targz,gevent): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo greenlet==3.2.5.dev0 > $$F ; echo $$F)
+$(call targz,gevent): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo greenlet==3.2.4 > $$F ; echo $$F)
 $(call targz,gevent): BUILD_ENV_VARS += PIP_TRUSTED_HOST=0.0.0.0 PIP_EXTRA_INDEX_URL=http://0.0.0.0:6931/simple
 $(call targz,gevent): BUILD_ENV_VARS += GEVENTSETUP_USE_LIBUV=0
 $(call targz,gevent): $(call build,gevent) $(call sysroot,default) $(call whl,greenlet) build-index-venv
@@ -834,7 +839,7 @@ $(call targz,gevent): $(call build,gevent) $(call sysroot,default) $(call whl,gr
 	# This is dumb, because the server is never stopped...
 	python3 -m http.server 6931 --directory $(PWD)/dist || true &
 	$(build_sdist)
-$(call whl,gevent): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo greenlet==3.2.5.dev0 > $$F ; echo $$F)
+$(call whl,gevent): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo greenlet==3.2.4 > $$F ; echo $$F)
 $(call whl,gevent): BUILD_ENV_VARS += PIP_TRUSTED_HOST=0.0.0.0 PIP_EXTRA_INDEX_URL=http://0.0.0.0:6931/simple
 $(call whl,gevent): BUILD_ENV_VARS += GEVENTSETUP_USE_LIBUV=0
 $(call whl,gevent): $(call sdist,gevent) $(call sysroot,default) $(call whl,greenlet) build-index-venv
