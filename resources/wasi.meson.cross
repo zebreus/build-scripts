@@ -9,6 +9,7 @@ c = 'wasix-clang'
 cpp = 'wasix-clang++'
 ar = 'llvm-ar'
 ld = 'wasm-ld'
+pkg-config = 'pkg-config'
 # cython = '/usr/bin/cython'
 
 [properties]
