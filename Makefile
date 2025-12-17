@@ -341,7 +341,7 @@ endef
 define build_wheel =
 mkdir -p pkgs
 if test -n "${PREPARE}" ; then source ./cross-venv/bin/activate && cd $(call sdist,$@) && _= ${PREPARE} ; fi
-source ./cross-venv/bin/activate && cd $(call sdist,$@) && $(call set_sysroot,cpython) ${BUILD_ENV_VARS} python3 -m build --wheel ${BUILD_EXTRA_FLAGS}
+source ./cross-venv/bin/activate && cd $(call sdist,$@) && $(call set_sysroot,python-wheels) ${BUILD_ENV_VARS} python3 -m build --wheel ${BUILD_EXTRA_FLAGS}
 mkdir -p artifacts
 cp $(call sdist,$@)/dist/*[2y].whl artifacts
 # [2y] is a hack to match anything ending in wasm32 or any
@@ -351,7 +351,7 @@ endef
 define build_sdist =
 mkdir -p pkgs
 if test -n "${PREPARE}" ; then source ./cross-venv/bin/activate && cd $(call build,$@) && _= ${PREPARE} ; fi
-source ./cross-venv/bin/activate && cd $(call build,$@)/${PYPROJECT_PATH} && $(call set_sysroot,cpython) ${BUILD_ENV_VARS} python3 -m build --sdist ${BUILD_EXTRA_FLAGS}
+source ./cross-venv/bin/activate && cd $(call build,$@)/${PYPROJECT_PATH} && $(call set_sysroot,python-wheels) ${BUILD_ENV_VARS} python3 -m build --sdist ${BUILD_EXTRA_FLAGS}
 mkdir -p artifacts
 cp $(call build,$@)/${PYPROJECT_PATH}/dist/*[0-9].tar.gz artifacts
 ln -sf ../artifacts/$$(basename $(call build,$@)/${PYPROJECT_PATH}/dist/*[0-9].tar.gz) $@
@@ -479,9 +479,12 @@ build-index-venv:
 native-venv:
 	python3 -m venv ./native-venv
 	source ./native-venv/bin/activate && pip install crossenv
+
+$(call sysroot,python-wheels): $(call sysroot,cpython) $(call tarxz,cpython)
+	$(assemble_sysroot)
 cross-venv: native-venv | python-base
 	rm -rf ./cross-venv
-	source ./native-venv/bin/activate && python3 -m crossenv python-base/root/usr/local/bin/python3.wasm ./cross-venv --cc wasix-clang --cxx wasix-clang++
+	source ./native-venv/bin/activate && python3 -m crossenv $(call sysroot,python-wheels)/usr/local/bin/python3.wasm ./cross-venv --cc wasix-clang --cxx wasix-clang++
 	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple build-pip install cffi
 	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple pip install build six cython setuptools wheel
 
@@ -675,7 +678,7 @@ $(call whl,psycopg-binary): BUILD_ENV_VARS = PATH="${PWD}/resources:$$PATH" WASI
 # Pretend we are a normal posix-like target, so we automatically include <endian.h>
 $(call whl,psycopg-binary): export CCC_OVERRIDE_OPTIONS = ^-D__linux__=1
 
-$(call sysroot,pillow): $(call sysroot,cpython) $(call tarxz,libjpeg-turbo) $(call tarxz,libpng) $(call tarxz,libtiff) $(call tarxz,libwebp) $(call tarxz,giflib) $(call tarxz,openjpeg)
+$(call sysroot,pillow): $(call sysroot,python-wheels) $(call tarxz,libjpeg-turbo) $(call tarxz,libpng) $(call tarxz,libtiff) $(call tarxz,libwebp) $(call tarxz,giflib) $(call tarxz,openjpeg)
 	$(assemble_sysroot)
 	$(call remove_shared_libs)
 
@@ -683,7 +686,7 @@ $(call whl,pillow): $(call sysroot,pillow)
 $(call whl,pillow): BUILD_ENV_VARS = $(call set_sysroot,pillow) WASIX_FORCE_STATIC_DEPENDENCIES=true
 $(call whl,pillow): BUILD_EXTRA_FLAGS = -Cplatform-guessing=disable
 
-$(call sysroot,lxml): $(call sysroot,cpython) $(call tarxz,libxslt) $(call tarxz,libxml2)
+$(call sysroot,lxml): $(call sysroot,python-wheels) $(call tarxz,libxslt) $(call tarxz,libxml2)
 	$(assemble_sysroot)
 	$(call remove_shared_libs)
 
@@ -719,7 +722,7 @@ $(call targz,numpy2-3-2): ${MESON_CROSSFILE}
 $(call whl,numpy2-3-2): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}" -Cbuild-dir=build
 $(call whl,numpy2-3-2): ${MESON_CROSSFILE}
 
-$(call sysroot,shapely): $(call sysroot,cpython) $(call tarxz,geos)
+$(call sysroot,shapely): $(call sysroot,python-wheels) $(call tarxz,geos)
 
 $(call whl,shapely): $(call sysroot,shapely)
 # TODO: Static build don't work yet, because we would have to specify recursive dependencies manually
@@ -741,14 +744,14 @@ $(call sdist,pypandoc_binary)/pypandoc/files/pandoc: $(call sdist,pypandoc_binar
 	tar xfJ $(call tarxz,pandoc) -C $(call sdist,pypandoc_binary)/pypandoc/files --strip-components=1 bin/pandoc
 	touch $@
 
-$(call sysroot,uvloop): $(call sysroot,cpython) $(call tarxz,libuv)
+$(call sysroot,uvloop): $(call sysroot,python-wheels) $(call tarxz,libuv)
 	$(assemble_sysroot)
 	$(call remove_shared_libs)
 $(call whl,uvloop): $(call sysroot,uvloop)
 $(call whl,uvloop): BUILD_ENV_VARS = $(call set_sysroot,uvloop) WASIX_FORCE_STATIC_DEPENDENCIES=true
 $(call whl,uvloop): BUILD_EXTRA_FLAGS = '-C--build-option=build_ext --use-system-libuv'
 
-$(call sysroot,mysqlclient): $(call sysroot,cpython) $(call tarxz,mariadb-connector-c)
+$(call sysroot,mysqlclient): $(call sysroot,python-wheels) $(call tarxz,mariadb-connector-c)
 	$(assemble_sysroot)
 	# Link files to make forced static linking work
 	ln -s libmariadbclient.a $@/usr/local/lib/wasm32-wasi/libmariadb.a
@@ -792,7 +795,7 @@ $(call targz,protobuf):
 	install -m666 $(call build,protobuf)/bazel-bin/python/dist/protobuf.tar.gz artifacts
 	ln -rsf ${PWD}/artifacts/protobuf.tar.gz $@
 
-$(call sysroot,pyarrow19-0-1): $(call sysroot,cpython) $(call tarxz,arrow19-0-1)
+$(call sysroot,pyarrow19-0-1): $(call sysroot,python-wheels) $(call tarxz,arrow19-0-1)
 	$(assemble_sysroot)
 	$(call remove_shared_libs)
 $(call targz,pyarrow19-0-1): $(call sysroot,pyarrow19-0-1)
@@ -805,7 +808,7 @@ $(call whl,pyarrow19-0-1): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; ec
 $(call whl,pyarrow19-0-1): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
 $(call whl,pyarrow19-0-1): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
 $(call whl,pyarrow19-0-1): BUILD_ENV_VARS += $(call set_sysroot,pyarrow19-0-1)
-$(call sysroot,pyarrow): $(call sysroot,cpython) $(call tarxz,arrow)
+$(call sysroot,pyarrow): $(call sysroot,python-wheels) $(call tarxz,arrow)
 	$(assemble_sysroot)
 	$(call remove_shared_libs)
 $(call targz,pyarrow): $(call sysroot,pyarrow)
@@ -848,7 +851,7 @@ $(call whl,gevent): $(call sdist,gevent) $(call sysroot,default) $(call whl,gree
 	python3 -m http.server 6931 --directory $(PWD)/dist || true &
 	$(build_wheel)
 
-$(call sysroot,pycurl): $(call sysroot,cpython) $(call tarxz,brotli) $(call tarxz,curl)
+$(call sysroot,pycurl): $(call sysroot,python-wheels) $(call tarxz,brotli) $(call tarxz,curl)
 	$(assemble_sysroot)
 $(call targz,pycurl): $(call sysroot,pycurl)
 $(call targz,pycurl): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
@@ -876,7 +879,7 @@ $(call whl,pycurl):
 # TODO: Remove patch for python-crc32c once
 #   A: We dont store libs in the wasm32-wasi subdir anymore OR
 #   B: wasix-clang supports automatically adding the wasm32-wasi subdir of every linker path to the linker path
-$(call sysroot,python-crc32c): $(call sysroot,cpython) $(call tarxz,google-crc32c)
+$(call sysroot,python-crc32c): $(call sysroot,python-wheels) $(call tarxz,google-crc32c)
 	$(assemble_sysroot)
 $(call whl,python-crc32c): $(call sysroot,python-crc32c)
 $(call whl,python-crc32c): BUILD_ENV_VARS = $(call set_sysroot,python-crc32c) CRC32C_INSTALL_PREFIX=${PWD}/$(call sysroot,python-crc32c)/usr/local WASIX_FORCE_STATIC_DEPENDENCIES=true
@@ -889,11 +892,11 @@ $(call whl,contourpy): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CR
 $(call whl,contourpy): ${MESON_CROSSFILE}
 
 # Untested until python build is fixed
-$(call sysroot,aspw): $(call sysroot,cpython) $(call tarxz,sqlite)
+$(call sysroot,aspw): $(call sysroot,python-wheels) $(call tarxz,sqlite)
 $(call whl,aspw): $(call sysroot,aspw)
 $(call whl,aspw): BUILD_ENV_VARS = $(call set_sysroot,aspw)
 
-$(call sysroot,jqpy): $(call sysroot,cpython) $(call tarxz,jq) $(call tarxz,onigurama)
+$(call sysroot,jqpy): $(call sysroot,python-wheels) $(call tarxz,jq) $(call tarxz,onigurama)
 	$(assemble_sysroot)
 	$(call remove_shared_libs_only,libonig*,libjq*)
 $(call whl,jqpy): $(call sysroot,jqpy)
@@ -902,13 +905,13 @@ $(call whl,jqpy): BUILD_ENV_VARS = $(call set_sysroot,jqpy) JQPY_USE_SYSTEM_LIBS
 # Needs cython from the venv during preparation
 $(call targz,peewee): BUILD_EXTRA_FLAGS = --no-isolation
 
-$(call sysroot,python-lz4): $(call sysroot,cpython) $(call tarxz,lz4)
+$(call sysroot,python-lz4): $(call sysroot,python-wheels) $(call tarxz,lz4)
 	$(assemble_sysroot)
 	$(call remove_shared_libs_only,liblz4*)
 $(call whl,python-lz4): $(call sysroot,python-lz4)
 $(call whl,python-lz4): BUILD_ENV_VARS = $(call set_sysroot,python-lz4) PYLZ4_EXPERIMENTAL=1
 
-$(call sysroot,pyzbar): $(call sysroot,cpython) $(call tarxz,zbar)
+$(call sysroot,pyzbar): $(call sysroot,python-wheels) $(call tarxz,zbar)
 $(call whl,pyzbar): $(call sysroot,pyzbar)
 $(call whl,pyzbar): BUILD_ENV_VARS = $(call set_sysroot,pyzbar)
 
