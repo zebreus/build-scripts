@@ -458,7 +458,7 @@ PYTHON_WEBC=python/python
 PYTHON_BASE_WEBC=python/python-base
 PYTHON_WITH_PACKAGES_WEBC=python/python-with-packages
 
-python-base: pkgs/python.webc
+python-base: pkgs/python-base.webc
 	${WASMER} package unpack $<$| --out-dir $@
 	cp $@/modules/python $@/root/usr/local/bin/python3.wasm
 	touch $@
