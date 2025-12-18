@@ -204,7 +204,7 @@ class TestUnderCachedProperty(unittest.TestCase):
         class C:
             def __init__(self):
                 self.calls = 0
-                self._cache = None
+                self._cache = None  # wrong type; C-extension may throw SystemError
 
             @under_cached_property
             def value(self):
@@ -212,7 +212,7 @@ class TestUnderCachedProperty(unittest.TestCase):
                 return self.calls
 
         c = C()
-        with self.assertRaises((AttributeError, TypeError)):
+        with self.assertRaises((AttributeError, TypeError, SystemError)):
             _ = c.value
 
     def test_delattr_raises_notimplementederror(self):
@@ -229,11 +229,9 @@ class TestUnderCachedProperty(unittest.TestCase):
         c = C()
         _ = c.value
 
-        # propcache's under_cached_property provides __delete__ but raises NotImplementedError
         with self.assertRaises((NotImplementedError, AttributeError)):
             del c.value
 
-        # Clearing is done via _cache:
         c._cache.pop("value", None)
         self.assertEqual(c.value, 2)
 
