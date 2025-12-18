@@ -1,7 +1,7 @@
-From df99b45fefbd3e1ac6b325f7cab0dd8c29f8f716 Mon Sep 17 00:00:00 2001
+From 4979bafa2623d96e2daea9480e6acfb0bdf9102e Mon Sep 17 00:00:00 2001
 From: Zebreus <zebreus@zebre.us>
 Date: Wed, 26 Nov 2025 17:22:09 +0100
-Subject: [PATCH 3/3] Disable forking in gevent subprocesses
+Subject: [PATCH 02/12] Disable forking in gevent subprocesses
 
 ---
  src/gevent/subprocess.py | 6 ++++--

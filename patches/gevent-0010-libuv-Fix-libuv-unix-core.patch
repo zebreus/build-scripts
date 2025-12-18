@@ -1,0 +1,73 @@
+From 4def4cf841a29cbe2f897b529f1bb7a93e766577 Mon Sep 17 00:00:00 2001
+From: Zebreus <zebreus@zebre.us>
+Date: Thu, 18 Dec 2025 10:50:10 +0100
+Subject: [PATCH 10/12] libuv: Fix libuv unix core
+
+---
+ deps/libuv/src/unix/core.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/deps/libuv/src/unix/core.c b/deps/libuv/src/unix/core.c
+index bd70442a..f71d475d 100644
+--- a/deps/libuv/src/unix/core.c
++++ b/deps/libuv/src/unix/core.c
+@@ -1612,6 +1612,7 @@ int uv_cpumask_size(void) {
+ }
+ 
+ int uv_os_getpriority(uv_pid_t pid, int* priority) {
++#ifndef __wasi__ /* WASIX does not yet support priority */
+   int r;
+ 
+   if (priority == NULL)
+@@ -1624,16 +1625,21 @@ int uv_os_getpriority(uv_pid_t pid, int* priority) {
+     return UV__ERR(errno);
+ 
+   *priority = r;
++#else
++  *priority = 0;
++#endif
+   return 0;
+ }
+ 
+ 
+ int uv_os_setpriority(uv_pid_t pid, int priority) {
++#ifndef __wasi__ /* WASIX does not yet support priority */
+   if (priority < UV_PRIORITY_HIGHEST || priority > UV_PRIORITY_LOW)
+     return UV_EINVAL;
+ 
+   if (setpriority(PRIO_PROCESS, (int) pid, priority) != 0)
+     return UV__ERR(errno);
++#endif
+ 
+   return 0;
+ }
+@@ -1645,6 +1651,7 @@ int uv_os_setpriority(uv_pid_t pid, int priority) {
+  * So the output parameter priority is actually the nice value.
+ */
+ int uv_thread_getpriority(uv_thread_t tid, int* priority) {
++#ifndef __wasi__ /* WASIX does not yet support priority */
+   int r;
+   int policy;
+   struct sched_param param;
+@@ -1671,6 +1678,9 @@ int uv_thread_getpriority(uv_thread_t tid, int* priority) {
+ #endif
+ 
+   *priority = param.sched_priority;
++#else
++  *priority = 0;
++#endif
+   return 0;
+ }
+ 
+@@ -1696,7 +1706,7 @@ static int set_nice_for_calling_thread(int priority) {
+  * If the function fails, the return value is non-zero.
+ */
+ int uv_thread_setpriority(uv_thread_t tid, int priority) {
+-#if !defined(__GNU__)
++#if !defined(__GNU__) && !defined(__wasi__) /* WASIX does not yet support thread priority */
+   int r;
+   int min;
+   int max;
+-- 
+2.51.0
+

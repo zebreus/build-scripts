@@ -1,0 +1,26 @@
+From 14b1dad4b342b6260bbc4bcdf66bb31ad53faa4f Mon Sep 17 00:00:00 2001
+From: Arshia Ghafoori <arshia001@live.com>
+Date: Thu, 18 Dec 2025 11:11:25 +0100
+Subject: [PATCH 11/12] libuv: Include posix header when targeting wasix
+
+---
+ deps/libuv/include/uv/unix.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/deps/libuv/include/uv/unix.h b/deps/libuv/include/uv/unix.h
+index 7c972026..586d6f67 100644
+--- a/deps/libuv/include/uv/unix.h
++++ b/deps/libuv/include/uv/unix.h
+@@ -66,7 +66,8 @@
+       defined(__MSYS__)   || \
+       defined(__HAIKU__)  || \
+       defined(__QNX__)    || \
+-      defined(__GNU__)
++      defined(__GNU__)    || \
++      defined(__wasi__)
+ # include "uv/posix.h"
+ #endif
+ 
+-- 
+2.51.0
+
