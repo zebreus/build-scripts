@@ -379,3 +379,6 @@
 [submodule "pkgs/multidict.source"]
 	path = pkgs/multidict.source
 	url = https://github.com/aio-libs/multidict.git
+[submodule "pkgs/yarl.source"]
+	path = pkgs/yarl.source
+	url = https://github.com/aio-libs/yarl.git
