@@ -1,3 +1,4 @@
+# Currently broken, needs further investigation
 """
 Comprehensive unittest suite for aioresponses (aiohttp mocking).
 
