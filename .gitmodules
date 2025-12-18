@@ -397,3 +397,6 @@
 [submodule "pkgs/async-timeout.source"]
 	path = pkgs/async-timeout.source
 	url = https://github.com/aio-libs/async-timeout
+[submodule "pkgs/aiojobs.source"]
+	path = pkgs/aiojobs.source
+	url = https://github.com/aio-libs/aiojobs
