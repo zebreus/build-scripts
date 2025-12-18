@@ -388,3 +388,6 @@
 [submodule "pkgs/aiohappyeyeballs.source"]
 	path = pkgs/aiohappyeyeballs.source
 	url = https://github.com/aio-libs/aiohappyeyeballs
+[submodule "pkgs/aiosignal.source"]
+	path = pkgs/aiosignal.source
+	url = https://github.com/aio-libs/aiosignal
