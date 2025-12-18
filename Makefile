@@ -104,6 +104,7 @@ WHEELS+=propcache
 WHEELS+=aiohappyeyeballs
 WHEELS+=aiosignal
 WHEELS+=frozenlist
+WHEELS+=async-timeout
 # WHEELS_END
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
