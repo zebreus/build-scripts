@@ -102,6 +102,7 @@ WHEELS+=multidict
 WHEELS+=yarl
 WHEELS+=propcache
 WHEELS+=aiohappyeyeballs
+WHEELS+=aiosignal
 # WHEELS_END
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
