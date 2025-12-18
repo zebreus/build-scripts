@@ -156,12 +156,14 @@ PYTHON_WASIX_BINARIES_WHEELS+=orjson-3.11.0-cp313-cp313-wasix_wasm32
 #PYTHON_WASIX_BINARIES_WHEELS+=pandas-cp313-cp313-wasix_wasm32
 # Not included: Source build in build-scripts
 #PYTHON_WASIX_BINARIES_WHEELS+=peewee-3.18.2-cp313-cp313-wasix_wasm32
-# Not included: Source build in build-scripts
-#PYTHON_WASIX_BINARIES_WHEELS+=psycopg-3.2.9-py3-none-any
-# Not included: Source build in build-scripts
-#PYTHON_WASIX_BINARIES_WHEELS+=psycopg_c-3.2.9-cp313-cp313-wasix_wasm32
-# Not included: Source build in build-scripts
-#PYTHON_WASIX_BINARIES_WHEELS+=psycopg_pool-3.3.0.dev1-py3-none-any
+# Included: Build in build-script requires minor fixes to allow bundeling libpq
+PYTHON_WASIX_BINARIES_WHEELS+=psycopg-3.2.9-py3-none-any
+# Not included: Need to figure out the difference between that and psycopg_binary again
+# PYTHON_WASIX_BINARIES_WHEELS+=psycopg_c-3.2.9-cp313-cp313-wasix_wasm32
+# Included: Build in build-script requires minor fixes to allow bundeling libpq
+PYTHON_WASIX_BINARIES_WHEELS+=psycopg_binary-3.2.9-cp313-cp313-wasix_wasm32
+# Included: Build in build-script requires minor fixes to allow bundeling libpq
+PYTHON_WASIX_BINARIES_WHEELS+=psycopg_pool-3.2.6-py3-none-any
 # Not included: Source build in build-scripts
 # PYTHON_WASIX_BINARIES_WHEELS+=pyarrow-19.0.1-cp313-cp313-wasix_wasm32
 # Not included: Source build in build-scripts
@@ -272,6 +274,9 @@ DONT_INSTALL+=pandas2-2-3
 DONT_INSTALL+=cryptography-43.0.3-cp313-abi3-wasix_wasm32
 # Dont install old pyarrow, because we already have the new one
 DONT_INSTALL+=pyarrow19-0-1
+# Dont install psycopg from build-scripts as I am to lazy to check if they work
+DONT_INSTALL+=psycopg-pool
+DONT_INSTALL+=psycopg
 
 # Helper function to get the project name from a path
 project_name = $(basename $(basename $(notdir $(1))))
