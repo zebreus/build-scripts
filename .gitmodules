@@ -394,3 +394,6 @@
 [submodule "pkgs/frozenlist.source"]
 	path = pkgs/frozenlist.source
 	url = https://github.com/aio-libs/frozenlist
+[submodule "pkgs/async-timeout.source"]
+	path = pkgs/async-timeout.source
+	url = https://github.com/aio-libs/async-timeout

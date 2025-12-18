@@ -221,6 +221,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * aiohappyeyeballs: 2.6.1
 * aiosignal: 1.4.0
 * frozenlist: 1.8.0
+* async-timeout: 5.0.1
 <!-- WHEEL_VERSIONS_END -->
 
 psycopg3-c is just the sdist of psycopg3-binary
