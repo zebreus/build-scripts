@@ -431,6 +431,12 @@ endef
 # Uses an older hash, because the latest version requires tail call support
 RUN_WITH_HASKELL=nix shell 'gitlab:haskell-wasm/ghc-wasm-meta/6a8b8457df83025bed2a8759f5502725a827104b?host=gitlab.haskell.org' --command
 
+# TODO: Find a better solution for adding -o with all the artifacts
+all-but-dont-require-rebuild:
+	make all $(for pkg in pkgs/*.whl pkgs/*.tar.gz pkgs/*.tar.xz ; do printf --  '-o %s ' "$pkg"; done)
+python-with-packages-but-dont-require-rebuild:
+	make python-with-packages $(for pkg in pkgs/*.whl pkgs/*.tar.gz pkgs/*.tar.xz ; do printf --  '-o %s ' "$pkg"; done)
+
 all: $(BUILT_LIBS) $(BUILT_WHEELS) $(PWB_WHEELS_TO_INSTALL)
 wheels: $(BUILT_WHEELS)
 external-wheels: $(PWB_WHEELS_TO_INSTALL)
