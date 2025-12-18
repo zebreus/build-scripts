@@ -107,6 +107,7 @@ WHEELS+=frozenlist
 WHEELS+=async-timeout
 WHEELS+=aiojobs
 WHEELS+=aioresponses
+WHEELS+=bytecode
 # WHEELS_END
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
