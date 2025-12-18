@@ -391,3 +391,6 @@
 [submodule "pkgs/aiosignal.source"]
 	path = pkgs/aiosignal.source
 	url = https://github.com/aio-libs/aiosignal
+[submodule "pkgs/frozenlist.source"]
+	path = pkgs/frozenlist.source
+	url = https://github.com/aio-libs/frozenlist

@@ -220,6 +220,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * propcache: 0.4.1
 * aiohappyeyeballs: 2.6.1
 * aiosignal: 1.4.0
+* frozenlist: 1.8.0
 <!-- WHEEL_VERSIONS_END -->
 
 psycopg3-c is just the sdist of psycopg3-binary
