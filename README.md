@@ -218,6 +218,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * multidict: 6.7.0
 * yarl: 1.22.0
 * propcache: 0.4.1
+* aiohappyeyeballs: 2.6.1
 <!-- WHEEL_VERSIONS_END -->
 
 psycopg3-c is just the sdist of psycopg3-binary

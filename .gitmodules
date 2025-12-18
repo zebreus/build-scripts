@@ -385,3 +385,6 @@
 [submodule "pkgs/propcache.source"]
 	path = pkgs/propcache.source
 	url = https://github.com/aio-libs/propcache
+[submodule "pkgs/aiohappyeyeballs.source"]
+	path = pkgs/aiohappyeyeballs.source
+	url = https://github.com/aio-libs/aiohappyeyeballs
