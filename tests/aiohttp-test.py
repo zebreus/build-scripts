@@ -1,5 +1,3 @@
-# Works on native
-# Missing deps on WASIX
 # Only tests the client-side functionality, not the server
 import asyncio
 import json
