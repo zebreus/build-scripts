@@ -376,3 +376,6 @@
 [submodule "pkgs/dnspython.source"]
 	path = pkgs/dnspython.source
 	url = https://github.com/rthalley/dnspython.git
+[submodule "pkgs/multidict.source"]
+	path = pkgs/multidict.source
+	url = https://github.com/aio-libs/multidict.git

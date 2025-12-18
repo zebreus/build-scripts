@@ -215,6 +215,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * zope.interface: 8.1.1
 * zope.event: 6.1
 * dnspython: 2.8.0
+* multidict: 6.7.0
 <!-- WHEEL_VERSIONS_END -->
 
 psycopg3-c is just the sdist of psycopg3-binary
