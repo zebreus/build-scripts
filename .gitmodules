@@ -382,3 +382,6 @@
 [submodule "pkgs/yarl.source"]
 	path = pkgs/yarl.source
 	url = https://github.com/aio-libs/yarl.git
+[submodule "pkgs/propcache.source"]
+	path = pkgs/propcache.source
+	url = https://github.com/aio-libs/propcache
