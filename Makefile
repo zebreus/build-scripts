@@ -100,6 +100,7 @@ WHEELS+=dnspython
 WHEELS+=gevent
 WHEELS+=multidict
 WHEELS+=yarl
+WHEELS+=propcache
 # WHEELS_END
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
