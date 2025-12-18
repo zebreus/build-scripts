@@ -118,6 +118,7 @@ if [ "$TYPE" == "pure-wheel" ]; then
     git add "Makefile"
     git commit -m "Add $NAME to the buildscripts"
 
-    git add "pkgs/$NAME.tar.gz" "pkgs/$NAME.whl" artifacts/${NAME}*.whl artifacts/${NAME}*.tar.gz
+    underscored_name="$(echo "$NAME" | tr '-' '_')"
+    git add "pkgs/$NAME.tar.gz" "pkgs/$NAME.whl" artifacts/${NAME}*.whl artifacts/${NAME}*.tar.gz || git add "pkgs/$NAME.whl" artifacts/${NAME}*.whl || git add "pkgs/$NAME.tar.gz" "pkgs/$NAME.whl" artifacts/${underscored_name}*.tar.gz artifacts/${underscored_name}*.whl
     git commit -m "Add prebuilt wheel for $NAME"
 fi
