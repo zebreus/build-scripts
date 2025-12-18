@@ -369,7 +369,7 @@ define assemble_sysroot =
 $(reset_install_dir) $@
 $(foreach dep,$^,if test "$(dep)" != "$(call tarxz,$(dep))" && test "$(dep)" != "$(call sysroot,$(dep))" ; then echo "The dependencies of a sysroot must be .tar.xz artifacts or other sysroots (got $(dep))." 1>&2 ; exit 1 ; fi ;)
 $(foreach dep,$(filter %.sysroot,$^),cp -rfT ${PWD}/$(call sysroot,$(dep)) ${PWD}/$@ || exit 1;)
-$(foreach dep,$(filter %.tar.xz,$^),make install-$(call project_name,$(dep)) LIBS_DESTDIR=${PWD}/$@ || exit 1;)
+$(foreach dep,$(filter %.tar.xz,$^),make install-$(call project_name,$(dep)) -o $(call tarxz,$(dep)) LIBS_DESTDIR=${PWD}/$@ || exit 1;)
 touch $@
 endef
 
@@ -562,10 +562,10 @@ $(call prepared,greenlet):
 
 #####     Building webcs      #####
 
-$(call lib,python-base-webc): $(call tarxz,cpython) $(call sysroot,cpython) $(call tarxz,ca-certificates) resources/python-webc/wasmer.toml $(call lib,ncurses)
+$(call lib,python-base-webc): $(call tarxz,cpython) $(call sysroot,cpython) $(call tarxz,ca-certificates) resources/python-webc/wasmer.toml $(call tarxz,ncurses)
 	mkdir -p $@/root
-	make install-cpython LIBS_DESTDIR=${PWD}/$@/root
-	make install-ca-certificates LIBS_DESTDIR=${PWD}/$@/root
+	make install-cpython LIBS_DESTDIR=${PWD}/$@/root -o $(call tarxz,cpython)
+	make install-ca-certificates LIBS_DESTDIR=${PWD}/$@/root -o $(call tarxz,ca-certificates)
 	rm -rf ${PWD}/$@/root/.install*
 
 	# Install to /lib because wasmer currently does not look in wasm32-wasi for shared libs
@@ -576,7 +576,9 @@ $(call lib,python-base-webc): $(call tarxz,cpython) $(call sysroot,cpython) $(ca
 
 	# Install terminfo database from ncurses
 	mkdir -p $@/root/usr/local/share/terminfo
-	cp -rT $(call lib,ncurses)/usr/local/share/terminfo $@/root/usr/local/share/terminfo
+	TEMP_DIR=$$(mktemp -d) ; \
+	tar xf $(call tarxz,ncurses) -C $$TEMP_DIR ; \
+	cp -rT $$TEMP_DIR/usr/local/share/terminfo $@/root/usr/local/share/terminfo
 
 	cp resources/python-webc/wasmer.toml $@/wasmer.toml
 	tomlq -i '.package.name = "$(PYTHON_BASE_WEBC)"' $@/wasmer.toml --output-format toml
@@ -627,7 +629,7 @@ $(call lib,python-with-packages-webc): $(call lib,python-base-webc) | $(BUILT_WH
 	cp -r $(call lib,python-base-webc) $@
 	
 	# TODO: Install wheels
-	WHEELS_DESTDIR=${PWD}/$(call lib,python-with-packages-webc)/root/usr/local/lib/python3.13 make install-wheels
+	WHEELS_DESTDIR=${PWD}/$(call lib,python-with-packages-webc)/root/usr/local/lib/python3.13 make install-wheels $(for pkg in pkgs/*.whl ; do printf --  '-o %s ' "$pkg"; done)
 
 	# Update the name in the wasmer.toml
 	tomlq -i '.package.name = "$(PYTHON_WITH_PACKAGES_WEBC)"' $@/wasmer.toml --output-format toml
