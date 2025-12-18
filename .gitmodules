@@ -400,3 +400,6 @@
 [submodule "pkgs/aiojobs.source"]
 	path = pkgs/aiojobs.source
 	url = https://github.com/aio-libs/aiojobs
+[submodule "pkgs/aioresponses.source"]
+	path = pkgs/aioresponses.source
+	url = https://github.com/pnuckowski/aioresponses

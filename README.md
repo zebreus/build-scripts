@@ -223,6 +223,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * frozenlist: 1.8.0
 * async-timeout: 5.0.1
 * aiojobs: 1.4.0
+* aioresponses: 0.7.8
 <!-- WHEEL_VERSIONS_END -->
 
 psycopg3-c is just the sdist of psycopg3-binary
