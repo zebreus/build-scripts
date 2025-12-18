@@ -625,7 +625,7 @@ $(call lib,python-webc): $(call lib,python-base-webc)
 
 	touch $@
 
-$(call lib,python-with-packages-webc): $(call lib,python-base-webc) | $(BUILT_WHEELS_TO_INSTALL) $(PWB_WHEELS_TO_INSTALL)
+$(call lib,python-with-packages-webc): $(call lib,python-base-webc) $(BUILT_WHEELS_TO_INSTALL) $(PWB_WHEELS_TO_INSTALL)
 	rm -rf $@
 	cp -r $(call lib,python-base-webc) $@
 	
