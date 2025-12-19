@@ -12,6 +12,7 @@ import json
 import hashlib
 import shutil
 import subprocess
+import zipfile
 
 package_list = 'package-list.jsonl'
 
@@ -38,10 +39,47 @@ wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'watchfile
 # These packages will be excluded from the index
 excluded_prefixes = (
     'artifacts/psycopg',  # For now we use psycopg builds from python-wasix-binaries,
-    'artifacts/packaging', # It's a non-native package, and having it in our index makes uv to fail when installing other `packaging` versions
-    'artifacts/pydantic', # It's a non-native package
 )
+
+# These packages will be included even if they don't contain native binaries
+included_prefixes = (
+    # Add package prefixes here that should always be included
+    # Example: 'artifacts/somepackage',
+)
+
+def contains_native_binaries(wheel_path):
+    """Check if a wheel file contains native binaries (.so, .so.*, or .wasm files)."""
+    try:
+        with zipfile.ZipFile(wheel_path, 'r') as zip_file:
+            for file_info in zip_file.namelist():
+                # Check for .so, .so.*, or .wasm files
+                if file_info.endswith('.so') or '.so.' in file_info or file_info.endswith('.wasm'):
+                    return True
+        return False
+    except Exception as e:
+        print(f"Warning: Could not check {wheel_path}: {e}")
+        # If we can't check, include it to be safe
+        return True
+
+# Filter out excluded prefixes
 wheel_files = [f for f in wheel_files if not f.startswith(excluded_prefixes)]
+
+# Filter out -none-any.whl files that don't contain native binaries
+filtered_wheel_files = []
+for f in wheel_files:
+    if f.endswith('-none-any.whl') and f.startswith('artifacts/'):
+        # Always include if it matches included_prefixes
+        if any(f.startswith(prefix) for prefix in included_prefixes):
+            filtered_wheel_files.append(f)
+        elif contains_native_binaries(f):
+            print(f"Including {os.path.basename(f)} even though it's `none-any` - native binaries found")
+            filtered_wheel_files.append(f)
+        else:
+            print(f"Excluding {os.path.basename(f)} - no native binaries found")
+    else:
+        filtered_wheel_files.append(f)
+
+wheel_files = filtered_wheel_files
 
 # Create JSON for each wheel file
 with open(package_list, 'w') as package_list_file:
