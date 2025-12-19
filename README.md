@@ -225,6 +225,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * aiojobs: 1.4.0
 * aioresponses: 0.7.8
 * bytecode: 0.17.0
+* aiohttp: 3.13.2
 <!-- WHEEL_VERSIONS_END -->
 
 psycopg3-c is just the sdist of psycopg3-binary
