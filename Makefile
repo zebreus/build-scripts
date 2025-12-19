@@ -108,6 +108,7 @@ WHEELS+=async-timeout
 WHEELS+=aiojobs
 WHEELS+=aioresponses
 WHEELS+=bytecode
+WHEELS+=aiohttp
 # WHEELS_END
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
@@ -581,6 +582,13 @@ $(call prepared,greenlet):
 	# Fix the version number so that it matches the wheel we build
 	cd $@ && sed -i 's/3.2.5.dev0/3.2.4/' src/greenlet/__init__.py
 
+$(call prepared,aiohttp):
+	$(prepare_submodule)
+	# Apply some patch from arshia.
+	# TODO: Review if this is still needed
+	cd $@/vendor/llhttp && git fetch origin c11271f223118301a9e3aee314f968fdedb7fbcc
+	cd $@/vendor/llhttp && git cherry-pick c11271f223118301a9e3aee314f968fdedb7fbcc
+
 #####     Building webcs      #####
 
 $(call lib,python-base-webc): $(call tarxz,cpython) $(call sysroot,cpython) $(call tarxz,ca-certificates) resources/python-webc/wasmer.toml $(call tarxz,ncurses)
@@ -774,6 +782,8 @@ $(call sysroot,uvloop): $(call sysroot,python-wheels) $(call tarxz,libuv)
 $(call whl,uvloop): $(call sysroot,uvloop)
 $(call whl,uvloop): BUILD_ENV_VARS = $(call set_sysroot,uvloop) WASIX_FORCE_STATIC_DEPENDENCIES=true
 $(call whl,uvloop): BUILD_EXTRA_FLAGS = '-C--build-option=build_ext --use-system-libuv'
+
+$(call targz,aiohttp): PREPARE = make cythonize ; yes | make generate-llhttp
 
 $(call sysroot,mysqlclient): $(call sysroot,python-wheels) $(call tarxz,mariadb-connector-c)
 	$(assemble_sysroot)
