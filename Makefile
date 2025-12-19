@@ -122,8 +122,8 @@ WHEELS+=aiohttp
 PYTHON_WASIX_BINARIES_WHEELS=
 
 # Included: Not moved to build-scripts yet
-# TODO: Move to build-scripts
-PYTHON_WASIX_BINARIES_WHEELS+=aiohttp-3.12.4-cp313-cp313-wasix_wasm32
+# TODO: Included in build-scripts
+#PYTHON_WASIX_BINARIES_WHEELS+=aiohttp-3.12.4-cp313-cp313-wasix_wasm32
 # Not included: Source build in build-scripts
 #PYTHON_WASIX_BINARIES_WHEELS+=cffi-1.17.1-cp313-cp313-wasix_wasm32
 # Included: Rust

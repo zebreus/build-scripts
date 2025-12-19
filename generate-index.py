@@ -18,7 +18,6 @@ package_list = 'package-list.jsonl'
 
 wheel_files = glob.glob(os.path.join("artifacts", '*.whl'))
 wheel_files += glob.glob(os.path.join("artifacts", '*.tar.gz')) # SDists
-wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'aiohttp*.whl'))
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'cryptography*.whl'))
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'ddtrace*.whl'))
 wheel_files += glob.glob(os.path.join("python-wasix-binaries/wheels", 'httptools*.whl'))
