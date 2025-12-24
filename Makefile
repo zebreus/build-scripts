@@ -448,9 +448,9 @@ RUN_WITH_HASKELL=nix shell 'gitlab:haskell-wasm/ghc-wasm-meta/6a8b8457df83025bed
 
 # TODO: Find a better solution for adding -o with all the artifacts
 all-but-dont-require-rebuild:
-	make all $(for pkg in pkgs/*.whl pkgs/*.tar.gz pkgs/*.tar.xz ; do printf --  '-o %s ' "$pkg"; done)
+	make all $$(for pkg in pkgs/*.whl pkgs/*.tar.gz pkgs/*.tar.xz ; do printf --  '-o %s ' "$$pkg"; done)
 python-with-packages-but-dont-require-rebuild:
-	make python-with-packages $(for pkg in pkgs/*.whl pkgs/*.tar.gz pkgs/*.tar.xz ; do printf --  '-o %s ' "$pkg"; done)
+	make python-with-packages $$(for pkg in pkgs/*.whl pkgs/*.tar.gz pkgs/*.tar.xz ; do printf --  '-o %s ' "$$pkg"; done)
 
 all: $(BUILT_LIBS) $(BUILT_WHEELS) $(PWB_WHEELS_TO_INSTALL)
 wheels: $(BUILT_WHEELS)
@@ -658,7 +658,7 @@ $(call lib,python-with-packages-webc): $(call lib,python-base-webc) $(BUILT_WHEE
 	cp -r $(call lib,python-base-webc) $@
 	
 	# TODO: Install wheels
-	WHEELS_DESTDIR=${PWD}/$(call lib,python-with-packages-webc)/root/usr/local/lib/python3.13 make install-wheels $(for pkg in pkgs/*.whl ; do printf --  '-o %s ' "$pkg"; done)
+	WHEELS_DESTDIR=${PWD}/$(call lib,python-with-packages-webc)/root/usr/local/lib/python3.13 make install-wheels $$(for pkg in pkgs/*.whl ; do printf --  '-o %s ' "$$pkg"; done)
 
 	# Update the name in the wasmer.toml
 	tomlq -i '.package.name = "$(PYTHON_WITH_PACKAGES_WEBC)"' $@/wasmer.toml --output-format toml
