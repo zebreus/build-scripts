@@ -857,7 +857,6 @@ $(call whl,pyarrow): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo num
 $(call whl,pyarrow): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
 $(call whl,pyarrow): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
 $(call whl,pyarrow): BUILD_ENV_VARS += $(call set_sysroot,pyarrow)
-$(call whl,pyarrow): $(call lib,arrow)
 
 $(call targz,matplotlib): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
 $(call targz,matplotlib): BUILD_ENV_VARS += PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple
@@ -1207,10 +1206,10 @@ $(call lib,geos):
 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
 	touch $@
 
-$(call lib,libxslt): $(call lib,xz) $(call lib,libxml2) $(call lib,zlib)
+$(call lib,libxslt): $(call tarxzunpacked,xz) $(call tarxzunpacked,libxml2) $(call tarxzunpacked,zlib)
 	cd $(call build,$@) && rm -rf static shared
-	cd $(call build,$@) && CMAKE_PREFIX_PATH=${PWD}/$(call lib,xz)/usr/local/lib/wasm32-wasi/cmake:${PWD}/$(call lib,libxml2)/usr/local/lib/wasm32-wasi/cmake:${PWD}/$(call lib,zlib)/usr/local/lib/wasm32-wasi/cmake cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_RPATH=YES -DLIBXSLT_WITH_PYTHON=OFF
-	cd $(call build,$@) && CMAKE_PREFIX_PATH=${PWD}/$(call lib,xz)/usr/local/lib/wasm32-wasi/cmake:${PWD}/$(call lib,libxml2)/usr/local/lib/wasm32-wasi/cmake:${PWD}/$(call lib,zlib)/usr/local/lib/wasm32-wasi/cmake cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_RPATH=YES -DLIBXSLT_WITH_PYTHON=OFF
+	cd $(call build,$@) && CMAKE_PREFIX_PATH=${PWD}/$(call tarxzunpacked,xz)/usr/local/lib/wasm32-wasi/cmake:${PWD}/$(call tarxzunpacked,libxml2)/usr/local/lib/wasm32-wasi/cmake:${PWD}/$(call tarxzunpacked,zlib)/usr/local/lib/wasm32-wasi/cmake cmake -B static -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_RPATH=YES -DLIBXSLT_WITH_PYTHON=OFF
+	cd $(call build,$@) && CMAKE_PREFIX_PATH=${PWD}/$(call tarxzunpacked,xz)/usr/local/lib/wasm32-wasi/cmake:${PWD}/$(call tarxzunpacked,libxml2)/usr/local/lib/wasm32-wasi/cmake:${PWD}/$(call tarxzunpacked,zlib)/usr/local/lib/wasm32-wasi/cmake cmake -B shared -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_RPATH=YES -DLIBXSLT_WITH_PYTHON=OFF
 	cd $(call build,$@) && cmake --build static -j${JOBS}
 	cd $(call build,$@) && cmake --build shared -j${JOBS}
 	$(reset_install_dir) $@
@@ -1301,11 +1300,11 @@ $(call lib,readline): $(call sysroot,readline)
 # * statically linked curl binary
 # * working shared and static libraries with brotli, zlib and openssl support
 # * curl-config and pkg-config files that work and do not contain absolute paths
-$(call lib,curl): $(call lib,zlib) $(call lib,openssl) $(call lib,brotli)
+$(call lib,curl): $(call tarxzunpacked,zlib) $(call tarxzunpacked,openssl) $(call tarxzunpacked,brotli)
 	cd $(call build,$@) && rm -rf deps-sysroot && mkdir -p deps-sysroot
-	cd $(call build,$@) && cp -ru ${PWD}/$(call lib,openssl)/* deps-sysroot
-	cd $(call build,$@) && cp -ru ${PWD}/$(call lib,zlib)/* deps-sysroot
-	cd $(call build,$@) && cp -ru ${PWD}/$(call lib,brotli)/* deps-sysroot
+	cd $(call build,$@) && cp -ru ${PWD}/$(call tarxzunpacked,openssl)/* deps-sysroot
+	cd $(call build,$@) && cp -ru ${PWD}/$(call tarxzunpacked,zlib)/* deps-sysroot
+	cd $(call build,$@) && cp -ru ${PWD}/$(call tarxzunpacked,brotli)/* deps-sysroot
 	cd $(call build,$@) && rm -rf shared static
 	cd $(call build,$@) && PKG_CONFIG_SYSROOT_DIR=${PWD}/$(call build,$@)/deps-sysroot PKG_CONFIG_PATH=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/pkgconfig cmake -B static --toolchain ${CMAKE_TOOLCHAIN} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=NO -DCURL_ZLIB=ON -DCURL_BROTLI=ON -DBUILD_STATIC_CURL=ON -DOPENSSL_USE_STATIC_LIBS=ON -DZLIB_INCLUDE_DIR=${PWD}/$(call build,$@)/deps-sysroot/usr/local/include -DZLIB_LIBRARY=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/libz.a -DBROTLI_INCLUDE_DIR=${PWD}/$(call build,$@)/deps-sysroot/usr/local/include -DBROTLICOMMON_LIBRARY=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/libbrotlicommon.a -DBROTLIDEC_LIBRARY=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/libbrotlidec.a
 	# cd $(call build,$@) && PKG_CONFIG_SYSROOT_DIR=${PWD}/$(call build,$@)/deps-sysroot PKG_CONFIG_PATH=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/pkgconfig cmake -B shared --toolchain ${CMAKE_TOOLCHAIN} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=NO -DCURL_ZLIB=ON -DCURL_BROTLI=ON -DBUILD_CURL_EXE=OFF -DZLIB_INCLUDE_DIR=${PWD}/$(call build,$@)/deps-sysroot/usr/local/include -DZLIB_LIBRARY=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/libz.so -DBROTLI_INCLUDE_DIR=${PWD}/$(call build,$@)/deps-sysroot/usr/local/include -DBROTLICOMMON_LIBRARY=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/libbrotlicommon.so -DBROTLIDEC_LIBRARY=${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/libbrotlidec.so
@@ -1318,6 +1317,27 @@ $(call lib,curl): $(call lib,zlib) $(call lib,openssl) $(call lib,brotli)
 	cd $(call lib,$@) && sed -Ei 's|${PWD}/$(call build,$@)/deps-sysroot/usr/local/lib/wasm32-wasi/lib([a-zA-Z0-9]+).(a\|so)|-l\1|g' usr/local/lib/wasm32-wasi/pkgconfig/libcurl.pc usr/local/bin/curl-config usr/local/lib/wasm32-wasi/cmake/CURL/CURLTargets.cmake
 	cd $(call lib,$@) && sed -i "s|$$(command -v $$CC)|$$CC|g" usr/local/bin/curl-config
 	touch $@
+
+# TODO: This should work but I havent tested it yet. When testing make sure the output is still static.
+# The same as above, but I tried to do it with sysroot.
+# $(call sysroot,curl): $(call sysroot,default) $(call tarxz,openssl) $(call tarxz,zlib) $(call tarxz,brotli)
+# $(call lib,curl): $(call sysroot,curl)
+# 	cd $(call build,$@) && rm -rf deps-sysroot && mkdir -p deps-sysroot
+# 	cd $(call build,$@) && cp -ru ${PWD}/$(call tarxzunpacked,openssl)/* deps-sysroot
+# 	cd $(call build,$@) && cp -ru ${PWD}/$(call tarxzunpacked,zlib)/* deps-sysroot
+# 	cd $(call build,$@) && cp -ru ${PWD}/$(call tarxzunpacked,brotli)/* deps-sysroot
+# 	cd $(call build,$@) && rm -rf shared static
+# 	cd $(call build,$@) && PKG_CONFIG_SYSROOT_DIR=${PWD}/$(call sysroot,curl) PKG_CONFIG_PATH=${PWD}/$(call sysroot,curl)/usr/local/lib/wasm32-wasi/pkgconfig cmake -B static --toolchain ${CMAKE_TOOLCHAIN} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=NO -DCURL_ZLIB=ON -DCURL_BROTLI=ON -DBUILD_STATIC_CURL=ON -DOPENSSL_USE_STATIC_LIBS=ON -DZLIB_INCLUDE_DIR=${PWD}/$(call sysroot,curl)/usr/local/include -DZLIB_LIBRARY=${PWD}/$(call sysroot,curl)/usr/local/lib/wasm32-wasi/libz.a -DBROTLI_INCLUDE_DIR=${PWD}/$(call sysroot,curl)/usr/local/include -DBROTLICOMMON_LIBRARY=${PWD}/$(call sysroot,curl)/usr/local/lib/wasm32-wasi/libbrotlicommon.a -DBROTLIDEC_LIBRARY=${PWD}/$(call sysroot,curl)/usr/local/lib/wasm32-wasi/libbrotlidec.a
+# 	# cd $(call build,$@) && PKG_CONFIG_SYSROOT_DIR=${PWD}/$(call sysroot,curl) PKG_CONFIG_PATH=${PWD}/$(call sysroot,curl)/usr/local/lib/wasm32-wasi/pkgconfig cmake -B shared --toolchain ${CMAKE_TOOLCHAIN} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=NO -DCURL_ZLIB=ON -DCURL_BROTLI=ON -DBUILD_CURL_EXE=OFF -DZLIB_INCLUDE_DIR=${PWD}/$(call sysroot,curl)/usr/local/include -DZLIB_LIBRARY=${PWD}/$(call sysroot,curl)/usr/local/lib/wasm32-wasi/libz.so -DBROTLI_INCLUDE_DIR=${PWD}/$(call sysroot,curl)/usr/local/include -DBROTLICOMMON_LIBRARY=${PWD}/$(call sysroot,curl)/usr/local/lib/wasm32-wasi/libbrotlicommon.so -DBROTLIDEC_LIBRARY=${PWD}/$(call sysroot,curl)/usr/local/lib/wasm32-wasi/libbrotlidec.so
+# 	cd $(call build,$@) && cmake --build static -j${JOBS}
+# 	# cd $(call build,$@) && cmake --build shared -j${JOBS}
+# 	$(reset_install_dir) $@
+# 	cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install static
+# 	# cd $(call build,$@) && DESTDIR=${PWD}/$@ cmake --install shared
+# 	# cmake generates absolute paths in its pkg-config and curl-config files, which we need to fix up
+# 	cd $(call lib,$@) && sed -Ei 's|${PWD}/$(call sysroot,curl)/usr/local/lib/wasm32-wasi/lib([a-zA-Z0-9]+).(a\|so)|-l\1|g' usr/local/lib/wasm32-wasi/pkgconfig/libcurl.pc usr/local/bin/curl-config usr/local/lib/wasm32-wasi/cmake/CURL/CURLTargets.cmake
+# 	cd $(call lib,$@) && sed -i "s|$$(command -v $$CC)|$$CC|g" usr/local/bin/curl-config
+# 	touch $@
 
 # # Building curl with autotools does not work currently, because one of the conftests requires LD_LIBRARY_PATH to work properly with binfmt
 # # However it still has two issues:
@@ -1610,6 +1630,7 @@ clean-build-artifacts:
 	rm -rf $(call build,*)
 	# Remove unpacked packages
 	rm -rf $(call lib,*)
+	rm -rf $(call tarxzunpacked,*)
 	rm -rf $(call wheel,*)
 	rm -rf $(call sdist,*)
 	rm -rf $(call sysroot,*)
