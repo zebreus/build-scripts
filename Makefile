@@ -296,6 +296,7 @@ sdist = $(call in_pkgs_with_suffix,.sdist,$(1))
 whl = $(call in_pkgs_with_suffix,.whl,$(1))
 wheel = $(call in_pkgs_with_suffix,.wheel,$(1))
 lib = $(call in_pkgs_with_suffix,.lib,$(1))
+tarxzunpacked = $(call in_pkgs_with_suffix,.tar.xz.unpacked,$(1))
 sysroot = $(call in_pkgs_with_suffix,.sysroot,$(1))
 
 WHEEL_SUBMODULES=$(call source,$(WHEELS))
@@ -307,7 +308,8 @@ BUILT_WHEELS=$(call whl,$(filter-out $(DONT_BUILD),$(WHEELS)))
 UNPACKED_WHEELS=$(call wheel,$(WHEELS))
 BUILT_SDISTS=$(call targz,$(WHEELS))
 UNPACKED_SDISTS=$(call sdist,$(WHEELS))
-UNPACKED_LIBS=$(call lib,$(LIBS))
+PREPACKED_LIBS=$(call lib,$(LIBS))
+UNPACKED_LIBS=$(call tarxzunpacked,$(LIBS))
 BUILT_LIBS=$(call tarxz,$(filter-out $(DONT_BUILD),$(LIBS)))
 
 # Names of the wheels and libs that we want to install
@@ -950,19 +952,25 @@ $(call whl,pyzbar): $(call sysroot,pyzbar)
 $(call whl,pyzbar): BUILD_ENV_VARS = $(call set_sysroot,pyzbar)
 
 #####     Building libraries     #####
-$(UNPACKED_LIBS): $(call lib,%): $(call build,%)
+$(PREPACKED_LIBS): $(call lib,%): $(call build,%)
+$(UNPACKED_LIBS): $(call tarxzunpacked,%): $(call tarxz,%)
 $(BUILT_LIBS): $(call tarxz,%): $(call lib,%)
 $(call lib,%): $(call build,%) 
 	echo "Missing build script for $@" >&2 && exit 1
 $(call tarxz,%): $(call lib,%)
 	$(package_lib)
 	touch $@
+$(call tarxzunpacked,%): $(call tarxz,%)
+	rm -rf '$@'
+	mkdir -p '$@'
+	tar -xJf '$<' -C '$@'
+	touch -r '$<' '$@'
 $(call sysroot,%):
 	$(assemble_sysroot)
 
 # The default sysroot thats used if nothing else is specified
 DEFAULT_SYSROOT_LIBS=wasix-libc compiler-rt libcxx zlib libffi
-$(filter-out $(call lib,$(DEFAULT_SYSROOT_LIBS)),$(UNPACKED_LIBS)): $(call lib,%): $(call build,%) $(call sysroot,default)
+$(filter-out $(call lib,$(DEFAULT_SYSROOT_LIBS)),$(PREPACKED_LIBS)): $(call lib,%): $(call build,%) $(call sysroot,default)
 $(call lib,%): WASIX_SYSROOT = ${PWD}/$(call sysroot,default)
 $(call sysroot,default): $(call tarxz,$(DEFAULT_SYSROOT_LIBS))
 	$(assemble_sysroot)
@@ -1614,5 +1622,5 @@ clean-artifacts:
 	rm -rf $(call whl,*)
 
 .NOTPARALLEL: $(SUBMODULES) $(addsuffix /.git,$(SUBMODULES))
-.SECONDARY: $(BUILT_SDISTS) $(BUILT_LIBS) $(BUILT_WHEELS) $(SUBMODULES) $(UNPACKED_LIBS)
+.SECONDARY: $(BUILT_SDISTS) $(BUILT_LIBS) $(BUILT_WHEELS) $(SUBMODULES) $(PREPACKED_LIBS)
 .PHONY: all wheels libs external-wheels test install install-wheels install-libs clean clean-build-artifacts init $(INSTALL_WHEELS_TARGETS) $(INSTALL_LIBS_TARGETS)

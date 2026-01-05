@@ -14,8 +14,10 @@ __pycache__
 /pkgs/*.sdist
 # Unpacked wheels
 /pkgs/*.wheel
-# Unpacked libs
+# libs before packing into a tarxz
 /pkgs/*.lib
+# Unpacked libs
+/pkgs/*.tar.xz.unpacked
 /pkgs/*.build
 /pkgs/*.prepared
 /pkgs/*.sysroot
