@@ -109,6 +109,8 @@ WHEELS+=aiojobs
 WHEELS+=aioresponses
 WHEELS+=bytecode
 WHEELS+=aiohttp
+WHEELS+=cryptography
+WHEELS+=cryptography43-0-3
 # WHEELS_END
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
@@ -126,10 +128,10 @@ PYTHON_WASIX_BINARIES_WHEELS=
 #PYTHON_WASIX_BINARIES_WHEELS+=aiohttp-3.12.4-cp313-cp313-wasix_wasm32
 # Not included: Source build in build-scripts
 #PYTHON_WASIX_BINARIES_WHEELS+=cffi-1.17.1-cp313-cp313-wasix_wasm32
-# Included: Rust
-PYTHON_WASIX_BINARIES_WHEELS+=cryptography-45.0.4-cp313-abi3-wasix_wasm32
-# Included: Rust
-PYTHON_WASIX_BINARIES_WHEELS+=cryptography-43.0.3-cp313-abi3-wasix_wasm32
+# Not included: Source build in build-scripts
+# PYTHON_WASIX_BINARIES_WHEELS+=cryptography-45.0.4-cp313-abi3-wasix_wasm32
+# Not included: Source build in build-scripts
+# PYTHON_WASIX_BINARIES_WHEELS+=cryptography-43.0.3-cp313-abi3-wasix_wasm32
 # Not included: Source build in build-scripts
 #PYTHON_WASIX_BINARIES_WHEELS+=dateutil-cp313-cp313-wasix_wasm32
 # Included: Not moved to build-scripts yet
@@ -272,8 +274,8 @@ DONT_INSTALL+=numpy2-0-2
 DONT_INSTALL+=numpy2-3-2
 # Dont install pandas 2.2.3, because we have a newer version
 DONT_INSTALL+=pandas2-2-3
-# Dont install cryptography 43, because we already have 45
-DONT_INSTALL+=cryptography-43.0.3-cp313-abi3-wasix_wasm32
+# Dont install cryptography 43.0.3, because we have a newer version
+DONT_INSTALL+=cryptography43-0-3
 # Dont install old pyarrow, because we already have the new one
 DONT_INSTALL+=pyarrow19-0-1
 # Dont install psycopg from build-scripts as I am to lazy to check if they work
@@ -914,6 +916,45 @@ $(call whl,pycurl): BUILD_EXTRA_FLAGS = -C--curl-config
 $(call whl,pycurl): ${MESON_CROSSFILE}
 $(call whl,pycurl):
 	$(build_wheel)
+
+$(call sysroot,cryptography): $(call sysroot,python-wheels) $(call tarxz,openssl)
+	$(assemble_sysroot)
+	# Copy openssl wasm32-wasi libs to the general lib dir, because openssl-sys does not look in wasm32-wasi subdir (I think)
+	cp -r $@/usr/local/lib/wasm32-wasi/* $@/usr/local/lib
+$(call targz,cryptography): PREPARE = rustup override set wasix
+$(call whl,cryptography): $(call sysroot,cryptography)
+$(call whl,cryptography): PREPARE = rustup override set wasix
+$(call whl,cryptography): BUILD_ENV_VARS += WASIXCC_SYSROOT=${PWD}/$(call sysroot,cryptography)
+$(call whl,cryptography): BUILD_ENV_VARS += WASIXCC_WASM_EXCEPTIONS=yes
+$(call whl,cryptography): BUILD_ENV_VARS += WASIXCC_PIC=yes
+$(call whl,cryptography): BUILD_ENV_VARS += WASIX_SYSROOT=${PWD}/$(call sysroot,cryptography)
+# $(call whl,cryptography): BUILD_ENV_VARS += CC_wasm32_wasmer_wasi_dl=wasixcc
+# $(call whl,cryptography): BUILD_ENV_VARS += CXX_wasm32_wasmer_wasi_dl=wasix++
+# $(call whl,cryptography): BUILD_ENV_VARS += CC=
+# $(call whl,cryptography): BUILD_ENV_VARS += CXX=
+$(call whl,cryptography): BUILD_ENV_VARS += CARGO_BUILD_TARGET=wasm32-wasmer-wasi-dl
+$(call whl,cryptography): BUILD_ENV_VARS += OPENSSL_DIR=${PWD}/$(call sysroot,cryptography)/usr/local
+$(call whl,cryptography): BUILD_ENV_VARS += PYO3_CROSS_LIB_DIR=${PWD}/python-with-packages/root/usr/local/lib
+$(call whl,cryptography): BUILD_ENV_VARS += RUSTFLAGS="-C llvm-args=-wasm-use-legacy-eh=false -C link-arg=-Bsymbolic"
+# $(call whl,cryptography): BUILD_ENV_VARS += MATURIN_PEP517_ARGS="" # extra maturin args if needed
+$(call whl,cryptography): BUILD_ENV_VARS += _PYTHON_HOST_PLATFORM="wasix_wasm32"
+
+$(call targz,cryptography43-0-3): PREPARE = rustup override set wasix
+$(call whl,cryptography43-0-3): $(call sysroot,cryptography)
+$(call whl,cryptography43-0-3): PREPARE = rustup override set wasix
+$(call whl,cryptography43-0-3): BUILD_ENV_VARS += WASIXCC_SYSROOT=${PWD}/$(call sysroot,cryptography)
+$(call whl,cryptography43-0-3): BUILD_ENV_VARS += WASIXCC_WASM_EXCEPTIONS=yes
+$(call whl,cryptography43-0-3): BUILD_ENV_VARS += WASIXCC_PIC=yes
+$(call whl,cryptography43-0-3): BUILD_ENV_VARS += WASIX_SYSROOT=${PWD}/$(call sysroot,cryptography)
+# $(call whl,cryptography43-0-3): BUILD_ENV_VARS += CC_wasm32_wasmer_wasi_dl=wasixcc
+# $(call whl,cryptography43-0-3): BUILD_ENV_VARS += CXX_wasm32_wasmer_wasi_dl=wasix++
+# $(call whl,cryptography43-0-3): BUILD_ENV_VARS += CC=
+# $(call whl,cryptography43-0-3): BUILD_ENV_VARS += CXX=
+$(call whl,cryptography43-0-3): BUILD_ENV_VARS += CARGO_BUILD_TARGET=wasm32-wasmer-wasi-dl
+$(call whl,cryptography43-0-3): BUILD_ENV_VARS += OPENSSL_DIR=${PWD}/$(call sysroot,cryptography)/usr/local
+$(call whl,cryptography43-0-3): BUILD_ENV_VARS += PYO3_CROSS_LIB_DIR=${PWD}/python-with-packages/root/usr/local/lib
+$(call whl,cryptography43-0-3): BUILD_ENV_VARS += RUSTFLAGS="-C llvm-args=-wasm-use-legacy-eh=false -C link-arg=-Bsymbolic"
+$(call whl,cryptography43-0-3): BUILD_ENV_VARS += _PYTHON_HOST_PLATFORM="wasix_wasm32"
 
 # TODO: When arrow supports setting rpath for all its libs, we can enable this and start working on shared builds
 # $(call whl,pyarrow): BUILD_ENV_VARS += PYARROW_BUNDLE_ARROW_CPP=ON PYARROW_BUNDLE_CYTHON_CPP=ON
