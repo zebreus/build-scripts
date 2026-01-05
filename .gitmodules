@@ -409,3 +409,6 @@
 [submodule "pkgs/aiohttp.source"]
 	path = pkgs/aiohttp.source
 	url = https://github.com/aio-libs/aiohttp
+[submodule "pkgs/cryptography.source"]
+	path = pkgs/cryptography.source
+	url = https://github.com/wasix-org/cryptography-python.git
