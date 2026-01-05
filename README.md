@@ -226,8 +226,8 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * aioresponses: 0.7.8
 * bytecode: 0.17.0
 * aiohttp: 3.13.2
-* cryptography: 45.0.4
-  * wasix-org fork
+* cryptography: 43.0.3 (wasix-org)
+* cryptography: 45.0.4 (wasix-org)
 <!-- WHEEL_VERSIONS_END -->
 
 psycopg3-c is just the sdist of psycopg3-binary

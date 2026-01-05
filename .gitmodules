@@ -412,3 +412,6 @@
 [submodule "pkgs/cryptography.source"]
 	path = pkgs/cryptography.source
 	url = https://github.com/wasix-org/cryptography-python.git
+[submodule "pkgs/cryptography43-0-3.source"]
+	path = pkgs/cryptography43-0-3.source
+	url = https://github.com/wasix-org/cryptography-python.git
