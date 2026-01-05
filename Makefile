@@ -605,6 +605,10 @@ $(call lib,python-base-webc): $(call tarxz,cpython) $(call sysroot,cpython) $(ca
 	cp -L $(call sysroot,cpython)/usr/local/lib/wasm32-wasi/libssl.so $@/root/lib
 	cp -L $(call sysroot,cpython)/usr/local/lib/wasm32-wasi/libsqlite3.so $@/root/lib
 
+	# Install openssl legacy module
+	mkdir -p $@/root/usr/local/lib/wasm32-wasi/ossl-modules
+	cp -L $(call sysroot,cpython)/usr/local/lib/wasm32-wasi/ossl-modules/legacy.so $@/root/usr/local/lib/wasm32-wasi/ossl-modules
+
 	# Install terminfo database from ncurses
 	mkdir -p $@/root/usr/local/share/terminfo
 	TEMP_DIR=$$(mktemp -d) ; \
@@ -649,6 +653,7 @@ $(call lib,python-webc): $(call lib,python-base-webc)
 	wasm-opt --emit-exnref -O3 --strip-debug $@/root/lib/libsqlite3.so -o $@/root/lib/libsqlite3.so
 	wasm-opt --emit-exnref -O3 --strip-debug $@/root/lib/libssl.so -o $@/root/lib/libssl.so
 	wasm-opt --emit-exnref -O3 --strip-debug $@/root/lib/libcrypto.so -o $@/root/lib/libcrypto.so
+	wasm-opt --emit-exnref -O3 --strip-debug $@/root/usr/local/lib/wasm32-wasi/ossl-modules/legacy.so -o $@/root/usr/local/lib/wasm32-wasi/ossl-modules/legacy.so
 
 	# Update the name in the wasmer.toml
 	tomlq -i '.package.name = "$(PYTHON_WEBC)"' $@/wasmer.toml --output-format toml
