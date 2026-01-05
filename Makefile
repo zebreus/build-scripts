@@ -511,7 +511,9 @@ cross-venv: native-venv | $(call sysroot,python-wheels)
 	rm -rf ./cross-venv
 	source ./native-venv/bin/activate && python3 -m crossenv $(call sysroot,python-wheels)/usr/local/bin/python3.wasm ./cross-venv --cc wasix-clang --cxx wasix-clang++
 	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple build-pip install cffi
-	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple pip install build six cython setuptools wheel
+	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple pip install build six cython setuptools wheel maturin
+	rm ./cross-venv/cross/bin/maturin.wasm
+	cp ./python-wasix-binaries/bin/maturin ./cross-venv/cross/bin/maturin
 
 #####     Preparing submodules     #####
 
