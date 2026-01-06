@@ -958,7 +958,7 @@ $(call whl,cryptography): BUILD_ENV_VARS += WASIX_SYSROOT=${PWD}/$(call sysroot,
 # $(call whl,cryptography): BUILD_ENV_VARS += CXX=
 $(call whl,cryptography): BUILD_ENV_VARS += CARGO_BUILD_TARGET=wasm32-wasmer-wasi-dl
 $(call whl,cryptography): BUILD_ENV_VARS += OPENSSL_DIR=${PWD}/$(call sysroot,cryptography)/usr/local
-$(call whl,cryptography): BUILD_ENV_VARS += PYO3_CROSS_LIB_DIR=${PWD}/python-with-packages/root/usr/local/lib
+$(call whl,cryptography): BUILD_ENV_VARS += PYO3_CROSS_LIB_DIR=${PWD}/$(call sysroot,cryptography)/usr/local/lib
 $(call whl,cryptography): BUILD_ENV_VARS += RUSTFLAGS="-C llvm-args=-wasm-use-legacy-eh=false -C link-arg=-Bsymbolic"
 # $(call whl,cryptography): BUILD_ENV_VARS += MATURIN_PEP517_ARGS="" # extra maturin args if needed
 $(call whl,cryptography): BUILD_ENV_VARS += _PYTHON_HOST_PLATFORM="wasix_wasm32"
@@ -976,7 +976,7 @@ $(call whl,cryptography43-0-3): BUILD_ENV_VARS += WASIX_SYSROOT=${PWD}/$(call sy
 # $(call whl,cryptography43-0-3): BUILD_ENV_VARS += CXX=
 $(call whl,cryptography43-0-3): BUILD_ENV_VARS += CARGO_BUILD_TARGET=wasm32-wasmer-wasi-dl
 $(call whl,cryptography43-0-3): BUILD_ENV_VARS += OPENSSL_DIR=${PWD}/$(call sysroot,cryptography)/usr/local
-$(call whl,cryptography43-0-3): BUILD_ENV_VARS += PYO3_CROSS_LIB_DIR=${PWD}/python-with-packages/root/usr/local/lib
+$(call whl,cryptography43-0-3): BUILD_ENV_VARS += PYO3_CROSS_LIB_DIR=${PWD}/$(call sysroot,cryptography)/usr/local/lib
 $(call whl,cryptography43-0-3): BUILD_ENV_VARS += RUSTFLAGS="-C llvm-args=-wasm-use-legacy-eh=false -C link-arg=-Bsymbolic"
 $(call whl,cryptography43-0-3): BUILD_ENV_VARS += _PYTHON_HOST_PLATFORM="wasix_wasm32"
 
