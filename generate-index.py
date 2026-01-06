@@ -63,7 +63,10 @@ def contains_native_binaries(file_path):
         if len(wheel_path) == 0:
             # No matching wheel found
             print(f"WARNING: No matching wheel found for {basename}")
-            exit(1)
+            if os.getenv('MAKELEVEL') != None:
+                return True
+            else:
+                exit(1)
         if len(wheel_path) > 1:
             print(f"WARNING: Multiple matching wheels found for {basename}, using the first one")
             exit(1)
