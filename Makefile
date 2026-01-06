@@ -32,6 +32,9 @@ PATCH_DIR=${PWD}/patches
 GIT:=git -c 'user.name=build-scripts' -c 'user.email=wasix@wasmer.io' -c 'init.defaultBranch=main'
 WASMER ?= wasmer
 
+ENV_VARS_FOR_NATIVE_CC=CC=/usr/bin/clang CXX=/usr/bin/clang++
+ENV_VARS_FOR_NATIVE_TOOLS=${ENV_VARS_FOR_NATIVE_CC} LD=/usr/bin/ld AR=/usr/bin/ar AS=/usr/bin/as
+
 # You should only run this Makefile with -j1, because git does not like parallel submodule operations
 JOBS=12
 
@@ -858,7 +861,7 @@ $(call whl,pandas2-2-3): ${MESON_CROSSFILE}
 $(call targz,protobuf):
 	mkdir -p pkgs
 	cd $(call build,protobuf)/python && bazel clean --expunge
-	cd $(call build,protobuf)/python && CC=/usr/bin/clang CXX=/usr/bin/clang++ LD=/usr/bin/ld AR=/usr/bin/ar AS=/usr/bin/as bazel build //python/dist:source_wheel --crosstool_top=//wasix-toolchain:wasix_toolchain --host_crosstool_top=@bazel_tools//tools/cpp:toolchain --cpu=wasm32-wasi
+	cd $(call build,protobuf)/python && ${ENV_VARS_FOR_NATIVE_TOOLS} bazel build //python/dist:source_wheel --crosstool_top=//wasix-toolchain:wasix_toolchain --host_crosstool_top=@bazel_tools//tools/cpp:toolchain --cpu=wasm32-wasi
 	mkdir -p artifacts
 	install -m666 $(call build,protobuf)/bazel-bin/python/dist/protobuf.tar.gz artifacts
 	ln -rsf ${PWD}/artifacts/protobuf.tar.gz $@
@@ -1447,7 +1450,7 @@ $(call lib,sqlite):
 $(call lib,wasix-libc):
 	$(reset_install_dir) $@
 	# The compiler needs to be able to target both native and wasm32-wasi, so we cannot use wasix-clang here
-	cd $(call build,$@) && CC=/usr/bin/clang LD=/usr/bin/ld.lld AR=/usr/bin/llvm-ar NM=/usr/bin/llvm-nm AS=/usr/bin/llvm-as TARGET_ARCH=wasm32 TARGET_OS=wasix make -f Makefile-eh PIC=yes CHECK_SYMBOLS=yes -j${JOBS} install DESTDIR=${PWD}/$@ PREFIX=/ LIBDIR=/lib/wasm32-wasi
+	cd $(call build,$@) && ${ENV_VARS_FOR_NATIVE_TOOLS} TARGET_ARCH=wasm32 TARGET_OS=wasix make -f Makefile-eh PIC=yes CHECK_SYMBOLS=yes -j${JOBS} install DESTDIR=${PWD}/$@ PREFIX=/ LIBDIR=/lib/wasm32-wasi
 	touch $@
 
 $(call sysroot,libcxx): $(call tarxz,wasix-libc) $(call tarxz,compiler-rt)
@@ -1553,7 +1556,7 @@ $(call sysroot,cpython): $(call sysroot,default) $(call tarxz,readline) $(call t
 	$(clean_sysroot)
 $(call lib,cpython): $(call sysroot,cpython)
 	mkdir -p build
-	cd $(call build,$@) && WASIX_SYSROOT=${PWD}/$(call sysroot,cpython) CC=/usr/bin/clang CXX=/usr/bin/clang++ bash wasix-full.sh
+	cd $(call build,$@) && WASIX_SYSROOT=${PWD}/$(call sysroot,cpython) ${ENV_VARS_FOR_NATIVE_CC} bash wasix-full.sh
 	$(reset_install_dir) $@
 	cd $(call build,$@) && WASIX_SYSROOT=${PWD}/$(call sysroot,cpython) make -j${JOBS} -C builddir/wasix install DESTDIR="${PWD}/$@"
 	touch $@
