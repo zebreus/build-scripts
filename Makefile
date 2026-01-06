@@ -1,6 +1,7 @@
 SHELL:=/usr/bin/bash
 
 # Check that CC is wasix-clang, works, and binfmt is setup correctly
+ifeq ($(MAKELEVEL),0)
 ifndef SKIP_CC_CHECK
 # CC must contain wasix-clang
 $(if $(findstring wasix-clang,$(CC)),,\
@@ -20,6 +21,7 @@ _cc_test := $(shell \
 $(if $(_cc_test),,\
   $(error CC cannot compile and run a test program. Make sure that wasix-clang is activated.))
 endif # SKIP_CC_CHECK
+endif # MAKELEVEL == 0
 
 PWD:=$(shell pwd)
 PYTHON_WASIX_BINARIES:=${PWD}/python-wasix-binaries
