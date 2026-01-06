@@ -1,5 +1,26 @@
 SHELL:=/usr/bin/bash
 
+# Check that CC is wasix-clang, works, and binfmt is setup correctly
+ifndef SKIP_CC_CHECK
+# CC must contain wasix-clang
+$(if $(findstring wasix-clang,$(CC)),,\
+  $(error CC must contain "wasix-clang" (got "$(CC)")))
+
+# CC must be able to compile and run a binary
+_cc_test := $(shell \
+	tmpdir="$$(mktemp -d -t cc-test.XXXXXX)"; \
+	tmp="$$tmpdir/cc-test.wasm"; \
+	export SOURCE_DATE_EPOCH=1; \
+	echo 'int main(){return 0;}' | \
+	$(CC) -frandom-seed=0 -g0 -x c -o "$$tmp" - >/dev/null 2>&1 && \
+	"$$tmp" >/dev/null 2>&1 && \
+	rm -rf "$$tmpdir" && echo ok || \
+	{ rm -rf "$$tmpdir"; exit 1; })
+
+$(if $(_cc_test),,\
+  $(error CC cannot compile and run a test program. Make sure that wasix-clang is activated.))
+endif # SKIP_CC_CHECK
+
 PWD:=$(shell pwd)
 PYTHON_WASIX_BINARIES:=${PWD}/python-wasix-binaries
 MESON_CROSSFILE=${PWD}/resources/wasi.meson.cross
