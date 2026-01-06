@@ -904,7 +904,6 @@ $(call whl,matplotlib): BUILD_ENV_VARS += NUMPY_ONLY_GET_INCLUDE=1
 $(call whl,matplotlib): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_CROSSFILE}"
 $(call whl,matplotlib): ${MESON_CROSSFILE}
 
-$(call targz,gevent): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo greenlet==3.2.4 > $$F ; echo $$F)
 $(call targz,gevent): BUILD_ENV_VARS += PIP_TRUSTED_HOST=0.0.0.0 PIP_EXTRA_INDEX_URL=http://0.0.0.0:6931/simple
 $(call targz,gevent): BUILD_ENV_VARS += GEVENTSETUP_USE_LIBUV=0
 $(call targz,gevent): $(call build,gevent) $(call sysroot,default) $(call whl,greenlet) build-index-venv
@@ -912,7 +911,6 @@ $(call targz,gevent): $(call build,gevent) $(call sysroot,default) $(call whl,gr
 	# This is dumb, because the server is never stopped...
 	python3 -m http.server 6931 --directory $(PWD)/dist || true &
 	$(build_sdist)
-$(call whl,gevent): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo greenlet==3.2.4 > $$F ; echo $$F)
 $(call whl,gevent): BUILD_ENV_VARS += PIP_TRUSTED_HOST=0.0.0.0 PIP_EXTRA_INDEX_URL=http://0.0.0.0:6931/simple
 $(call whl,gevent): BUILD_ENV_VARS += GEVENTSETUP_USE_LIBUV=0
 $(call whl,gevent): $(call sdist,gevent) $(call sysroot,default) $(call whl,greenlet) build-index-venv
