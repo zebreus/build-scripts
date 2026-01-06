@@ -412,7 +412,7 @@ define assemble_sysroot =
 $(reset_install_dir) $@
 $(foreach dep,$^,if test "$(dep)" != "$(call tarxz,$(dep))" && test "$(dep)" != "$(call sysroot,$(dep))" ; then echo "The dependencies of a sysroot must be .tar.xz artifacts or other sysroots (got $(dep))." 1>&2 ; exit 1 ; fi ;)
 $(foreach dep,$(filter %.sysroot,$^),cp -rfT ${PWD}/$(call sysroot,$(dep)) ${PWD}/$@ || exit 1;)
-$(foreach dep,$(filter %.tar.xz,$^),make install-$(call project_name,$(dep)) -o $(call tarxz,$(dep)) LIBS_DESTDIR=${PWD}/$@ || exit 1;)
+$(foreach dep,$(filter %.tar.xz,$^),$(call install_tarxz,${PWD}/$@,$(call project_name,$(dep))) || exit 1;)
 touch $@
 endef
 
@@ -622,8 +622,8 @@ $(call prepared,aiohttp):
 
 $(call lib,python-base-webc): $(call tarxz,cpython) $(call sysroot,cpython) $(call tarxz,ca-certificates) resources/python-webc/wasmer.toml $(call tarxz,ncurses)
 	mkdir -p $@/root
-	make install-cpython LIBS_DESTDIR=${PWD}/$@/root -o $(call tarxz,cpython)
-	make install-ca-certificates LIBS_DESTDIR=${PWD}/$@/root -o $(call tarxz,ca-certificates)
+	$(call install_tarxz,${PWD}/$@/root,cpython)
+	$(call install_tarxz,${PWD}/$@/root,ca-certificates)
 	rm -rf ${PWD}/$@/root/.install*
 
 	# Install to /lib because wasmer currently does not look in wasm32-wasi for shared libs
@@ -639,7 +639,7 @@ $(call lib,python-base-webc): $(call tarxz,cpython) $(call sysroot,cpython) $(ca
 	# Install terminfo database from ncurses
 	mkdir -p $@/root/usr/local/share/terminfo
 	TEMP_DIR=$$(mktemp -d) ; \
-	tar xf $(call tarxz,ncurses) -C $$TEMP_DIR ; \
+	$(call install_tarxz,$$TEMP_DIR,ncurses) \
 	cp -rT $$TEMP_DIR/usr/local/share/terminfo $@/root/usr/local/share/terminfo
 
 	cp resources/python-webc/wasmer.toml $@/wasmer.toml
@@ -1663,20 +1663,33 @@ $(call lib,ca-certificates): | python-wasix-binaries/.git
 # Use `install-wheels` to install all wheels
 # Use `install-libs` to install all libs
 
+# $(call install_tarxz,${LIBS_DESTDIR},pkgs/src.tar.xz)
+define install_tarxz =
+test -n "$(1)" || (echo "You must set LIBS_DESTDIR to the wasix you want to install libraries to" && exit 1) ; \
+tar mxJf "$(call tarxz,$(2))" -C "$(1)" ; \
+touch "$(1)/.$(call project_name,$(2)).installed" ; _= 
+endef
+# $(call install_wheel,${WHEELS_DESTDIR},path_to/src.whl)
+define install_wheel =
+test -n "$(1)" || (echo "You must set WHEELS_DESTDIR to the wasix you want to install libraries to" && exit 1) ; \
+unzip -oq "$(call whl,$(2))" -d "$(1)" ; \
+touch "$(1)/.$(call project_name,$(2)).installed" ; _= 
+endef
+# $(call install_pwb_wheel,${WHEELS_DESTDIR},path_to/src.whl)
+define install_pwb_wheel =
+test -n "$(1)" || (echo "You must set WHEELS_DESTDIR to the wasix you want to install libraries to" && exit 1) ; \
+unzip -oq "$(2)" -d "$(1)" ; \
+touch "$(1)/.pwb-$(basename $(notdir $(2))).installed" ; _= 
+endef
+
 ${LIBS_DESTDIR}/.%.installed: $(call tarxz,%)
-	test -n "${LIBS_DESTDIR}" || (echo "You must set LIBS_DESTDIR to the wasix you want to install libraries to" && exit 1)
-	tar mxJf $< -C ${LIBS_DESTDIR}
-	touch $@
+	$(call install_tarxz,${LIBS_DESTDIR},$<)
 
 ${WHEELS_DESTDIR}/.%.installed: $(call whl,%)
-	test -n "${WHEELS_DESTDIR}" || (echo "You must set WHEELS_DESTDIR to the python library path" && exit 1)
-	unzip -oq $< -d ${WHEELS_DESTDIR}
-	touch $@
+	$(call install_wheel,${WHEELS_DESTDIR},$<)
 
 ${WHEELS_DESTDIR}/.pwb-%.installed: ${PYTHON_WASIX_BINARIES}/wheels/%.whl
-	test -n "${WHEELS_DESTDIR}" || (echo "You must set WHEELS_DESTDIR to the python library path" && exit 1)
-	unzip -oq $< -d ${WHEELS_DESTDIR}
-	touch $@
+	$(call install_pwb_wheel,${WHEELS_DESTDIR},$<)
 
 INSTALL_WHEELS_TARGETS=$(addprefix install-,$(WHEELS))
 INSTALL_LIBS_TARGETS=$(addprefix install-,$(LIBS))
