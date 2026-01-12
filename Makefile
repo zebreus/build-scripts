@@ -281,6 +281,7 @@ LIBS+=lz4
 LIBS+=snappy
 LIBS+=lzo
 LIBS+=ca-certificates
+LIBS+=gmp
 
 # Packages that are broken can be marked as DONT_BUILD
 # Packages that work but should not be included in the default install can be marked as DONT_INSTALL
@@ -1659,6 +1660,15 @@ $(call lib,ca-certificates): | python-wasix-binaries/.git
 	mkdir -p ${PWD}/$@/usr/local/ssl
 	cd $(call build,$@) && cp -rT ./ssl-certs ${PWD}/$@/usr/local/ssl
 	touch $@
+
+$(call lib,gmp): $(call sysroot,default)
+	cd $(call build,$@) && autoreconf -vfi
+	cd $(call build,$@) && $(call set_sysroot,default) ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --host="wasm32-wasi" --enable-static --disable-shared --disable-assembly --disable-libtool-lock
+	cd $(call build,$@) && $(call set_sysroot,default) make -j${JOBS}
+	$(reset_install_dir) $@
+	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
+	touch $@
+
 
 #####     Installing wheels and libs     #####
 
