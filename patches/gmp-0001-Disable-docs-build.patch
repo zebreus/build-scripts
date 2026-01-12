@@ -1,0 +1,25 @@
+From 92cc88318468cd93deac36f42440eda155deb2e7 Mon Sep 17 00:00:00 2001
+From: Zebreus <zebreus@zebre.us>
+Date: Mon, 12 Jan 2026 15:34:41 +0100
+Subject: [PATCH] Disable docs build
+
+---
+ Makefile.am | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile.am b/Makefile.am
+index 03356e0c6..21daf69d4 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -113,7 +113,7 @@ LIBGMPXX_LT_REVISION = 0
+ LIBGMPXX_LT_AGE      = 7
+ 
+ 
+-SUBDIRS = tests mpn mpz mpq mpf printf scanf rand cxx demos tune doc
++SUBDIRS = tests mpn mpz mpq mpf printf scanf rand cxx demos tune
+ 
+ EXTRA_DIST = configfsf.guess configfsf.sub .gdbinit INSTALL.autoconf \
+ 	     COPYING.LESSERv3 COPYINGv2 COPYINGv3
+-- 
+2.51.0
+
