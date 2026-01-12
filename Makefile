@@ -495,11 +495,14 @@ test: python-with-packages
 	test -n "$$(command -v docker)" || (echo "You must have docker installed to run the tests" && exit 1)
 	docker kill wasix-tests-mysql || true
 	docker kill wasix-tests-postgres || true
+	docker kill wasix-tests-clickhouse || true
 	docker run --rm -it -d --name wasix-tests-mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password  mysql:latest
 	docker run --rm -it -d --name wasix-tests-postgres -p 5432:5432 -e POSTGRES_USER=myuser -e POSTGRES_PASSWORD=mypassword -e POSTGRES_DB=mydatabase postgres
+	docker run --rm -it -d --name wasix-tests-clickhouse -e CLICKHOUSE_DB=mydatabase -e CLICKHOUSE_USER=myuser -e CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1 -e CLICKHOUSE_PASSWORD=mypassword -p 8123:8123 -p 9003:9000/tcp clickhouse/clickhouse-server
 	bash run-tests.sh
 	docker kill wasix-tests-mysql || true
 	docker kill wasix-tests-postgres || true
+	docker kill wasix-tests-clickhouse || true
 
 # Make sure that python-wasix-binaries is initialized
 python-wasix-binaries/.git:
