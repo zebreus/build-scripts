@@ -299,6 +299,7 @@ psycopg3-c is just the sdist of psycopg3-binary
 * ca-certificates: wasix-org/python-wasix-binaries
   * For now this is just copied in from python-wasix-binaries
 * sed: 4.9
+* mpfr: 4.2.2
 <!-- LIB_VERSIONS_END -->
 
 ### Notes
