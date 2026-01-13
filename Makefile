@@ -283,6 +283,7 @@ LIBS+=lzo
 LIBS+=ca-certificates
 LIBS+=gmp
 LIBS+=mpfr
+LIBS+=zz
 
 # Packages that are broken can be marked as DONT_BUILD
 # Packages that work but should not be included in the default install can be marked as DONT_INSTALL
@@ -1675,6 +1676,15 @@ $(call lib,mpfr): $(call sysroot,mpfr)
 	cd $(call build,$@) && autoreconf -vfi
 	cd $(call build,$@) && $(call set_sysroot,mpfr) ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --host="wasm32-wasi" --enable-static --enable-shared --enable-thread-safe
 	cd $(call build,$@) && $(call set_sysroot,mpfr) make -j${JOBS}
+	$(reset_install_dir) $@
+	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
+	touch $@
+
+$(call sysroot,zz): $(call sysroot,default) $(call tarxz,gmp)
+$(call lib,zz): $(call sysroot,zz)
+	cd $(call build,$@) && autoreconf -vfi
+	cd $(call build,$@) && $(call set_sysroot,$@) ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --host="wasm32-wasi" --enable-static --enable-shared --enable-thread-safe
+	cd $(call build,$@) && $(call set_sysroot,$@) make -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
 	touch $@
