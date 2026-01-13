@@ -1663,7 +1663,7 @@ $(call lib,ca-certificates): | python-wasix-binaries/.git
 
 $(call lib,gmp): $(call sysroot,default)
 	cd $(call build,$@) && autoreconf -vfi
-	cd $(call build,$@) && $(call set_sysroot,default) ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --host="wasm32-wasi" --enable-static --disable-shared --disable-assembly --disable-libtool-lock
+	cd $(call build,$@) && $(call set_sysroot,default) ./configure --prefix=/usr/local --host="wasm32-wasi" --libdir='$${exec_prefix}/lib/wasm32-wasi' --enable-static --enable-shared --disable-assembly
 	cd $(call build,$@) && $(call set_sysroot,default) make -j${JOBS}
 	$(reset_install_dir) $@
 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
