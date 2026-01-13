@@ -300,6 +300,7 @@ psycopg3-c is just the sdist of psycopg3-binary
   * For now this is just copied in from python-wasix-binaries
 * sed: 4.9
 * mpfr: 4.2.2
+* zz: 0.7.0
 <!-- LIB_VERSIONS_END -->
 
 ### Notes
