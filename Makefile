@@ -13,8 +13,8 @@ _cc_test := $(shell \
 	tmp="$$tmpdir/cc-test.wasm"; \
 	export SOURCE_DATE_EPOCH=1; \
 	echo 'int main(){return 0;}' | \
-	$(CC) -frandom-seed=0 -g0 -x c -o "$$tmp" - >/dev/null 2>&1 && \
-	"$$tmp" >/dev/null 2>&1 && \
+	$(CC) -frandom-seed=0 -g0 -x c -o "$$tmp" - >/dev/null 2>/dev/tty && \
+	"$$tmp" >/dev/null 2>/dev/tty && \
 	rm -rf "$$tmpdir" && echo ok || \
 	{ rm -rf "$$tmpdir"; exit 1; })
 
