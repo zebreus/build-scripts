@@ -47,7 +47,7 @@ if test -z "$_arg_output_dir" ; then
     exit 1
 fi
 
-ASSEMBLED_DIR="$(realpath "$_arg_output_dir")"
+ASSEMBLED_DIR="$_arg_output_dir"
 if test -e "$ASSEMBLED_DIR" ; then
     echo "Output directory $ASSEMBLED_DIR already exists. aborting." >&2
     exit 1
@@ -77,7 +77,8 @@ for input in "${_arg_input[@]}" ; do
     fi
 done
 
-mkdir -p "$ASSEMBLED_DIR"
+mkdir -p "$_arg_output_dir"
+ASSEMBLED_DIR="$(realpath "$_arg_output_dir")"
 
 for input in "${_arg_input[@]}" ; do
     tar mxJf "$TMP_DIR/$input.tar.xz" -C "$ASSEMBLED_DIR"
