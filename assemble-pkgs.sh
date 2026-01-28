@@ -7,6 +7,7 @@
 # ARG_OPTIONAL_SINGLE([output-dir],[o],[Output directory])
 # ARG_OPTIONAL_SINGLE([artifact-dir],[],[If this is set, artifacts are picked from this directory instead of being downloaded from a github release])
 # ARG_OPTIONAL_SINGLE([release],[],[Select the github release from which to download artifacts])
+# ARG_OPTIONAL_SINGLE([github-token],[],[Github token to use for API requests])
 
 # ARG_HELP([Fetch and combine multiple packages from build-scripts into one directory])
 # ARGBASH_GO()
@@ -37,16 +38,18 @@ _arg_input=()
 _arg_output_dir=
 _arg_artifact_dir=
 _arg_release=
+_arg_github_token=
 
 
 print_help()
 {
 	printf '%s\n' "Fetch and combine multiple packages from build-scripts into one directory"
-	printf 'Usage: %s [-i|--input <arg>] [-o|--output-dir <arg>] [--artifact-dir <arg>] [--release <arg>] [-h|--help]\n' "$0"
+	printf 'Usage: %s [-i|--input <arg>] [-o|--output-dir <arg>] [--artifact-dir <arg>] [--release <arg>] [--github-token <arg>] [-h|--help]\n' "$0"
 	printf '\t%s\n' "-i, --input: List of input libraries (empty by default)"
 	printf '\t%s\n' "-o, --output-dir: Output directory (no default)"
 	printf '\t%s\n' "--artifact-dir: If this is set, artifacts are picked from this directory instead of being downloaded from a github release (no default)"
 	printf '\t%s\n' "--release: Select the github release from which to download artifacts (no default)"
+	printf '\t%s\n' "--github-token: Github token to use for API requests (no default)"
 	printf '\t%s\n' "-h, --help: Prints help"
 }
 
@@ -96,6 +99,14 @@ parse_commandline()
 			--release=*)
 				_arg_release="${_key##--release=}"
 				;;
+			--github-token)
+				test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+				_arg_github_token="$2"
+				shift
+				;;
+			--github-token=*)
+				_arg_github_token="${_key##--github-token=}"
+				;;
 			-h|--help)
 				print_help
 				exit 0
@@ -133,10 +144,19 @@ check_command curl
 check_command mktemp
 check_command xz
 check_command tar
+check_command sed
 
-VERSION=v0.1.0
+VERSION=latest
 if test -n "$_arg_release" ; then
     VERSION="$_arg_release"
+fi
+
+if test "$VERSION" = "latest" ; then
+    if [ -n "$_arg_github_token" ]; then
+        VERSION="$(curl -s -H "authorization: Bearer $_arg_github_token" https://api.github.com/repos/wasix-org/build-scripts/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')"
+    else
+        VERSION="$(curl -s https://api.github.com/repos/wasix-org/build-scripts/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')"
+    fi
 fi
 
 if test -z "$_arg_output_dir" ; then

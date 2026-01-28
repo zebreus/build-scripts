@@ -7,6 +7,7 @@
 # ARG_OPTIONAL_SINGLE([output-dir], [o], [Output directory])
 # ARG_OPTIONAL_SINGLE([artifact-dir], [], [If this is set, artifacts are picked from this directory instead of being downloaded from a github release])
 # ARG_OPTIONAL_SINGLE([release], [], [Select the github release from which to download artifacts])
+# ARG_OPTIONAL_SINGLE([github-token], [], [Github token to use for API requests])
 
 # ARG_HELP([Fetch and combine multiple packages from build-scripts into one directory])
 # ARGBASH_GO
@@ -26,10 +27,19 @@ check_command curl
 check_command mktemp
 check_command xz
 check_command tar
+check_command sed
 
-VERSION=v0.1.0
+VERSION=latest
 if test -n "$_arg_release" ; then
     VERSION="$_arg_release"
+fi
+
+if test "$VERSION" = "latest" ; then
+    if [ -n "$_arg_github_token" ]; then
+        VERSION="$(curl -s -H "authorization: Bearer $_arg_github_token" https://api.github.com/repos/wasix-org/build-scripts/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')"
+    else
+        VERSION="$(curl -s https://api.github.com/repos/wasix-org/build-scripts/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')"
+    fi
 fi
 
 if test -z "$_arg_output_dir" ; then
