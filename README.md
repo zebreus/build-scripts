@@ -8,7 +8,7 @@ To build from this repo you **must** use a supported build environment. If you d
 
 ### Setting up a supported build environment
 
-The only supported usage of this repo is via in a otherwise clean ubuntu 25.04 VM (no container) with at least 16GB of memory, 100GB of storage, and 4 x86_64 cores. Other setups might work, but are not tested. I found `multipass launch 25.04 -n wasix-build-vm --disk 50G --cpus 4 --memory 16G` and then `multipass shell wasix-build-vm` the easiest way to get such a VM.
+The only supported usage of this repo is via in a otherwise clean ubuntu 25.04 VM (no container) with at least 16GB of memory, 100GB of storage, and 4 x86_64 cores ([more details](#detailed-requirements-for-the-supported-build-environment)). I found `multipass launch 25.04 -n wasix-build-vm --disk 50G --cpus 4 --memory 16G` and then `multipass shell wasix-build-vm` the easiest way to get such a VM.
 
 Then install all dependencies with the following commands:
 
@@ -51,7 +51,7 @@ make pkgs/sqlite.lib
 make pkgs/sqlite.tar.xz
 ```
 
-### Background on the requirements for the supported build environment
+### Detailed requirements for the supported build environment
 
 Requirements:
 * ubuntu 25.04
@@ -69,7 +69,7 @@ Requirements:
 * 4 CPU cores
   * This is the amount I tested it with. Less might be fine.
 
-A few of the packages in the requirements might actually be unused. However you should install them all in the way described in the previous section just to be sure.
+The dependencies are defined by the install commands above. A few of the packages in the requirements might actually be unused. However you should install them all in the way described in the previous section just to be sure.
 
 ## Package Versions
 
