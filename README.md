@@ -8,24 +8,9 @@ To build from this repo you **must** use a supported build environment. If you d
 
 ### Setting up a supported build environment
 
-The only supported usage of this repo is via in a otherwise clean ubuntu 25.04 VM with at least 16GB of memory, 100GB of storage, and 4 x86_64 cores. Other setups might work, but are not tested.
+The only supported usage of this repo is via in a otherwise clean ubuntu 25.04 VM (no container) with at least 16GB of memory, 100GB of storage, and 4 x86_64 cores. Other setups might work, but are not tested. I found `multipass launch 25.04 -n wasix-build-vm --disk 50G --cpus 4 --memory 16G` and then `multipass shell wasix-build-vm` the easiest way to get such a VM.
 
-Requirements:
-* ubuntu 25.04
-* x86-64
-* not in a container
-* 16GB of memory
-* 100GB of storage
-* 4 CPU cores
-
-There are many ways to get such an environment, I found the multipass the easiest:
-
-```bash
-multipass launch 25.04 -n wasix-test --disk 50G --cpus 4 --memory 16G
-multipass shell wasix-test
-```
-
-If you are in a clean build environment you must install all required dependencies with the following commands:
+Then install all dependencies with the following commands:
 
 ```bash
 # Install common dependencies
