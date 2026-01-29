@@ -142,7 +142,6 @@ function check_command {
 
 check_command curl
 check_command mktemp
-check_command xz
 check_command tar
 check_command sed
 
