@@ -1,101 +1,31 @@
-# Python native modules for WASIX
+# WASIX `build-scripts`
 
-## Python Index
+A collection of build recipes for building packages for the WASIX platform.
 
-You can use this index for WASIX easily by providing this index to `pip` or `uv`: <https://pythonindex.wasix.org/>
+## Building native and python packages from source
 
-### Using the index in your projects
+To build from this repo you **must** use a supported build environment. If you don't it, things will not work.
 
-The actual **Simple API** endpoint that pip/uv expect lives under the `simple/` path, so the full base URL is:
+### Setting up a supported build environment
 
-```bash
-https://pythonindex.wasix.org/simple
-```
+The only supported usage of this repo is via in a otherwise clean ubuntu 25.04 VM with at least 16GB of memory, 100GB of storage, and 4 x86_64 cores. Other setups might work, but are not tested.
 
-Below are a few common ways to point your tooling at it.
+Requirements:
+* ubuntu 25.04
+* x86-64
+* not in a container
+* 16GB of memory
+* 100GB of storage
+* 4 CPU cores
 
-#### pip (one-off)
-
-Install a package **only** from the WASIX index (no PyPI fallback):
-
-```bash
-pip install --index-url https://wasix-org.github.io/build-scripts/simple <package-name>
-```
-
-Keep the default PyPI index but let pip also search the WASIX index:
+There are many ways to get such an environment, I found the multipass the easiest:
 
 ```bash
-pip install --extra-index-url https://wasix-org.github.io/build-scripts/simple <package-name>
+multipass launch 25.04 -n wasix-test --disk 50G --cpus 4 --memory 16G
+multipass shell wasix-test
 ```
 
-You can also set an environment variable once per shell:
-
-```bash
-export PIP_INDEX_URL=https://wasix-org.github.io/build-scripts/simple
-pip install <package-name>
-```
-
-#### uv (one-off)
-
-`uv` accepts the same flags as pip, so you can run e.g.:
-
-```bash
-# Only use the WASIX index
-uv pip install --index-url https://wasix-org.github.io/build-scripts/simple <package-name>
-
-# Or combine with PyPI
-uv pip install --extra-index-url https://wasix-org.github.io/build-scripts/simple <package-name>
-```
-
-#### uv (project configuration)
-
-For a permanent, checked-in configuration add a custom index section to your `pyproject.toml`:
-
-```toml
-[[tool.uv.index]]
-# A human-friendly name you pick
-name = "wasix"
-# The Simple index URL
-url = "https://wasix-org.github.io/build-scripts/simple"
-# Optional – make this the primary index
-default = true
-```
-
-After that, every `uv sync` / `uv pip install` inside the project will automatically resolve packages against the WASIX index.
-
----
-
-### Rebuilding the index
-
-All the supported native modules are already compiled in the [`artifacts/`](./artifacts) folder.
-For each commit that changes the modules, we generate a new index using `dumb-pypi` that is statically stored in the provided URL index.
-
-If you want to regenerate the index manually, you just need to do:
-
-```bash
-./generate-index.sh
-```
-
-## Building modules from source
-
-Buildscripts to build numpy and other wheels for wasix. For convenience, this package already includes prebuilt versions of all the wheels and libraries.
-
-### Usage
-
-The build script is controlled by the following environment variables:
-
-* `CC`, `CXX`, `AR`, `LD`, `RANLIB`, etc... : The cross-compiler tools. These should all be normal clang tools, but target wasm32-wasix by default and use the wasix sysroot.
-* `WASIX_SYSROOT`: The path to the wasix sysroot that is used by the toolchain. Libraries will get installed here when you run `make install` or when they are required to build a package.
-* `INSTALL_DIR`: The path to the python library path. Wheels will get installed here when you run `make install`.
-* `WASMER`: The path to the wasmer binary. You must have it registered to handle wasm files as binfmt_misc. You can do this with `sudo $WASMER binfmt reregister`.
-
-The easiest way to setup all the environment variables is to activate the wasix-clang environment using `source wasix-clang/activate`.
-
-Then you can run `make all` to build all wheels and libraries.
-
-### Usage with [wasix-clang](https://github.com/wasix-org/wasix-clang)
-
-Example for building a numpy wheel from scratch:
+If you are in a clean build environment you must install all required dependencies with the following commands:
 
 ```bash
 # Install common dependencies
@@ -113,33 +43,50 @@ sudo apt install -y xmlto imagemagick # giflib docs require these but they are q
 curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sudo sh -s -- install $(! test -f /.dockerenv || echo "linux --init none") --no-confirm ; source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh # pandoc requires a haskell toolchain for wasm32 which we build with nix
 wget https://github.com/bazelbuild/bazelisk/releases/download/v1.27.0/bazelisk-linux-amd64 ; sudo install -m755 bazelisk-linux-amd64 /usr/bin/bazel ; rm bazelisk-linux-amd64 # grpc and protobuf require bazel. I found bazelisk the easiest way to install bazel
 cargo install --locked wasm-tools && echo PATH='"$HOME/.cargo/bin:$PATH"' >> ~/.profile && export PATH="$HOME/.cargo/bin:$PATH" # wasm-tools is required for shapely
+```
 
+Any other way of installing the dependencies is not a supported build environment.
+
+### Building packages
+
+If you are in a **supported build environment** (see above), you can clone this repo, activate [wasix-clang](https://github.com/wasix-org/wasix-clang) (available in a supported build-environment), and start making packages:
+
+```bash
 # Fetch this repo
 git clone https://github.com/wasix-org/build-scripts.git
 cd build-scripts
-
 # Activate wasix-clang
 source ~/.wasix-clang/activate
-# Build numpyz
+
+# Build numpy
 make pkgs/numpy.whl
+# Build sqlite (unpacked)
+make pkgs/sqlite.lib
+# Build sqlite (packed)
+make pkgs/sqlite.tar.xz
 ```
 
-The above example was tested in a freshly installed ubuntu VM created with:
+### Background on the requirements for the supported build environment
 
-```bash
-multipass launch 25.04 -n wasix-test --disk 50G --cpus 4 --memory 16G
-multipass shell wasix-test
-```
+Requirements:
+* ubuntu 25.04
+  * The wasmer binary release was build against this ubuntu version
+  * Some package names might be different in other versions
+* x86-64
+  * The host architecture is hardcoded in some places
+* not in a container
+  * `build-scripts` relies on binfmt_misc to execute wasm binaries like native binaries.
+  * binfmt_misc does not work in containers
+* 16GB of memory
+  * This is the amount I tested it with. Less might be fine.
+* 100GB of storage
+  * This is the amount I tested it with. Less might be fine depending on which packages you build.
+* 4 CPU cores
+  * This is the amount I tested it with. Less might be fine.
 
-### Patches
+A few of the packages in the requirements might actually be unused. However you should install them all in the way described in the previous section just to be sure.
 
-For the most part we try to keep patches to a minimum and contribute changes back upstream if they provide any additional value besides adding WASIX support.
-
-Patches are mostly applied to make existing build processes that don't support a WASI target work. In the rare cases where software uses features that are not available in WASIX we might also patch it to add workarounds/remove broken code paths. We try to keep software as vanilla as possible.
-
-One exception is `numpy` where we have a special patch that helps when building other crates. More on that below.
-
-### Versions
+## Package Versions
 
 Here is a list of the versions of the wheels and libraries that are included in this package:
 
@@ -303,6 +250,29 @@ psycopg3-c is just the sdist of psycopg3-binary
 * zz: 0.7.0
 <!-- LIB_VERSIONS_END -->
 
+## Detailed information on how this repo works 
+
+### Using the Makefile
+
+The build script is controlled by the following environment variables:
+
+* `CC`, `CXX`, `AR`, `LD`, `RANLIB`, etc... : The cross-compiler tools. These should all be normal clang tools, but target wasm32-wasix by default and use the wasix sysroot.
+* `WASIX_SYSROOT`: The path to the wasix sysroot that is used by the toolchain. Libraries will get installed here when you run `make install` or when they are required to build a package.
+* `INSTALL_DIR`: The path to the python library path. Wheels will get installed here when you run `make install`.
+* `WASMER`: The path to the wasmer binary. You must have it registered to handle wasm files as binfmt_misc. You can do this with `sudo $WASMER binfmt reregister`.
+
+The easiest way to setup all the environment variables is to activate the wasix-clang environment using `source wasix-clang/activate`.
+
+Then you can run `make all` to build all wheels and libraries.
+
+### Patches
+
+For the most part we try to keep patches to a minimum and contribute changes back upstream if they provide any additional value besides adding WASIX support.
+
+Patches are mostly applied to make existing build processes that don't support a WASI target work. In the rare cases where software uses features that are not available in WASIX we might also patch it to add workarounds/remove broken code paths. We try to keep software as vanilla as possible.
+
+One exception is `numpy` where we have a special patch that helps when building other crates. More on that below.
+
 ### Notes
 
 All built library packages should include a pkg-config file for each library.
@@ -409,3 +379,78 @@ If a project depends on other project they can either be direct dependencies of 
 
 We publish to `python/python@3.12.10-beta.XXX` on wasmer.wtf and `zebreus/python@3.12.10-beta.XXX` on prod.
 
+## Python Index
+
+You can use this index for WASIX easily by providing this index to `pip` or `uv`: <https://pythonindex.wasix.org/>
+
+### Using the index in your projects
+
+The actual **Simple API** endpoint that pip/uv expect lives under the `simple/` path, so the full base URL is:
+
+```bash
+https://pythonindex.wasix.org/simple
+```
+
+Below are a few common ways to point your tooling at it.
+
+#### pip (one-off)
+
+Install a package **only** from the WASIX index (no PyPI fallback):
+
+```bash
+pip install --index-url https://wasix-org.github.io/build-scripts/simple <package-name>
+```
+
+Keep the default PyPI index but let pip also search the WASIX index:
+
+```bash
+pip install --extra-index-url https://wasix-org.github.io/build-scripts/simple <package-name>
+```
+
+You can also set an environment variable once per shell:
+
+```bash
+export PIP_INDEX_URL=https://wasix-org.github.io/build-scripts/simple
+pip install <package-name>
+```
+
+#### uv (one-off)
+
+`uv` accepts the same flags as pip, so you can run e.g.:
+
+```bash
+# Only use the WASIX index
+uv pip install --index-url https://wasix-org.github.io/build-scripts/simple <package-name>
+
+# Or combine with PyPI
+uv pip install --extra-index-url https://wasix-org.github.io/build-scripts/simple <package-name>
+```
+
+#### uv (project configuration)
+
+For a permanent, checked-in configuration add a custom index section to your `pyproject.toml`:
+
+```toml
+[[tool.uv.index]]
+# A human-friendly name you pick
+name = "wasix"
+# The Simple index URL
+url = "https://wasix-org.github.io/build-scripts/simple"
+# Optional – make this the primary index
+default = true
+```
+
+After that, every `uv sync` / `uv pip install` inside the project will automatically resolve packages against the WASIX index.
+
+---
+
+### Rebuilding the index
+
+All the supported native modules are already compiled in the [`artifacts/`](./artifacts) folder.
+For each commit that changes the modules, we generate a new index using `dumb-pypi` that is statically stored in the provided URL index.
+
+If you want to regenerate the index manually, you just need to do:
+
+```bash
+./generate-index.sh
+```
