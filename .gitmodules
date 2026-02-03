@@ -417,7 +417,7 @@
 	url = https://github.com/wasix-org/cryptography-python.git
 [submodule "pkgs/mpfr.source"]
 	path = pkgs/mpfr.source
-	url = https://gitlab.inria.fr/mpfr/mpfr.git
+	url = https://github.com/wasix-org/mpfr.git
 [submodule "pkgs/zz.source"]
 	path = pkgs/zz.source
 	url = https://github.com/diofant/zz.git
