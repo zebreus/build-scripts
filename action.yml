@@ -29,6 +29,12 @@ inputs:
     type: string
     default: '$HOME/.build-scripts/pkgs'
     required: false
+  
+  merge:
+    description: 'Allow installing packages into an existing sysroot directory'
+    type: boolean
+    default: false
+    required: false
 
 outputs:
   path:
@@ -100,6 +106,10 @@ runs:
         
         if [ -n "${{ inputs.github_token }}" ]; then
           CMD_ARGS+=("--github-token" "${{ inputs.github_token }}")
+        fi
+        
+        if [ "${{ inputs.merge }}" = "true" ]; then
+          CMD_ARGS+=("--merge")
         fi
         
         echo "Running: ./assemble-pkgs.sh ${CMD_ARGS[*]}"

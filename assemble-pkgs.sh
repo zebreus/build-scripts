@@ -8,6 +8,7 @@
 # ARG_OPTIONAL_SINGLE([artifact-dir],[],[If this is set, artifacts are picked from this directory instead of being downloaded from a github release])
 # ARG_OPTIONAL_SINGLE([release],[],[Select the github release from which to download artifacts])
 # ARG_OPTIONAL_SINGLE([github-token],[],[Github token to use for API requests])
+# ARG_OPTIONAL_BOOLEAN([merge],[m],[Allow installing packages into an existing sysroot directory],[off])
 
 # ARG_HELP([Fetch and combine multiple packages from build-scripts into one directory])
 # ARGBASH_GO()
@@ -28,7 +29,7 @@ die()
 
 begins_with_short_option()
 {
-	local first_option all_short_options='ioh'
+	local first_option all_short_options='iomh'
 	first_option="${1:0:1}"
 	test "$all_short_options" = "${all_short_options/$first_option/}" && return 1 || return 0
 }
@@ -39,17 +40,19 @@ _arg_output_dir=
 _arg_artifact_dir=
 _arg_release=
 _arg_github_token=
+_arg_merge="off"
 
 
 print_help()
 {
 	printf '%s\n' "Fetch and combine multiple packages from build-scripts into one directory"
-	printf 'Usage: %s [-i|--input <arg>] [-o|--output-dir <arg>] [--artifact-dir <arg>] [--release <arg>] [--github-token <arg>] [-h|--help]\n' "$0"
+	printf 'Usage: %s [-i|--input <arg>] [-o|--output-dir <arg>] [--artifact-dir <arg>] [--release <arg>] [--github-token <arg>] [-m|--(no-)merge] [-h|--help]\n' "$0"
 	printf '\t%s\n' "-i, --input: List of input libraries (empty by default)"
 	printf '\t%s\n' "-o, --output-dir: Output directory (no default)"
 	printf '\t%s\n' "--artifact-dir: If this is set, artifacts are picked from this directory instead of being downloaded from a github release (no default)"
 	printf '\t%s\n' "--release: Select the github release from which to download artifacts (no default)"
 	printf '\t%s\n' "--github-token: Github token to use for API requests (no default)"
+	printf '\t%s\n' "-m, --merge, --no-merge: Allow installing packages into an existing sysroot directory (off by default)"
 	printf '\t%s\n' "-h, --help: Prints help"
 }
 
@@ -106,6 +109,18 @@ parse_commandline()
 				;;
 			--github-token=*)
 				_arg_github_token="${_key##--github-token=}"
+				;;
+			-m|--no-merge|--merge)
+				_arg_merge="on"
+				test "${1:0:5}" = "--no-" && _arg_merge="off"
+				;;
+			-m*)
+				_arg_merge="on"
+				_next="${_key##-m}"
+				if test -n "$_next" -a "$_next" != "$_key"
+				then
+					{ begins_with_short_option "$_next" && shift && set -- "-m" "-${_next}" "$@"; } || die "The short option '$_key' can't be decomposed to ${_key:0:2} and -${_key:2}, because ${_key:0:2} doesn't accept value and '-${_key:2:1}' doesn't correspond to a short option."
+				fi
 				;;
 			-h|--help)
 				print_help
@@ -165,8 +180,14 @@ fi
 
 ASSEMBLED_DIR="$_arg_output_dir"
 if test -e "$ASSEMBLED_DIR" ; then
-    echo "Output directory $ASSEMBLED_DIR already exists. aborting." >&2
-    exit 1
+    if test "$_arg_merge" = "off" ; then
+        echo "Output directory $ASSEMBLED_DIR already exists. Use --merge to install into an existing sysroot." >&2
+        exit 1
+    fi
+    if ! test -d "$ASSEMBLED_DIR" ; then
+        echo "Output path $ASSEMBLED_DIR exists but is not a directory." >&2
+        exit 1
+    fi
 fi
 
 ARTIFACT_DIR=""
