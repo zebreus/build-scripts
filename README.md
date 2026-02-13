@@ -383,19 +383,19 @@ Below are a few common ways to point your tooling at it.
 Install a package **only** from the WASIX index (no PyPI fallback):
 
 ```bash
-pip install --index-url https://wasix-org.github.io/build-scripts/simple <package-name>
+pip install --index-url https://pythonindex.wasix.org/simple <package-name>
 ```
 
 Keep the default PyPI index but let pip also search the WASIX index:
 
 ```bash
-pip install --extra-index-url https://wasix-org.github.io/build-scripts/simple <package-name>
+pip install --extra-index-url https://pythonindex.wasix.org/simple <package-name>
 ```
 
 You can also set an environment variable once per shell:
 
 ```bash
-export PIP_INDEX_URL=https://wasix-org.github.io/build-scripts/simple
+export PIP_INDEX_URL=https://pythonindex.wasix.org/simple
 pip install <package-name>
 ```
 
@@ -405,10 +405,10 @@ pip install <package-name>
 
 ```bash
 # Only use the WASIX index
-uv pip install --index-url https://wasix-org.github.io/build-scripts/simple <package-name>
+uv pip install --index-url https://pythonindex.wasix.org/simple <package-name>
 
 # Or combine with PyPI
-uv pip install --extra-index-url https://wasix-org.github.io/build-scripts/simple <package-name>
+uv pip install --extra-index-url https://pythonindex.wasix.org/simple <package-name>
 ```
 
 #### uv (project configuration)
@@ -420,7 +420,7 @@ For a permanent, checked-in configuration add a custom index section to your `py
 # A human-friendly name you pick
 name = "wasix"
 # The Simple index URL
-url = "https://wasix-org.github.io/build-scripts/simple"
+url = "https://pythonindex.wasix.org/simple"
 # Optional – make this the primary index
 default = true
 ```
