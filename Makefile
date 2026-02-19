@@ -1560,9 +1560,9 @@ $(call sysroot,cpython): $(call sysroot,default) $(call tarxz,readline) $(call t
 	$(clean_sysroot)
 $(call lib,cpython): $(call sysroot,cpython)
 	mkdir -p build
-	cd $(call build,$@) && WASIX_SYSROOT=${PWD}/$(call sysroot,cpython) ${ENV_VARS_FOR_NATIVE_CC} bash wasix-full.sh
+	cd $(call build,$@) && WASIXCC_SYSROOT=${PWD}/$(call sysroot,cpython) ${ENV_VARS_FOR_NATIVE_CC} LIBTOOL=/usr/bin/libtool LIBTOOLIZE=/usr/bin/libtoolize ACLOCAL_PATH= _lt_pkgdatadir= bash wasix-full.sh
 	$(reset_install_dir) $@
-	cd $(call build,$@) && WASIX_SYSROOT=${PWD}/$(call sysroot,cpython) make -j${JOBS} -C builddir/wasix install DESTDIR="${PWD}/$@"
+	cd $(call build,$@) && WASIXCC_SYSROOT=${PWD}/$(call sysroot,cpython) make -j${JOBS} -C builddir/wasix install DESTDIR="${PWD}/$@"
 	touch $@
 
 $(call lib,libb2):
