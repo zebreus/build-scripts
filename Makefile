@@ -912,6 +912,7 @@ $(call whl,matplotlib): BUILD_EXTRA_FLAGS = -Csetup-args="--cross-file=${MESON_C
 $(call whl,matplotlib): ${MESON_CROSSFILE}
 
 $(call targz,gevent): BUILD_ENV_VARS += PIP_TRUSTED_HOST=0.0.0.0 PIP_EXTRA_INDEX_URL=http://0.0.0.0:6931/simple
+$(call targz,gevent): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo greenlet==3.3.0 > $$F ; echo $$F)
 $(call targz,gevent): BUILD_ENV_VARS += GEVENTSETUP_USE_LIBUV=0
 $(call targz,gevent): $(call build,gevent) $(call sysroot,default) $(call whl,greenlet) build-index-venv
 	source ./build-index-venv/bin/activate && python3 generate-index.py
@@ -919,6 +920,7 @@ $(call targz,gevent): $(call build,gevent) $(call sysroot,default) $(call whl,gr
 	python3 -m http.server 6931 --directory $(PWD)/dist || true &
 	$(build_sdist)
 $(call whl,gevent): BUILD_ENV_VARS += PIP_TRUSTED_HOST=0.0.0.0 PIP_EXTRA_INDEX_URL=http://0.0.0.0:6931/simple
+$(call whl,gevent): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo greenlet==3.3.0 > $$F ; echo $$F)
 $(call whl,gevent): BUILD_ENV_VARS += GEVENTSETUP_USE_LIBUV=0
 $(call whl,gevent): $(call sdist,gevent) $(call sysroot,default) $(call whl,greenlet) build-index-venv
 	source ./build-index-venv/bin/activate && python3 generate-index.py
