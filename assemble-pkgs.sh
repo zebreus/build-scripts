@@ -159,6 +159,7 @@ check_command curl
 check_command mktemp
 check_command tar
 check_command sed
+check_command xz
 
 VERSION=latest
 if test -n "$_arg_release" ; then
