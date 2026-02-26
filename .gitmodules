@@ -421,3 +421,6 @@
 [submodule "pkgs/zz.source"]
 	path = pkgs/zz.source
 	url = https://github.com/diofant/zz.git
+[submodule "pkgs/bcrypt.source"]
+	path = pkgs/bcrypt.source
+	url = https://github.com/pyca/bcrypt.git

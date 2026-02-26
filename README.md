@@ -165,6 +165,7 @@ Here is a list of the versions of the wheels and libraries that are included in 
 * aiohttp: 3.13.2
 * cryptography: 43.0.3 (wasix-org)
 * cryptography: 45.0.4 (wasix-org)
+* bcrypt: 5.0.0
 <!-- WHEEL_VERSIONS_END -->
 
 psycopg3-c is just the sdist of psycopg3-binary
