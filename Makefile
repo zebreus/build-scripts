@@ -137,6 +137,7 @@ WHEELS+=bytecode
 WHEELS+=aiohttp
 WHEELS+=cryptography
 WHEELS+=cryptography43-0-3
+WHEELS+=bcrypt
 # WHEELS_END
 
 #####     List of all wheel in python-wasix-binaries with reasons for inclusion in here     #####
@@ -988,6 +989,16 @@ $(call whl,cryptography43-0-3): BUILD_ENV_VARS += OPENSSL_DIR=${PWD}/$(call sysr
 $(call whl,cryptography43-0-3): BUILD_ENV_VARS += PYO3_CROSS_LIB_DIR=${PWD}/$(call sysroot,cryptography)/usr/local/lib
 $(call whl,cryptography43-0-3): BUILD_ENV_VARS += RUSTFLAGS="-C llvm-args=-wasm-use-legacy-eh=false -C link-arg=-Bsymbolic"
 $(call whl,cryptography43-0-3): BUILD_ENV_VARS += _PYTHON_HOST_PLATFORM="wasix_wasm32"
+
+$(call targz,bcrypt): PREPARE = rustup override set wasix
+$(call whl,bcrypt): PREPARE = rustup override set wasix
+$(call whl,bcrypt): BUILD_ENV_VARS += WASIXCC_SYSROOT=${PWD}/$(call sysroot,python-wheels)
+$(call whl,bcrypt): BUILD_ENV_VARS += WASIXCC_WASM_EXCEPTIONS=yes
+$(call whl,bcrypt): BUILD_ENV_VARS += WASIXCC_PIC=yes
+$(call whl,bcrypt): BUILD_ENV_VARS += CARGO_BUILD_TARGET=wasm32-wasmer-wasi-dl
+$(call whl,bcrypt): BUILD_ENV_VARS += PYO3_CROSS_LIB_DIR=${PWD}/$(call sysroot,python-wheels)/usr/local/lib
+$(call whl,bcrypt): BUILD_ENV_VARS += RUSTFLAGS="-C llvm-args=-wasm-use-legacy-eh=false -C link-arg=-Bsymbolic"
+$(call whl,bcrypt): BUILD_ENV_VARS += _PYTHON_HOST_PLATFORM="wasix_wasm32"
 
 # TODO: When arrow supports setting rpath for all its libs, we can enable this and start working on shared builds
 # $(call whl,pyarrow): BUILD_ENV_VARS += PYARROW_BUNDLE_ARROW_CPP=ON PYARROW_BUNDLE_CYTHON_CPP=ON
