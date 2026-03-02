@@ -15,7 +15,7 @@ Then install all dependencies with the following commands:
 ```bash
 # Install common dependencies
 sudo apt install -y clang llvm zlib1g-dev git git-lfs build-essential make cmake python3.13 python3.13-dev python3.13-venv autopoint libtool pkg-config autoconf dejagnu meson ninja-build bison flex perl patchelf po4a yq moreutils rustup texinfo
-# Install wasix-clang
+# Install wasix-clang (might still be required by some packages)
 curl -sSf https://raw.githubusercontent.com/wasix-org/wasix-clang/refs/heads/main/setup.sh | bash
 # Install wasixcc
 curl -fsSL https://wasix.cc | sh
@@ -37,14 +37,14 @@ Any other way of installing the dependencies is not a supported build environmen
 
 ### Building packages
 
-If you are in a **supported build environment** (see above), you can clone this repo, activate [wasix-clang](https://github.com/wasix-org/wasix-clang) (available in a supported build-environment), and start making packages:
+If you are in a **supported build environment** (see above), you can clone this repo, enter a [wasixcc cross-shell](https://github.com/wasix-org/wasixcc) (available in a supported build-environment), and start making packages:
 
 ```bash
 # Fetch this repo
 git clone https://github.com/wasix-org/build-scripts.git
 cd build-scripts
-# Activate wasix-clang
-source ~/.wasix-clang/activate
+# Enter a wasixcc cross shell
+wasixccenv cross-shell
 
 # Build numpy
 make pkgs/numpy.whl
@@ -250,7 +250,7 @@ The build script is controlled by the following environment variables:
 * `INSTALL_DIR`: The path to the python library path. Wheels will get installed here when you run `make install`.
 * `WASMER`: The path to the wasmer binary. You must have it registered to handle wasm files as binfmt_misc. You can do this with `sudo $WASMER binfmt reregister`.
 
-The easiest way to setup all the environment variables is to activate the wasix-clang environment using `source wasix-clang/activate`.
+The easiest way to setup all the environment variables is to activate the wasixcc cross shell using `wasixccenv cross-shell`.
 
 Then you can run `make all` to build all wheels and libraries.
 

@@ -1,11 +1,11 @@
 SHELL:=/usr/bin/bash
 
-# Check that CC is wasix-clang, works, and binfmt is setup correctly
+# Check that CC is wasixcc, works, and binfmt is setup correctly
 ifeq ($(MAKELEVEL),0)
 ifndef SKIP_CC_CHECK
-# CC must contain wasix-clang
-$(if $(findstring wasix-clang,$(CC)),,\
-  $(error CC must contain "wasix-clang" (got "$(CC)")))
+# CC must contain wasixcc
+$(if $(findstring wasixcc,$(CC)),,\
+  $(error CC must contain "wasixcc" (got "$(CC)")))
 
 # CC must be able to compile and run a binary
 _cc_test := $(shell \
@@ -19,7 +19,7 @@ _cc_test := $(shell \
 	{ rm -rf "$$tmpdir"; exit 1; })
 
 $(if $(_cc_test),,\
-  $(error CC cannot compile and run a test program. Make sure that wasix-clang is activated and binfmt is not set to an outdated wasmer version.))
+  $(error CC cannot compile and run a test program. Make sure that a wasixcc cross-env is activated and binfmt is not set to an outdated wasmer version.))
 endif # SKIP_CC_CHECK
 endif # MAKELEVEL == 0
 
@@ -39,7 +39,7 @@ ENV_VARS_FOR_NATIVE_TOOLS=${ENV_VARS_FOR_NATIVE_CC} LD=/usr/bin/ld AR=/usr/bin/a
 JOBS=12
 
 # Install libs to the normal sysroot if not specified otherwise
-LIBS_DESTDIR?=${WASIX_SYSROOT}
+LIBS_DESTDIR?=${WASIXCC_SYSROOT}
 # Install python wheels here
 WHEELS_DESTDIR?=""
 
@@ -268,9 +268,9 @@ LIBS+=ncurses
 LIBS+=readline
 LIBS+=curl
 LIBS+=sqlite
-LIBS+=wasix-libc
-LIBS+=libcxx
-LIBS+=compiler-rt
+LIBS+=wasix-libc # Replaced by the sysroot shipped with wasixcc
+LIBS+=libcxx # Replaced by the sysroot shipped with wasixcc
+LIBS+=compiler-rt # Replaced by the sysroot shipped with wasixcc
 LIBS+=cpython
 LIBS+=libb2
 LIBS+=zstd
@@ -469,7 +469,7 @@ endef
 
 # Set some environment variables based on the build sysroot
 define set_sysroot =
-WASIX_SYSROOT=${PWD}/$(if $(1),$(call sysroot,$(1)),$(call sysroot,default)) \
+WASIXCC_SYSROOT=${PWD}/$(if $(1),$(call sysroot,$(1)),$(call sysroot,default)) \
 PKG_CONFIG_SYSROOT_DIR=${PWD}/$(if $(1),$(call sysroot,$(1)),$(call sysroot,default)) \
 PKG_CONFIG_LIBDIR=${PWD}/$(if $(1),$(call sysroot,$(1)),$(call sysroot,default))/usr/local/lib/wasm32-wasi/pkgconfig \
 CMAKE_PREFIX_PATH=${PWD}/$(if $(1),$(call sysroot,$(1)),$(call sysroot,default))/usr/local/lib/wasm32-wasi/cmake \
@@ -544,7 +544,7 @@ $(call sysroot,python-wheels): $(call sysroot,cpython) $(call tarxz,cpython)
 	$(assemble_sysroot)
 cross-venv: native-venv | $(call sysroot,python-wheels)
 	rm -rf ./cross-venv
-	source ./native-venv/bin/activate && python3 -m crossenv $(call sysroot,python-wheels)/usr/local/bin/python3.wasm ./cross-venv --cc wasix-clang --cxx wasix-clang++
+	source ./native-venv/bin/activate && python3 -m crossenv $(call sysroot,python-wheels)/usr/local/bin/python3.wasm ./cross-venv --cc wasixcc --cxx wasixcc++
 	source ./cross-venv/bin/activate && PIP_EXTRA_INDEX_URL=https://pythonindex.wasix.org/simple build-pip install cffi
 	# Run with the native tools because we need to build maturin from source for the build system
 	# Setuptools 81.0.0 is required as 82.0.0 removed pkg_resources which is required for building uvloop. We should be able to upgrade to 82.0.0 once uvloop is updated to not require pkg_resources anymore.
@@ -721,11 +721,11 @@ pkgs/python-with-packages.webc: $(call lib,python-with-packages-webc)
 # A target to build a wheel from a python submodule
 # To override the build behaviour, add a target for your submodule
 $(BUILT_WHEELS): $(call whl,%): $(call sdist,%) | cross-venv
-$(call whl,%): WASIX_SYSROOT = ${PWD}/$(call sysroot,default)
+$(call whl,%): WASIXCC_SYSROOT = ${PWD}/$(call sysroot,default)
 $(call whl,%): $(call sdist,%) $(call sysroot,default)
 	$(build_wheel)
 $(BUILT_SDISTS): $(call targz,%): $(call build,%) | cross-venv
-$(call targz,%): WASIX_SYSROOT = ${PWD}/$(call sysroot,default)
+$(call targz,%): WASIXCC_SYSROOT = ${PWD}/$(call sysroot,default)
 $(call targz,%): $(call build,%) $(call sysroot,default)
 	$(build_sdist)
 $(UNPACKED_SDISTS): $(call sdist,%): $(call targz,%) | cross-venv
@@ -751,7 +751,7 @@ $(call targz,psycopg-pool): PYPROJECT_PATH = psycopg_pool
 $(call targz,psycopg-binary): PYPROJECT_PATH = psycopg_binary
 $(call targz,psycopg-binary): PREPARE = rm -rf psycopg_binary && python3 tools/build/copy_to_binary.py
 # Inject a mock pg_config to the PATH, so the build process can find it
-$(call whl,psycopg-binary): BUILD_ENV_VARS = PATH="${PWD}/resources:$$PATH" WASIX_FORCE_STATIC_DEPENDENCIES=true
+$(call whl,psycopg-binary): BUILD_ENV_VARS = PATH="${PWD}/resources:$$PATH" WASIXCC_FORCE_STATIC_DEPENDENCIES=true
 # Pretend we are a normal posix-like target, so we automatically include <endian.h>
 $(call whl,psycopg-binary): export CCC_OVERRIDE_OPTIONS = ^-D__linux__=1
 
@@ -760,7 +760,7 @@ $(call sysroot,pillow): $(call sysroot,python-wheels) $(call tarxz,libjpeg-turbo
 	$(call remove_shared_libs)
 
 $(call whl,pillow): $(call sysroot,pillow)
-$(call whl,pillow): BUILD_ENV_VARS = $(call set_sysroot,pillow) WASIX_FORCE_STATIC_DEPENDENCIES=true
+$(call whl,pillow): BUILD_ENV_VARS = $(call set_sysroot,pillow) WASIXCC_FORCE_STATIC_DEPENDENCIES=true
 $(call whl,pillow): BUILD_EXTRA_FLAGS = -Cplatform-guessing=disable
 
 $(call sysroot,lxml): $(call sysroot,python-wheels) $(call tarxz,libxslt) $(call tarxz,libxml2)
@@ -769,8 +769,8 @@ $(call sysroot,lxml): $(call sysroot,python-wheels) $(call tarxz,libxslt) $(call
 
 # We need to install, because we can only specify one sysroot in pkgconfig
 $(call targz,lxml): $(call sysroot,lxml)
-$(call targz,lxml): BUILD_ENV_VARS = $(call set_sysroot,lxml) WASIX_FORCE_STATIC_DEPENDENCIES=true
-$(call whl,lxml): BUILD_ENV_VARS = $(call set_sysroot,lxml) WASIX_FORCE_STATIC_DEPENDENCIES=true
+$(call targz,lxml): BUILD_ENV_VARS = $(call set_sysroot,lxml) WASIXCC_FORCE_STATIC_DEPENDENCIES=true
+$(call whl,lxml): BUILD_ENV_VARS = $(call set_sysroot,lxml) WASIXCC_FORCE_STATIC_DEPENDENCIES=true
 
 $(call targz,dateutil): PREPARE = python3 updatezinfo.py
 
@@ -803,7 +803,7 @@ $(call sysroot,shapely): $(call sysroot,python-wheels) $(call tarxz,geos)
 
 $(call whl,shapely): $(call sysroot,shapely)
 # TODO: Static build don't work yet, because we would have to specify recursive dependencies manually
-# $(call whl,shapely): BUILD_ENV_VARS += WASIX_FORCE_STATIC_DEPENDENCIES=true
+# $(call whl,shapely): BUILD_ENV_VARS += WASIXCC_FORCE_STATIC_DEPENDENCIES=true
 # Set geos paths
 $(call whl,shapely): BUILD_ENV_VARS += $(call set_sysroot,shapely)
 $(call whl,shapely): BUILD_ENV_VARS += GEOS_INCLUDE_PATH="${PWD}/$(call sysroot,shapely)/usr/local/include"
@@ -825,7 +825,7 @@ $(call sysroot,uvloop): $(call sysroot,python-wheels) $(call tarxz,libuv)
 	$(assemble_sysroot)
 	$(call remove_shared_libs)
 $(call whl,uvloop): $(call sysroot,uvloop)
-$(call whl,uvloop): BUILD_ENV_VARS = $(call set_sysroot,uvloop) WASIX_FORCE_STATIC_DEPENDENCIES=true
+$(call whl,uvloop): BUILD_ENV_VARS = $(call set_sysroot,uvloop) WASIXCC_FORCE_STATIC_DEPENDENCIES=true
 $(call whl,uvloop): BUILD_EXTRA_FLAGS = '-C--build-option=build_ext --use-system-libuv'
 
 $(call targz,aiohttp): PREPARE = make cythonize ; yes | make generate-llhttp
@@ -836,9 +836,9 @@ $(call sysroot,mysqlclient): $(call sysroot,python-wheels) $(call tarxz,mariadb-
 	ln -s libmariadbclient.a $@/usr/local/lib/wasm32-wasi/libmariadb.a
 	ln -s libmysqlclient.a $@/usr/local/lib/wasm32-wasi/libmysql.a
 $(call targz,mysqlclient): $(call sysroot,mysqlclient)
-$(call targz,mysqlclient): BUILD_ENV_VARS = $(call set_sysroot,mysqlclient) WASIX_FORCE_STATIC_DEPENDENCIES=true
+$(call targz,mysqlclient): BUILD_ENV_VARS = $(call set_sysroot,mysqlclient) WASIXCC_FORCE_STATIC_DEPENDENCIES=true
 $(call whl,mysqlclient): $(call sysroot,mysqlclient)
-$(call whl,mysqlclient): BUILD_ENV_VARS = $(call set_sysroot,mysqlclient) WASIX_FORCE_STATIC_DEPENDENCIES=true
+$(call whl,mysqlclient): BUILD_ENV_VARS = $(call set_sysroot,mysqlclient) WASIXCC_FORCE_STATIC_DEPENDENCIES=true
 
 # Use numpy dev build from our registry. Our patches have been merged upstream, so for the next numpy release we can remove this.
 $(call targz,pandas): BUILD_ENV_VARS += PIP_CONSTRAINT=$$(F=$$(mktemp) ; echo numpy==2.4.0.dev0 > $$F ; echo $$F)
@@ -961,7 +961,7 @@ $(call whl,cryptography): PREPARE = rustup override set wasix
 $(call whl,cryptography): BUILD_ENV_VARS += WASIXCC_SYSROOT=${PWD}/$(call sysroot,cryptography)
 $(call whl,cryptography): BUILD_ENV_VARS += WASIXCC_WASM_EXCEPTIONS=yes
 $(call whl,cryptography): BUILD_ENV_VARS += WASIXCC_PIC=yes
-$(call whl,cryptography): BUILD_ENV_VARS += WASIX_SYSROOT=${PWD}/$(call sysroot,cryptography)
+$(call whl,cryptography): BUILD_ENV_VARS += WASIXCC_SYSROOT=${PWD}/$(call sysroot,cryptography)
 # $(call whl,cryptography): BUILD_ENV_VARS += CC_wasm32_wasmer_wasi_dl=wasixcc
 # $(call whl,cryptography): BUILD_ENV_VARS += CXX_wasm32_wasmer_wasi_dl=wasix++
 # $(call whl,cryptography): BUILD_ENV_VARS += CC=
@@ -979,7 +979,7 @@ $(call whl,cryptography43-0-3): PREPARE = rustup override set wasix
 $(call whl,cryptography43-0-3): BUILD_ENV_VARS += WASIXCC_SYSROOT=${PWD}/$(call sysroot,cryptography)
 $(call whl,cryptography43-0-3): BUILD_ENV_VARS += WASIXCC_WASM_EXCEPTIONS=yes
 $(call whl,cryptography43-0-3): BUILD_ENV_VARS += WASIXCC_PIC=yes
-$(call whl,cryptography43-0-3): BUILD_ENV_VARS += WASIX_SYSROOT=${PWD}/$(call sysroot,cryptography)
+$(call whl,cryptography43-0-3): BUILD_ENV_VARS += WASIXCC_SYSROOT=${PWD}/$(call sysroot,cryptography)
 # $(call whl,cryptography43-0-3): BUILD_ENV_VARS += CC_wasm32_wasmer_wasi_dl=wasixcc
 # $(call whl,cryptography43-0-3): BUILD_ENV_VARS += CXX_wasm32_wasmer_wasi_dl=wasix++
 # $(call whl,cryptography43-0-3): BUILD_ENV_VARS += CC=
@@ -1009,7 +1009,7 @@ $(call whl,bcrypt): BUILD_ENV_VARS += _PYTHON_HOST_PLATFORM="wasix_wasm32"
 $(call sysroot,python-crc32c): $(call sysroot,python-wheels) $(call tarxz,google-crc32c)
 	$(assemble_sysroot)
 $(call whl,python-crc32c): $(call sysroot,python-crc32c)
-$(call whl,python-crc32c): BUILD_ENV_VARS = $(call set_sysroot,python-crc32c) CRC32C_INSTALL_PREFIX=${PWD}/$(call sysroot,python-crc32c)/usr/local WASIX_FORCE_STATIC_DEPENDENCIES=true
+$(call whl,python-crc32c): BUILD_ENV_VARS = $(call set_sysroot,python-crc32c) CRC32C_INSTALL_PREFIX=${PWD}/$(call sysroot,python-crc32c)/usr/local WASIXCC_FORCE_STATIC_DEPENDENCIES=true
 
 $(call whl,charset_normalizer): BUILD_ENV_VARS = CHARSET_NORMALIZER_USE_MYPYC=1
 
@@ -1060,12 +1060,18 @@ $(call sysroot,%):
 	$(assemble_sysroot)
 
 # The default sysroot thats used if nothing else is specified
-DEFAULT_SYSROOT_LIBS=wasix-libc compiler-rt libcxx zlib libffi
+DEFAULT_SYSROOT_LIBS=wasixcc-sysroot libffi zlib
 $(filter-out $(call lib,$(DEFAULT_SYSROOT_LIBS)),$(PREPACKED_LIBS)): $(call lib,%): $(call build,%) $(call sysroot,default)
-$(call lib,%): WASIX_SYSROOT = ${PWD}/$(call sysroot,default)
+$(call lib,%): WASIXCC_SYSROOT = ${PWD}/$(call sysroot,default)
 $(call sysroot,default): $(call tarxz,$(DEFAULT_SYSROOT_LIBS))
 	$(assemble_sysroot)
 	$(call remove_shared_libs)
+
+# wasixcc-sysroot does not need any do any preparation as it's not a source build
+$(call lib,wasixcc-sysroot): LICENSE
+	rm -rf $@
+	mkdir -p $@
+	unset WASIXCC_SYSROOT ; cp -r $$(wasixccenv print-sysroot)/* $@
 
 # TODO: Add libjpeg support
 $(call lib,zbar):
@@ -1078,7 +1084,7 @@ $(call lib,zbar):
 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
 	touch $@
 
-$(call sysroot,libffi): $(call tarxz,wasix-libc) $(call tarxz,compiler-rt) $(call tarxz,libcxx)
+$(call sysroot,libffi): $(call tarxz,wasixcc-sysroot) # $(call tarxz,wasix-libc) $(call tarxz,compiler-rt) $(call tarxz,libcxx)
 $(call lib,libffi): $(call sysroot,libffi)
 	cd $(call build,$@) && autoreconf -vfi
 	cd $(call build,$@) && $(call set_sysroot,libffi) ./configure --prefix=/usr/local --libdir='$${exec_prefix}/lib/wasm32-wasi' --host="wasm32-wasi" --enable-static --disable-shared --disable-dependency-tracking --disable-builddir --disable-multi-os-directory --disable-raw-api --disable-docs
@@ -1087,7 +1093,7 @@ $(call lib,libffi): $(call sysroot,libffi)
 	cd $(call build,$@) && make install DESTDIR=${PWD}/$@
 	touch $@
 
-$(call sysroot,zlib): $(call tarxz,wasix-libc) $(call tarxz,compiler-rt) $(call tarxz,libcxx)
+$(call sysroot,zlib): $(call tarxz,wasixcc-sysroot) # $(call tarxz,wasix-libc) $(call tarxz,compiler-rt) $(call tarxz,libcxx)
 $(call lib,zlib): $(call sysroot,zlib)
 	cd $(call build,$@) && rm -rf combined
 	cd $(call build,$@) && $(call set_sysroot,zlib) cmake -B combined -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR='lib/wasm32-wasi' -DCMAKE_SKIP_RPATH=YES -DZLIB_BUILD_MINIZIP=OFF
@@ -1465,13 +1471,16 @@ $(call lib,sqlite):
 	cd $(call lib,$@) && sed -Ei 's|-L${PWD}([^ ()]+)||g' usr/local/lib/wasm32-wasi/pkgconfig/sqlite3.pc
 	touch $@
 
-$(call lib,wasix-libc):
+$(call lib,wasix-libc): 
 	$(reset_install_dir) $@
-	# The compiler needs to be able to target both native and wasm32-wasi, so we cannot use wasix-clang here
+	# The compiler needs to be able to target both native and wasm32-wasi, so we cannot use wasixcc here
 	cd $(call build,$@) && ${ENV_VARS_FOR_NATIVE_TOOLS} TARGET_ARCH=wasm32 TARGET_OS=wasix make -f Makefile-eh PIC=yes CHECK_SYMBOLS=yes -j${JOBS} install DESTDIR=${PWD}/$@ PREFIX=/ LIBDIR=/lib/wasm32-wasi
 	touch $@
 
-$(call sysroot,libcxx): $(call tarxz,wasix-libc) $(call tarxz,compiler-rt)
+$(call sysroot,libcxx): $(call tarxz,wasixcc-sysroot) # $(call tarxz,compiler-rt) $(call tarxz,wasix-libc)
+	$(assemble_sysroot)
+	# Remove existing sysroot from wasixcc sysroot
+	rm -rf "$@/include/c++" "$@/lib/wasm32-wasi/libc++"*
 $(call lib,libcxx): $(call sysroot,libcxx) ${CMAKE_TOOLCHAIN}
 	cd $(call build,$@) && mkdir -p build
 	cd $(call build,$@) && $(call set_sysroot,libcxx) TARGET_ARCH=wasm32 TARGET_OS=wasix cmake -B build \
@@ -1524,8 +1533,8 @@ $(call lib,libcxx): $(call sysroot,libcxx) ${CMAKE_TOOLCHAIN}
 	cd $(call build,$@) && $(call set_sysroot,libcxx) DESTDIR=${PWD}/$@ cmake --install build
 	touch $@
 
-$(call sysroot,compiler-rt): $(call tarxz,wasix-libc)
-$(call lib,compiler-rt): $(call sysroot,compiler-rt) ${CMAKE_TOOLCHAIN}
+$(call sysroot,compiler-rt): $(call tarxz,wasixcc-sysroot) # $(call tarxz,wasix-libc)
+$(call lib,compiler-rt): $(call sysroot,compiler-rt)
 	cd $(call build,$@) && mkdir -p build
 	cd $(call build,$@) && $(call set_sysroot,compiler-rt) TARGET_ARCH=wasm32 TARGET_OS=wasix cmake -B build \
 	    -DCMAKE_SYSTEM_NAME=WASI \

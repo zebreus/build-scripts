@@ -19,9 +19,9 @@ index f8a1772..be2a28d 100644
 -CC=gcc
 -AR=ar
 -RANLIB=ranlib
-+CC=wasix-clang
-+AR=llvm-ar
-+RANLIB=llvm-ranlib
++CC=wasixcc
++AR=wasixar
++RANLIB=wasixranlib
  LDFLAGS=
  
  BIGFILES=-D_FILE_OFFSET_BITS=64
@@ -34,7 +34,7 @@ index fb0f230..a753427 100644
  
  SHELL=/bin/sh
 -CC=gcc
-+CC=wasix-clang
++CC=wasixcc
  BIGFILES=-D_FILE_OFFSET_BITS=64
  CFLAGS=-fpic -fPIC -Wall -Winline -O2 -g $(BIGFILES)
  
