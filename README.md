@@ -1,3 +1,7 @@
+# Deprecation notice
+
+While this project has been a fun experiment, it turns out that maintaining so many things in one place doesn't really work out that well. This project has been superseded by [wasinix](https://github.com/wasix-org/wasinix).
+
 # WASIX `build-scripts`
 
 A collection of build recipes for building packages for the WASIX platform.
