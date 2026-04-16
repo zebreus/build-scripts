@@ -3,7 +3,7 @@ load(":cc_toolchain_config.bzl", "wasix_cc_toolchain_config")
 
 wasix_cc_toolchain_config(
     name = "wasix_cc_toolchain_config",
-    # compiler_path = "wasix-clang",
+    # compiler_path = "wasixcc",
 
 )
 

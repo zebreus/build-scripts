@@ -1,17 +1,17 @@
 [package]
-name = "wasmer/python-native"
+name = "python/python"
 version = "0.1.0"
 entrypoint = "python"
 
 [fs]
-"/usr/local/ssl" = "../../python-wasix-binaries/ssl-certs"
-"/usr/local/lib" = "../../pkgs/cpython.sysroot/usr/local/lib/wasm32-wasi"
-"/usr/terminfo" = "../../pkgs/cpython.sysroot/usr/local/lib/terminfo"
-"/cpython" = "../../pkgs/cpython.lib/usr/local"
+# Mounting root to / prevents users from mounting anything else.
+# So we mount /usr/local and /lib explicitly.
+"/lib" = "./root/lib"
+"/usr/local" = "./root/usr/local"
 
 [[module]]
 name = "python"
-source = "../../pkgs/cpython.lib/usr/local/bin/python3.wasm"
+source = "./root/usr/local/bin/python3.wasm"
 abi = "wasi"
 
 [module.interfaces]
@@ -25,8 +25,7 @@ runner = "wasi"
 [command.annotations.wasi]
 env = [
     "PYTHONEXECUTABLE=/bin/python",
-    "PYTHONHOME=/cpython",
-    "TERMINFO_DIRS=/usr/terminfo",
+    # "PYTHONHOME=/usr/local",
     # pyrepl is currently not working 100% correctly, so disable it for now.
     # pyrepl will be disabled when TERM=dumb. Set to xterm, once wasmer supports all the required features.
     "TERM=dumb",

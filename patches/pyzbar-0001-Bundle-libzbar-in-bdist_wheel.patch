@@ -1,0 +1,51 @@
+From 6721a2b2c154c83e4c2a3fb8d6731664c5a043af Mon Sep 17 00:00:00 2001
+From: Zebreus <zebreus@zebre.us>
+Date: Tue, 7 Oct 2025 17:25:33 +0200
+Subject: [PATCH] Bundle libzbar in bdist_wheel
+
+---
+ pyzbar/zbar_library.py | 2 +-
+ setup.py               | 7 +++++++
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/pyzbar/zbar_library.py b/pyzbar/zbar_library.py
+index b63108c..c5781d1 100644
+--- a/pyzbar/zbar_library.py
++++ b/pyzbar/zbar_library.py
+@@ -60,7 +60,7 @@ def load():
+             dependencies, libzbar = load_objects(Path(__file__).parent)
+     else:
+         # Assume a shared library on the path
+-        path = find_library('zbar')
++        path = Path.joinpath(Path(__file__).parent, 'libzbar.so')
+         if not path:
+             raise ImportError('Unable to find zbar shared library')
+         libzbar = cdll.LoadLibrary(path)
+diff --git a/setup.py b/setup.py
+index 8603d2a..21b7707 100755
+--- a/setup.py
++++ b/setup.py
+@@ -20,6 +20,12 @@ def readme():
+     except:
+         return 'Visit {0} for more details.'.format(URL)
+ 
++if "bdist_wheel" in sys.argv:
++    # Copy in the shared library when building a wheel
++    import shutil
++    import os
++    libzbar_path = os.path.join(os.environ.get('WASIX_SYSROOT'), "usr/local/lib/wasm32-wasi/libzbar.so")
++    shutil.copy(libzbar_path, "pyzbar/libzbar.so")
+ 
+ setup_data = {
+     'name': 'pyzbar',
+@@ -51,6 +57,7 @@ setup_data = {
+         'numpy>=1.8.2',
+         PILLOW,
+     ],
++    'package_data': {"pyzbar": ["libzbar.so"]},
+     'include_package_data': True,
+     'classifiers': [
+         'Development Status :: 4 - Beta',
+-- 
+2.48.1
+

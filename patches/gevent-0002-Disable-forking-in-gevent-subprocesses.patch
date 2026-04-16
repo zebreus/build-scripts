@@ -1,0 +1,36 @@
+From 4979bafa2623d96e2daea9480e6acfb0bdf9102e Mon Sep 17 00:00:00 2001
+From: Zebreus <zebreus@zebre.us>
+Date: Wed, 26 Nov 2025 17:22:09 +0100
+Subject: [PATCH 02/12] Disable forking in gevent subprocesses
+
+---
+ src/gevent/subprocess.py | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/src/gevent/subprocess.py b/src/gevent/subprocess.py
+index 0a0ef378..54cfda32 100644
+--- a/src/gevent/subprocess.py
++++ b/src/gevent/subprocess.py
+@@ -299,8 +299,9 @@ else:
+     import fcntl
+     import pickle
+     from gevent import monkey
+-    fork = monkey.get_original('os', 'fork')
+-    from gevent.os import fork_and_watch
++    # TODO: See if we can replace this with something that uses posix_spawn
++    # fork = monkey.get_original('os', 'fork')
++    # from gevent.os import fork_and_watch
+ 
+ STDOUT = __subprocess__.STDOUT # static analysis
+ 
+@@ -1640,6 +1641,7 @@ class Popen(object):
+                     # write to stderr -> hang.  http://bugs.python.org/issue1336
+                     gc.disable()
+                     try:
++                        raise RuntimeError("fork_and_watch not available in WASIX. We can most likely implement this using posix_spawn. If you need this functionality, please open an issue on github.com/wasix-org/build-scripts")
+                         self.pid = fork_and_watch(self._on_child, self._loop, True, fork)
+                     except:
+                         if gc_was_enabled:
+-- 
+2.51.0
+

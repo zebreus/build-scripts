@@ -303,3 +303,124 @@
 [submodule "pkgs/xxhash.source"]
 	path = pkgs/xxhash.source
 	url = https://github.com/Cyan4973/xxHash.git
+[submodule "pkgs/python-xxhash.source"]
+	path = pkgs/python-xxhash.source
+	url = https://github.com/ifduyue/python-xxhash.git
+[submodule "pkgs/peewee.source"]
+	path = pkgs/peewee.source
+	url = https://github.com/coleifer/peewee.git
+[submodule "pkgs/clickhouse-connect.source"]
+	path = pkgs/clickhouse-connect.source
+	url = https://github.com/ClickHouse/clickhouse-connect.git
+[submodule "pkgs/pandas2.2.3.source"]
+	path = pkgs/pandas2-2-3.source
+	url = https://github.com/pandas-dev/pandas.git
+[submodule "pkgs/lz4.source"]
+	path = pkgs/lz4.source
+	url = https://github.com/lz4/lz4.git
+[submodule "pkgs/python-lz4.source"]
+	path = pkgs/python-lz4.source
+	url = https://github.com/python-lz4/python-lz4.git
+[submodule "pkgs/fastavro.source"]
+	path = pkgs/fastavro.source
+	url = https://github.com/fastavro/fastavro.git
+[submodule "pkgs/snappy.source"]
+	path = pkgs/snappy.source
+	url = https://github.com/google/snappy.git
+[submodule "pkgs/lzo.source"]
+	path = pkgs/lzo.source
+	url = https://github.com/nemequ/lzo.git
+[submodule "pkgs/scipy.source"]
+	path = pkgs/scipy.source
+	url = https://github.com/scipy/scipy.git
+[submodule "pkgs/gmp.source"]
+	path = pkgs/gmp.source
+	url = https://github.com/gmp-mirror/gmp-6.3.git
+[submodule "pkgs/ssl-certs.source"]
+	path = pkgs/ca-certificates.source
+	url = https://github.com/wasix-org/python-wasix-binaries
+[submodule "pkgs/sed.source"]
+	path = pkgs/sed.source
+	url = https://github.com/mirror/sed.git
+
+[submodule "pkgs/greenlet.source"]
+	path = pkgs/greenlet.source
+	url = https://github.com/wasix-org/greenlet
+[submodule "pkgs/gevent.source"]
+	path = pkgs/gevent.source
+	url = https://github.com/gevent/gevent.git
+[submodule "pkgs/sqlalchemy.source"]
+	path = pkgs/sqlalchemy.source
+	url = https://github.com/sqlalchemy/sqlalchemy.git
+[submodule "pkgs/eventlet.source"]
+	path = pkgs/eventlet.source
+	url = https://github.com/eventlet/eventlet.git
+[submodule "pkgs/greenback.source"]
+	path = pkgs/greenback.source
+	url = https://github.com/oremanj/greenback.git
+[submodule "pkgs/outcome.source"]
+	path = pkgs/outcome.source
+	url = https://github.com/python-trio/outcome.git
+[submodule "pkgs/attrs.source"]
+	path = pkgs/attrs.source
+	url = https://github.com/python-attrs/attrs.git
+[submodule "pkgs/sniffio.source"]
+	path = pkgs/sniffio.source
+	url = https://github.com/python-trio/sniffio.git
+[submodule "pkgs/zope_interface.source"]
+	path = pkgs/zope_interface.source
+	url = https://github.com/zopefoundation/zope.interface.git
+[submodule "pkgs/zope_event.source"]
+	path = pkgs/zope_event.source
+	url = https://github.com/zopefoundation/zope.event.git
+[submodule "pkgs/dnspython.source"]
+	path = pkgs/dnspython.source
+	url = https://github.com/rthalley/dnspython.git
+[submodule "pkgs/multidict.source"]
+	path = pkgs/multidict.source
+	url = https://github.com/aio-libs/multidict.git
+[submodule "pkgs/yarl.source"]
+	path = pkgs/yarl.source
+	url = https://github.com/aio-libs/yarl.git
+[submodule "pkgs/propcache.source"]
+	path = pkgs/propcache.source
+	url = https://github.com/aio-libs/propcache
+[submodule "pkgs/aiohappyeyeballs.source"]
+	path = pkgs/aiohappyeyeballs.source
+	url = https://github.com/aio-libs/aiohappyeyeballs
+[submodule "pkgs/aiosignal.source"]
+	path = pkgs/aiosignal.source
+	url = https://github.com/aio-libs/aiosignal
+[submodule "pkgs/frozenlist.source"]
+	path = pkgs/frozenlist.source
+	url = https://github.com/aio-libs/frozenlist
+[submodule "pkgs/async-timeout.source"]
+	path = pkgs/async-timeout.source
+	url = https://github.com/aio-libs/async-timeout
+[submodule "pkgs/aiojobs.source"]
+	path = pkgs/aiojobs.source
+	url = https://github.com/aio-libs/aiojobs
+[submodule "pkgs/aioresponses.source"]
+	path = pkgs/aioresponses.source
+	url = https://github.com/pnuckowski/aioresponses
+[submodule "pkgs/bytecode.source"]
+	path = pkgs/bytecode.source
+	url = https://github.com/MatthieuDartiailh/bytecode.git
+[submodule "pkgs/aiohttp.source"]
+	path = pkgs/aiohttp.source
+	url = https://github.com/aio-libs/aiohttp
+[submodule "pkgs/cryptography.source"]
+	path = pkgs/cryptography.source
+	url = https://github.com/wasix-org/cryptography-python.git
+[submodule "pkgs/cryptography43-0-3.source"]
+	path = pkgs/cryptography43-0-3.source
+	url = https://github.com/wasix-org/cryptography-python.git
+[submodule "pkgs/mpfr.source"]
+	path = pkgs/mpfr.source
+	url = https://github.com/wasix-org/mpfr.git
+[submodule "pkgs/zz.source"]
+	path = pkgs/zz.source
+	url = https://github.com/diofant/zz.git
+[submodule "pkgs/bcrypt.source"]
+	path = pkgs/bcrypt.source
+	url = https://github.com/pyca/bcrypt.git

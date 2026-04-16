@@ -1,0 +1,25 @@
+From 9136e6ea23cee171d0118d8f928eb8ccbb5ca08c Mon Sep 17 00:00:00 2001
+From: Zebreus <zebreus@zebre.us>
+Date: Thu, 18 Dec 2025 15:05:45 +0100
+Subject: [PATCH] Fix vendored cares build for wasix
+
+---
+ setup.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/setup.py b/setup.py
+index 39ca17e824..b5991e104f 100644
+--- a/setup.py
++++ b/setup.py
+@@ -62,7 +62,7 @@ if "darwin" in sys.platform:
+     CARES_INCLUDE += (os.path.join("third_party", "cares", "config_darwin"),)
+ if "freebsd" in sys.platform:
+     CARES_INCLUDE += (os.path.join("third_party", "cares", "config_freebsd"),)
+-if "linux" in sys.platform:
++if "linux" in sys.platform or "wasix" in sys.platform:
+     CARES_INCLUDE += (os.path.join("third_party", "cares", "config_linux"),)
+ if "openbsd" in sys.platform:
+     CARES_INCLUDE += (os.path.join("third_party", "cares", "config_openbsd"),)
+-- 
+2.51.0
+

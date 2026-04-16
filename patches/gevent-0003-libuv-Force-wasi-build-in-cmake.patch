@@ -1,0 +1,28 @@
+From 2b40e3e0488724c1f3b05e34156785c3cf326d6c Mon Sep 17 00:00:00 2001
+From: Zebreus <zebreus@zebre.us>
+Date: Wed, 26 Nov 2025 17:05:44 +0100
+Subject: [PATCH 03/12] libuv: Force wasi build in cmake
+
+---
+ deps/libuv/CMakeLists.txt | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/deps/libuv/CMakeLists.txt b/deps/libuv/CMakeLists.txt
+index 73d5aff8..b72c9aa3 100644
+--- a/deps/libuv/CMakeLists.txt
++++ b/deps/libuv/CMakeLists.txt
+@@ -1,5 +1,11 @@
+ cmake_minimum_required(VERSION 3.10)
+ 
++# Settings for WASI target
++set(CMAKE_SYSTEM_NAME "WASI" CACHE STRING "Target system" FORCE)
++set(LIBUV_BUILD_TESTS OFF CACHE BOOL "Build the unit tests when BUILD_TESTING is enabled and we are the root project" FORCE)
++set(LIBUV_BUILD_BENCH OFF CACHE BOOL "Build the benchmarks when building unit tests and we are the root project" FORCE)
++set(CMAKE_INSTALL_LIBDIR "lib/wasm32-wasi" CACHE PATH "Library installation directory" FORCE)
++
+ if(POLICY CMP0091)
+   cmake_policy(SET CMP0091 NEW) # Enable MSVC_RUNTIME_LIBRARY setting
+ endif()
+-- 
+2.51.0
+

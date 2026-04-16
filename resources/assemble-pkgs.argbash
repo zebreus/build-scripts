@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+#
+# Regenerate the script by running:
+# docker run --rm -v "$(pwd):/work" -u "$(id -u):$(id -g)" matejak/argbash -o assemble-pkgs.sh resources/assemble-pkgs.argbash
+#
+# ARG_OPTIONAL_REPEATED([input], [i], [List of input libraries])
+# ARG_OPTIONAL_SINGLE([output-dir], [o], [Output directory])
+# ARG_OPTIONAL_SINGLE([artifact-dir], [], [If this is set, artifacts are picked from this directory instead of being downloaded from a github release])
+# ARG_OPTIONAL_SINGLE([release], [], [Select the github release from which to download artifacts])
+# ARG_OPTIONAL_SINGLE([github-token], [], [Github token to use for API requests])
+# ARG_OPTIONAL_BOOLEAN([merge], [m], [Allow installing packages into an existing sysroot directory], [off])
+
+# ARG_HELP([Fetch and combine multiple packages from build-scripts into one directory])
+# ARGBASH_GO
+
+# [ <-- needed because of Argbash
+
+set -e
+
+function check_command {
+    if ! command -v "$1" &> /dev/null ; then
+        echo "Missing dependency: $1" >&2
+        exit 1
+    fi
+}
+
+check_command curl
+check_command mktemp
+check_command tar
+check_command sed
+check_command xz
+
+VERSION=latest
+if test -n "$_arg_release" ; then
+    VERSION="$_arg_release"
+fi
+
+if test "$VERSION" = "latest" ; then
+    if [ -n "$_arg_github_token" ]; then
+        VERSION="$(curl -s -H "authorization: Bearer $_arg_github_token" https://api.github.com/repos/wasix-org/build-scripts/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')"
+    else
+        VERSION="$(curl -s https://api.github.com/repos/wasix-org/build-scripts/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')"
+    fi
+fi
+
+if test -z "$_arg_output_dir" ; then
+    echo "No output directory set" >&2
+    exit 1
+fi
+
+ASSEMBLED_DIR="$_arg_output_dir"
+if test -e "$ASSEMBLED_DIR" ; then
+    if test "$_arg_merge" = "off" ; then
+        echo "Output directory $ASSEMBLED_DIR already exists. Use --merge to install into an existing sysroot." >&2
+        exit 1
+    fi
+    if ! test -d "$ASSEMBLED_DIR" ; then
+        echo "Output path $ASSEMBLED_DIR exists but is not a directory." >&2
+        exit 1
+    fi
+fi
+
+ARTIFACT_DIR=""
+if test -n "$_arg_artifact_dir" ; then
+    ARTIFACT_DIR="$(realpath "$_arg_artifact_dir")"
+    if ! test -d "$ARTIFACT_DIR" ; then
+        echo "Artifact directory $ARTIFACT_DIR does not exist" >&2
+        exit 1
+    fi
+fi
+
+TMP_DIR=$(mktemp -d)
+
+for input in "${_arg_input[@]}" ; do
+    output="$TMP_DIR/$input.tar.xz"
+    if test -f "$output" ; then
+        echo "Temporary file $output already exists. aborting." >&2
+        exit 1
+    fi
+    if test -n "$ARTIFACT_DIR" ; then
+        cp "$ARTIFACT_DIR/$input.tar.xz" "$output"
+    else
+        curl -sSfL "https://github.com/wasix-org/build-scripts/releases/download/$VERSION/$input.tar.xz" -o "$output"
+    fi
+done
+
+mkdir -p "$_arg_output_dir"
+ASSEMBLED_DIR="$(realpath "$_arg_output_dir")"
+
+for input in "${_arg_input[@]}" ; do
+    tar mxJf "$TMP_DIR/$input.tar.xz" -C "$ASSEMBLED_DIR"
+done
+
+# ] <-- needed because of Argbash

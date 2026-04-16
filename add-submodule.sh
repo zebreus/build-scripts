@@ -4,7 +4,14 @@ set -xe
 
 test -n "$BASH_VERSION" || { echo "This script requires bash"; exit 1; }
 test -f "generate-index.py" || { echo "This script must be run from the root of the build-scripts directory"; exit 1; }
-test -z "$(git status --porcelain)" || { echo "There are uncommitted changes in the repository. Please commit or stash them before running this script."; exit 1; }
+
+if [[ "$1" == "ilikedanger" ]] ; then
+    echo "☠️ Danger mode enabled. Skipping check for dirty worktree."
+    shift
+else
+    # Ensure there are no uncommitted changes
+    test -z "$(git status --porcelain)" || { echo "There are uncommitted changes in the repository. Please commit or stash them before running this script."; exit 1; }
+fi
 
 # lib = C library
 # wheel = python wheel with complex build steps
@@ -111,6 +118,7 @@ if [ "$TYPE" == "pure-wheel" ]; then
     git add "Makefile"
     git commit -m "Add $NAME to the buildscripts"
 
-    git add "pkgs/$NAME.tar.gz" "pkgs/$NAME.whl" artifacts/${NAME}*.whl artifacts/${NAME}*.tar.gz
+    underscored_name="$(echo "$NAME" | tr '-' '_')"
+    git add "pkgs/$NAME.tar.gz" "pkgs/$NAME.whl" artifacts/${NAME}*.whl artifacts/${NAME}*.tar.gz || git add "pkgs/$NAME.whl" artifacts/${NAME}*.whl || git add "pkgs/$NAME.tar.gz" "pkgs/$NAME.whl" artifacts/${underscored_name}*.tar.gz artifacts/${underscored_name}*.whl
     git commit -m "Add prebuilt wheel for $NAME"
 fi

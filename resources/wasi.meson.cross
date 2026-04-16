@@ -5,10 +5,11 @@ cpu = 'wasm32'
 endian = 'little'
 
 [binaries]
-c = 'wasix-clang'
-cpp = 'wasix-clang++'
-ar = 'llvm-ar'
+c = 'wasixcc'
+cpp = 'wasixcc++'
+ar = 'wasixar'
 ld = 'wasm-ld'
+pkg-config = 'pkg-config'
 # cython = '/usr/bin/cython'
 
 [properties]

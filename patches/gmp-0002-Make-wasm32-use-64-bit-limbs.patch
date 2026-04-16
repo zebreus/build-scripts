@@ -1,0 +1,32 @@
+From 1dfc3af98c95a558e4c73fda3f80cfc3cd3bf98e Mon Sep 17 00:00:00 2001
+From: Zebreus <zebreus@zebre.us>
+Date: Tue, 13 Jan 2026 13:20:37 +0100
+Subject: [PATCH] Make wasm32 use 64-bit limbs
+
+---
+ configure.ac | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/configure.ac b/configure.ac
+index 082077b26..cbcaae449 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -2085,6 +2085,15 @@ case $host in
+     ;;
+ 
+ 
++  # WebAssembly - 32-bit pointers but 64-bit arithmetic
++  wasm32-*)
++    enable_assembly=no
++    abilist="32"
++    path="generic"
++    limb=longlong
++    ;;
++
++
+   # Special CPU "none" used to select generic C, now this is obsolete.
+   none-*-*)
+     enable_assembly=no
+-- 
+2.51.0
+

@@ -1,0 +1,58 @@
+From 01df1b4b0fc23a6f087669ac398585dda0a7c81b Mon Sep 17 00:00:00 2001
+From: Zebreus <zebreus@zebre.us>
+Date: Tue, 7 Oct 2025 14:48:58 +0200
+Subject: [PATCH] Bundle geos
+
+---
+ pyproject.toml |  2 +-
+ setup.py       | 14 ++++++++++++--
+ 2 files changed, 13 insertions(+), 3 deletions(-)
+
+diff --git a/pyproject.toml b/pyproject.toml
+index 1a61c42..1c0ec9b 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -67,7 +67,7 @@ include-package-data = false
+ include = ["shapely", "shapely.*"]
+ 
+ [tool.setuptools.package-data]
+-"shapely" = ["*.pxd"]
++"shapely" = ["*.pxd", "libgeos_c.so", "libgeos.so.3.13.1"]
+ 
+ [tool.cibuildwheel]
+ skip = ["pp*", "*_i686", "*_ppc64le", "*_s390x"]
+diff --git a/setup.py b/setup.py
+index e02c7a9..f1a9bb8 100644
+--- a/setup.py
++++ b/setup.py
+@@ -78,7 +78,7 @@ def get_ext_options():
+         ],
+         "include_dirs": ["./src"],
+         "library_dirs": [],
+-        "extra_link_args": [],
++        "extra_link_args": ["-Wl,-rpath,$ORIGIN"],
+         "libraries": [],
+     }
+ 
+@@ -192,7 +192,17 @@ else:
+         compiler_directives=compiler_directives,
+     )
+ 
+-
++    import shutil
++    for libfile in ["libgeos_c.so", "libgeos.so.3.13.1"]:
++        for library_dir in ext_options.get("library_dirs", []):
++            libpath = os.path.join(library_dir, libfile)
++            if os.path.exists(libpath):
++                target_path = os.path.join("shapely", libfile)
++                shutil.copy(libpath, target_path)
++                exitcode = os.system(f"wasm-tools print {target_path} | sed '5i(runtime-path \"$ORIGIN\")' | sponge | wasm-tools parse -o {target_path}")
++                if exitcode != 0:
++                    print(f"ERROR: Please make sure wasm-tools and moreutils are installed", file=sys.stderr)
++                    sys.exit(1)
+ cmdclass = versioneer.get_cmdclass()
+ 
+ 
+-- 
+2.48.1
+
